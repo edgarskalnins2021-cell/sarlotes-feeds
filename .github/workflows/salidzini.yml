@@ -2,11 +2,20 @@ name: Salidzini XML
 
 on:
   schedule:
-    - cron: '15 3 * * *' # katru dienu 03:15 UTC (05:15–06:15 pēc Latvijas laika), pirms Salidzini nolasa failu 08–12
+    # 4 reizes dienā pēc Latvijas laika – ~1 h pirms katras Salidzini nolasīšanas
+    # (08–12, 12–13, 15–16, 18–19). Minūte :47, jo pilnās stundās GitHub mēdz kavēties.
+    - cron: '47 5 * * *'
+      timezone: 'Europe/Riga'
+    - cron: '47 10 * * *'
+      timezone: 'Europe/Riga'
+    - cron: '47 13 * * *'
+      timezone: 'Europe/Riga'
+    - cron: '47 16 * * *'
+      timezone: 'Europe/Riga'
   workflow_dispatch: # ļauj palaist arī ar roku (Actions → Salidzini XML → Run workflow)
 
 permissions:
-  contents: read
+  contents: write # nedēļas statusa ieraksts (lai GitHub neatslēgtu grafiku pēc 60 dienām bez aktivitātes)
   pages: write
   id-token: write
 
@@ -17,6 +26,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,6 +41,17 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
+      - name: Nedēļas statuss (pirmdienas rītā)
+        if: github.event_name == 'schedule'
+        run: |
+          if [ "$(TZ=Europe/Riga date +%u)" = "1" ] && [ "$(TZ=Europe/Riga date +%H)" -lt 9 ]; then
+            mkdir -p status && cp public/stats.json status/last-run.json
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add status/last-run.json
+            git commit -m "Statuss $(TZ=Europe/Riga date +%F)" || echo "Nav izmaiņu"
+            git push || echo "Statusu neizdevās ierakstīt – XML tas neietekmē"
+          fi
 
   deploy:
     needs: build

@@ -16,6 +16,27 @@ export const CONFIG = {
   // Produktu tipi, ko nerādām vispār.
   excludeProductTypes: ['Dāvanu kartes', 'Customizer'],
 
+  // Apģērbi apdrukai (T-krekli, džemperi) – nerādām, arī ja tiem nav tipa "Customizer".
+  // ("T-kreklu dzija" un "Kreklu audums" netiek skarti.)
+  excludeTitlePattern: /(^|\s)(T-krekls|Džemperis)(\s|$)/i,
+
+  // Bojātas, lietotas, demo preces – Salidzini prasa <used>1</used>.
+  usedPattern: /(ar defektu|defekts|bojāt|lietot[aāsi]\b|\bdemo\b|ekspozīcij)/i,
+
+  // Nosaukumu tīrīšana: Salidzini neļauj noliktavas/reklāmas frāzes un iekšējas piezīmes.
+  nameFixes: [
+    [/\s*[-–]?\s*pēdējais gabaliņš\s*/gi, ' – gabals '],
+    [/[-–\s]*neatjaunot\b/gi, ''],
+    [/(\d)(cm|mm)\b/g, '$1 $2'],
+    [/(\S)–\s/g, '$1 – '],
+    [/\s–(\S)/g, ' – $1'],
+  ],
+
+  // Kategorija bez Google laukiem: produkta tips + konkrētākais tags.
+  // Tagi, kas ir vairāk nekā pusei šī tipa produktu, ir meklētāju (SEO) tagi, nevis kategorija.
+  categoryTagMaxShare: 0.5,
+  categoryTagMinCount: 2,
+
   // Piegāde (Latvija).
   courierOnlyType: 'COURIER_ONLY',
   delivery: {
@@ -84,13 +105,41 @@ function detectBrand(product, cfg) {
   return '';
 }
 
-function categoryFor(product, variant, cfg) {
+// Cik bieži katrs tags sastopams katra tipa produktos (lai atšķirtu kategoriju no SEO taga).
+function tagStats(products) {
+  const byType = new Map();
+  for (const p of products) {
+    const type = p.productType || '';
+    if (!byType.has(type)) byType.set(type, { n: 0, tags: new Map() });
+    const s = byType.get(type);
+    s.n++;
+    for (const t of new Set(p.tags || [])) s.tags.set(t, (s.tags.get(t) || 0) + 1);
+  }
+  return byType;
+}
+
+function categoryFor(product, variant, cfg, stats) {
   const parts = (variant.categoryPath || []).filter(Boolean);
   if (parts.length) return parts.join(' >> ');
+  const type = product.productType === cfg.courierOnlyType ? '' : (product.productType || ''); // tehnisks tips, nav kategorija
   const generic = new Set(cfg.genericTags.map((t) => t.toLowerCase()));
-  const tag = (product.tags || []).find((t) => !generic.has(t.toLowerCase()) && t.length > 2);
-  const type = product.productType === cfg.courierOnlyType ? '' : product.productType; // tehnisks tips, nav kategorija
-  return [type, tag].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' >> ');
+  const s = stats?.get(product.productType || '');
+  let best = '';
+  let bestN = Infinity;
+  for (const t of product.tags || []) {
+    const lt = t.toLowerCase().trim();
+    if (generic.has(lt) || t.length <= 2 || /^[-–]/.test(t) || lt === type.toLowerCase()) continue;
+    const n = s?.tags.get(t) || 0;
+    if (n < cfg.categoryTagMinCount) continue; // viena produkta tags nav kategorija
+    if (s && s.n >= 10 && n / s.n > cfg.categoryTagMaxShare) continue; // SEO tags
+    if (n < bestN || (n === bestN && t.length > best.length)) { best = t; bestN = n; } // konkrētākais
+  }
+  return [type, best].filter(Boolean).join(' >> ');
+}
+
+function cleanName(s, cfg) {
+  for (const [re, to] of cfg.nameFixes || []) s = s.replace(re, to);
+  return s;
 }
 
 /**
@@ -103,6 +152,7 @@ export function buildItems(products, cfg = CONFIG) {
   const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
   const seenNames = new Set();
   const items = [];
+  const tags = tagStats(products);
 
   for (const p of products) {
     if (p.onlineStore === false) { skip('nav publicēts veikalā'); continue; }
@@ -110,6 +160,7 @@ export function buildItems(products, cfg = CONFIG) {
       skip(p.isGiftCard || p.productType === 'Dāvanu kartes' ? 'dāvanu karte' : `tips ${p.productType}`);
       continue;
     }
+    if (cfg.excludeTitlePattern?.test(p.title)) { skip('T-krekli/džemperi'); continue; }
     const decimal = (p.tags || []).includes(cfg.decimalTag);
     const multi = p.variants.length > 1;
 
@@ -128,7 +179,7 @@ export function buildItems(products, cfg = CONFIG) {
       if (price < cfg.minPrice) { skip(`cena zem ${money(cfg.minPrice)} €`); continue; }
 
       const variantTitle = v.title && v.title !== 'Default Title' ? ` – ${v.title}` : '';
-      const name = cut(`${p.title}${variantTitle}${decimal ? ' (1 m)' : ''}`, 200);
+      const name = cut(cleanName(`${p.title}${variantTitle}`, cfg) + (decimal ? ' (1 m)' : ''), 200);
       if (seenNames.has(name)) { skip('dublikāts'); continue; }
       seenNames.add(name);
 
@@ -144,13 +195,14 @@ export function buildItems(products, cfg = CONFIG) {
         link: cut(`${cfg.shopUrl}/products/${p.handle}${multi ? `?variant=${numericId}` : ''}`, 500),
         price: money(price),
         image: cut(v.image || p.image || '', 500),
-        category_full: cut(categoryFor(p, v, cfg), 200),
+        category_full: cut(categoryFor(p, v, cfg, tags), 200),
         brand: detectBrand(p, cfg),
         ean: validGtin(v.barcode, numericId) || '',
         in_stock: inStock != null ? String(inStock) : '',
         delivery_latvija: money(delivery),
         delivery_days_latvija: String(cfg.deliveryDaysLatvia),
         delivery_days_shop: String(cfg.deliveryDaysShop),
+        used: cfg.usedPattern?.test(`${p.title} ${v.title || ''}`) ? '1' : '',
         _decimal: decimal,
       });
     }
@@ -160,7 +212,7 @@ export function buildItems(products, cfg = CONFIG) {
 }
 
 const TAG_ORDER = ['name', 'link', 'price', 'image', 'category_full', 'brand', 'ean', 'in_stock',
-  'delivery_latvija', 'delivery_days_latvija', 'delivery_days_shop'];
+  'delivery_latvija', 'delivery_days_latvija', 'delivery_days_shop', 'used'];
 
 export function toXml(items) {
   const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>'];

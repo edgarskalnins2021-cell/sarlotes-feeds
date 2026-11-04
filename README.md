@@ -14,10 +14,13 @@ tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu
 | Metrā tirgotās preces (tags `decimal`) | cena × 10 (par 1 m), atlikums ÷ 10 (metros), nosaukumā "(1 m)" |
 | Atlikumā mazāk par 1 m | nerāda |
 | 0 atlikums / atlikums netiek uzskaitīts | nerāda |
-| Dāvanu kartes, T-krekli (tips `Customizer`), digitālās preces, 0 € | nerāda |
+| Dāvanu kartes, apdrukas preces (tips `Customizer`), digitālās preces, 0 € | nerāda |
+| T-krekli un džemperi (nosaukums sākas ar "T-krekls" / "Džemperis") | nerāda |
 | Cena zem 3 € (metrā – par 1 m) | nerāda |
 | Vienāds nosaukums divreiz | rāda vienu reizi |
-| Kategorija | Google Shopping lauki, piem. "Audumi >> Kokvilnas audumi" |
+| Nosaukumā "ar defektu", "bojāts", "lietots", "demo" | `<used>1</used>` (Salidzini prasība) |
+| Nosaukumā "pēdējais gabaliņš 50cm", "-neatjaunot" | "gabals 50 cm", piezīme tiek izņemta |
+| Kategorija | Google Shopping lauki, piem. "Audumi >> Kokvilnas audumi"; bez tiem – tips + konkrētākais tags (SEO tagi, kas ir vairāk nekā pusei tipa preču, netiek ņemti) |
 | Zīmols | tikai īsti zīmoli (SCHMETZ, Milward, Prym, DROPS, Alize u.c.) |
 | EAN | tikai derīgi kodi (automātiski ģenerētie netiek likti) |
 | Piegāde | 3,30 € (Omniva), 0 € no 70 €; tikai kurjers – 11,90 € / 15,90 € virs 3 kg; 3 dienas; veikalā – šodien |

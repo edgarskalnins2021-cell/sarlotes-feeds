@@ -2,16 +2,13 @@ name: Salidzini XML
 
 on:
   schedule:
-    # 4 reizes dienā pēc Latvijas laika – ~1 h pirms katras Salidzini nolasīšanas
-    # (08–12, 12–13, 15–16, 18–19). Minūte :47, jo pilnās stundās GitHub mēdz kavēties.
-    - cron: '47 5 * * *'
-      timezone: 'Europe/Riga'
-    - cron: '47 10 * * *'
-      timezone: 'Europe/Riga'
-    - cron: '47 13 * * *'
-      timezone: 'Europe/Riga'
-    - cron: '47 16 * * *'
-      timezone: 'Europe/Riga'
+    # 4 reizes dienā pirms katras Salidzini nolasīšanas (08–12, 12–13, 15–16, 18–19).
+    # Laiks UTC: ziemā Rīgā 5:47, 10:47, 13:47, 16:47; vasarā stundu vēlāk – arī der.
+    # Minūte :47, jo pilnās stundās GitHub mēdz kavēties.
+    - cron: '47 3 * * *'
+    - cron: '47 8 * * *'
+    - cron: '47 11 * * *'
+    - cron: '47 14 * * *'
   workflow_dispatch: # ļauj palaist arī ar roku (Actions → Salidzini XML → Run workflow)
 
 permissions:
@@ -44,7 +41,7 @@ jobs:
       - name: Nedēļas statuss (pirmdienas rītā)
         if: github.event_name == 'schedule'
         run: |
-          if [ "$(TZ=Europe/Riga date +%u)" = "1" ] && [ "$(TZ=Europe/Riga date +%H)" -lt 9 ]; then
+          if [ "$(TZ=Europe/Riga date +%u)" = "1" ] && [ "$(TZ=Europe/Riga date +%H)" -lt 10 ]; then
             mkdir -p status && cp public/stats.json status/last-run.json
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

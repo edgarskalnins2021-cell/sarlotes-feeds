@@ -1,7 +1,11 @@
 # Šarlotes audumi – Salidzini.lv XML fails
 
-Katru rītu (ap 05:15–06:15 pēc Latvijas laika) GitHub automātiski nolasa preces no Shopify,
-pārrēķina un uzbūvē `salidzini.xml`. Salidzini.lv šo failu nolasa dienā 08–12.
+4 reizes dienā (5:47, 10:47, 13:47 un 16:47 pēc Latvijas laika) GitHub automātiski nolasa preces
+no Shopify, pārrēķina un uzbūvē `salidzini.xml`. Salidzini.lv šo failu nolasa 08–12, 12–13, 15–16 un 18–19.
+
+Drošības noteikumi: ja Shopify īslaicīgi neatbild, skripts mēģina vēlreiz; ja preču ir aizdomīgi maz
+(zem 100 vai uz pusi mazāk nekā iepriekš), vecais fails paliek nemainīts. Reizi nedēļā (pirmdienas rītā)
+tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu neaktivitātes dēļ.
 
 ## Ko fails dara
 

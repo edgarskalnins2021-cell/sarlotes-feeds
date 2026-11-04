@@ -16,12 +16,34 @@ const CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
 const OUT_DIR = process.env.OUT_DIR || 'public';
 
+const PAGES_URL = process.env.PAGES_URL || 'https://edgarskalnins2021-cell.github.io/sarlotes-feeds';
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Pieprasījums ar atkārtojumiem: ja Shopify/tīkls īslaicīgi atbild ar 429 vai 5xx, mēģina vēlreiz.
+async function fetchRetry(url, options = {}, tries = 4) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(url, { ...options, signal: AbortSignal.timeout(60_000) });
+      if ((res.status === 429 || res.status >= 500) && attempt < tries) {
+        const wait = Number(res.headers.get('retry-after')) * 1000 || 5_000 * attempt;
+        console.log(`  ${res.status} – mēģinu vēlreiz pēc ${wait / 1000} s (${url.split('?')[0]})`);
+        await sleep(wait);
+        continue;
+      }
+      return res;
+    } catch (err) {
+      if (attempt >= tries) throw err;
+      console.log(`  tīkla kļūda (${err.message}) – mēģinu vēlreiz`);
+      await sleep(5_000 * attempt);
+    }
+  }
+}
 
 // ---------- Shopify Admin API ----------
 
 async function getToken() {
-  const res = await fetch(`https://${STORE}/admin/oauth/access_token`, {
+  const res = await fetchRetry(`https://${STORE}/admin/oauth/access_token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
     body: new URLSearchParams({ grant_type: 'client_credentials', client_id: CLIENT_ID, client_secret: CLIENT_SECRET }),
@@ -31,7 +53,7 @@ async function getToken() {
 }
 
 async function gql(token, query, variables = {}) {
-  const res = await fetch(`https://${STORE}/admin/api/${API_VERSION}/graphql.json`, {
+  const res = await fetchRetry(`https://${STORE}/admin/api/${API_VERSION}/graphql.json`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
     body: JSON.stringify({ query, variables }),
@@ -85,7 +107,7 @@ async function fromAdminApi() {
   if (op.status !== 'COMPLETED') throw new Error(`Bulk operācija beidzās ar ${op.status} ${op.errorCode || ''}`);
   if (!op.url) return [];
 
-  const text = await (await fetch(op.url)).text();
+  const text = await (await fetchRetry(op.url)).text();
   const variants = new Map();
   const children = [];
   for (const line of text.split('\n')) {
@@ -145,7 +167,7 @@ export function normalizeStorefront(list) {
 async function fromStorefront() {
   const all = [];
   for (let page = 1; page <= 200; page++) {
-    const res = await fetch(`${CONFIG.shopUrl}/products.json?limit=250&page=${page}`, {
+    const res = await fetchRetry(`${CONFIG.shopUrl}/products.json?limit=250&page=${page}`, {
       headers: { 'User-Agent': 'sarlotes-salidzini-feed/1.0' },
     });
     if (!res.ok) throw new Error(`/products.json lapa ${page}: ${res.status}`);
@@ -164,6 +186,18 @@ console.log(`Datu avots: ${useAdmin ? 'Shopify Admin API' : 'publiskais /product
 const products = useAdmin ? await fromAdminApi() : await fromStorefront();
 const { items, stats } = buildItems(products, CONFIG);
 if (items.length < 100) throw new Error(`Aizdomīgi maz preču (${items.length}) – fails netiek pārrakstīts.`);
+
+// Drošība: ja preču pēkšņi ir uz pusi mazāk nekā iepriekšējā reizē, kaut kas nav kārtībā
+// (piem. Shopify atdeva nepilnus datus) – tad atstājam veco failu. Apiet var ar FORCE=1.
+try {
+  const prev = await (await fetchRetry(`${PAGES_URL}/stats.json`, { cache: 'no-store' }, 2)).json();
+  if (prev?.items && items.length < prev.items * 0.5 && process.env.FORCE !== '1') {
+    throw new Error(`Preču skaits nokrities no ${prev.items} uz ${items.length} – fails netiek pārrakstīts.`);
+  }
+} catch (err) {
+  if (err.message.startsWith('Preču skaits')) throw err;
+  console.log(`Iepriekšējo statistiku nevarēja nolasīt (${err.message}) – turpinu.`);
+}
 
 await mkdir(OUT_DIR, { recursive: true });
 await writeFile(`${OUT_DIR}/salidzini.xml`, toXml(items), 'utf8');

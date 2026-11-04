@@ -18,7 +18,7 @@ tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu
 | 0 atlikums / atlikums netiek uzskaitīts | nerāda |
 | Dāvanu kartes, apdrukas preces (tips `Customizer`), digitālās preces, 0 € | nerāda |
 | T-krekli un džemperi (nosaukums sākas ar "T-krekls" / "Džemperis") | nerāda |
-| Cena zem 3 € (metrā – par 1 m) | nerāda |
+| Minimālā cena | nav (`minPrice: 0`); ja vajag, var iestatīt, piem. 3 € – metrā tirgotajām precēm tiek salīdzināta 1 m cena |
 | Vienāds nosaukums divreiz | rāda vienu reizi |
 | Nosaukumā "ar defektu", "bojāts", "lietots", "demo" | `<used>1</used>` (Salidzini prasība) |
 | Nosaukumā "pēdējais gabaliņš 50cm", "-neatjaunot" | "gabals 50 cm", piezīme tiek izņemta |
@@ -27,7 +27,7 @@ tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu
 | EAN | tikai derīgi kodi (automātiski ģenerētie netiek likti) |
 | Piegāde | 3,30 € (Omniva), 0 € no 70 €; tikai kurjers – 11,90 € / 15,90 € virs 3 kg; 3 dienas; veikalā – šodien |
 
-Visi skaitļi ir `feed-core.mjs` augšā, blokā `CONFIG` (piem. `minPrice: 3.0`).
+Visi skaitļi ir `feed-core.mjs` augšā, blokā `CONFIG` (piem. `minPrice: 0`).
 
 ## Vienreizēja iestatīšana
 

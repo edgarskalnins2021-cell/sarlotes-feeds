@@ -6,7 +6,8 @@ export const CONFIG = {
   shopUrl: 'https://sarlotesaudumi.lv',
 
   // Minimālā cena (EUR ar PVN). Metrā tirgotajām precēm – cena par 1 m.
-  minPrice: 3.0,
+  // 0 = minimālās cenas nav (rāda visas preces, kuru cena ir lielāka par 0). Agrāk bija 3.0.
+  minPrice: 0,
 
   // Metrā tirgotās preces: Shopify glabā cenu un atlikumu par 0,1 m (10 cm).
   decimalTag: 'decimal',

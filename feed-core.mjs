@@ -215,6 +215,34 @@ export function buildItems(products, cfg = CONFIG) {
 const TAG_ORDER = ['name', 'link', 'price', 'image', 'category_full', 'brand', 'ean', 'in_stock',
   'delivery_latvija', 'delivery_days_latvija', 'delivery_days_shop', 'used'];
 
+// Kurpirkt.lv formāts (https://www.kurpirkt.lv/veikaliem.php): tās pašas preces, citi lauku nosaukumi.
+export function toKurpirktXml(items) {
+  const out = ["<?xml version='1.0' encoding='utf-8' ?>", '<root>'];
+  for (const it of items) {
+    const parts = String(it.category_full || '').split(/\s*>>\s*/).filter(Boolean);
+    const row = {
+      name: it.name,
+      link: it.link,
+      price: it.price,
+      image: it.image,
+      manufacturer: it.brand,
+      category: parts[parts.length - 1] || '',
+      category_full: parts.join(' > '),
+      in_stock: it.in_stock,
+      delivery_cost_riga: it.delivery_latvija,
+      used: it.used === '1' ? '1' : '0',
+    };
+    out.push('<item>');
+    for (const [tag, val] of Object.entries(row)) {
+      if ((val === '' || val == null) && ['in_stock', 'delivery_cost_riga'].includes(tag)) continue; // neobligātie
+      out.push(`<${tag}>${escapeXml(val)}</${tag}>`);
+    }
+    out.push('</item>');
+  }
+  out.push('</root>', '');
+  return out.join('\n');
+}
+
 export function toXml(items) {
   const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>'];
   for (const it of items) {

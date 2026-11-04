@@ -8,7 +8,7 @@
 // Palaišana: node generate.mjs   (Node 20+, bez papildu bibliotēkām)
 
 import { mkdir, writeFile } from 'node:fs/promises';
-import { CONFIG, buildItems, toXml } from './feed-core.mjs';
+import { CONFIG, buildItems, toXml, toKurpirktXml } from './feed-core.mjs';
 
 const STORE = process.env.SHOPIFY_STORE || 'sarlotesaudumi.myshopify.com';
 const API_VERSION = process.env.SHOPIFY_API_VERSION || '2026-10';
@@ -201,6 +201,7 @@ try {
 
 await mkdir(OUT_DIR, { recursive: true });
 await writeFile(`${OUT_DIR}/salidzini.xml`, toXml(items), 'utf8');
+await writeFile(`${OUT_DIR}/kurpirkt.xml`, toKurpirktXml(items), 'utf8');
 await writeFile(`${OUT_DIR}/stats.json`, JSON.stringify({ generated: new Date().toISOString(), source: useAdmin ? 'admin' : 'storefront', ...stats }, null, 2));
-await writeFile(`${OUT_DIR}/index.html`, `<!doctype html><meta charset="utf-8"><title>Šarlotes audumi – XML</title><p><a href="salidzini.xml">salidzini.xml</a> · ${items.length} preces · ${new Date().toISOString()}</p>`);
+await writeFile(`${OUT_DIR}/index.html`, `<!doctype html><meta charset="utf-8"><title>Šarlotes audumi – XML</title><p><a href="salidzini.xml">salidzini.xml</a> · <a href="kurpirkt.xml">kurpirkt.xml</a> · ${items.length} preces · ${new Date().toISOString()}</p>`);
 console.log(JSON.stringify(stats, null, 2));

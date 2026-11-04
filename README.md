@@ -2,6 +2,8 @@
 
 4 reizes dienā (5:47, 10:47, 13:47 un 16:47 pēc Latvijas laika) GitHub automātiski nolasa preces
 no Shopify, pārrēķina un uzbūvē `salidzini.xml`. Salidzini.lv šo failu nolasa 08–12, 12–13, 15–16 un 18–19.
+Tajā pašā reizē top arī `kurpirkt.xml` (tās pašas preces Kurpirkt.lv formātā: `manufacturer`, `category`,
+`category_full` ar ">", `delivery_cost_riga`, `used` 0/1).
 
 Drošības noteikumi: ja Shopify īslaicīgi neatbild, skripts mēģina vēlreiz; ja preču ir aizdomīgi maz
 (zem 100 vai uz pusi mazāk nekā iepriekš), vecais fails paliek nemainīts. Reizi nedēļā (pirmdienas rītā)

@@ -1,0 +1,43 @@
+name: Salidzini XML
+
+on:
+  schedule:
+    - cron: '15 3 * * *' # katru dienu 03:15 UTC (05:15–06:15 pēc Latvijas laika), pirms Salidzini nolasa failu 08–12
+  workflow_dispatch: # ļauj palaist arī ar roku (Actions → Salidzini XML → Run workflow)
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ģenerē XML
+        env:
+          SHOPIFY_STORE: sarlotesaudumi.myshopify.com
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+        run: node generate.mjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

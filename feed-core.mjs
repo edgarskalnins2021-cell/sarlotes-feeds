@@ -12,6 +12,7 @@ export const CONFIG = {
   decimalTag: 'decimal',
   decimalStep: 0.1,
   minDecimalMeters: 1, // ja atlikumā ir mazāk par 1 m, preci nerādām
+  decimalNameSuffix: ' (cena par 1 m)', // pievieno nosaukumam, lai pircējs saprot, ka cena ir par metru
 
   // Produktu tipi, ko nerādām vispār.
   excludeProductTypes: ['Dāvanu kartes', 'Customizer'],
@@ -179,7 +180,7 @@ export function buildItems(products, cfg = CONFIG) {
       if (price < cfg.minPrice) { skip(`cena zem ${money(cfg.minPrice)} €`); continue; }
 
       const variantTitle = v.title && v.title !== 'Default Title' ? ` – ${v.title}` : '';
-      const name = cut(cleanName(`${p.title}${variantTitle}`, cfg) + (decimal ? ' (1 m)' : ''), 200);
+      const name = cut(cleanName(`${p.title}${variantTitle}`, cfg) + (decimal ? cfg.decimalNameSuffix : ''), 200);
       if (seenNames.has(name)) { skip('dublikāts'); continue; }
       seenNames.add(name);
 

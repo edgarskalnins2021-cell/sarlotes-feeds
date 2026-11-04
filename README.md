@@ -11,7 +11,7 @@ tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu
 
 | Noteikums | Kā |
 |---|---|
-| Metrā tirgotās preces (tags `decimal`) | cena × 10 (par 1 m), atlikums ÷ 10 (metros), nosaukumā "(1 m)" |
+| Metrā tirgotās preces (tags `decimal`) | cena × 10 (par 1 m), atlikums ÷ 10 (metros), nosaukumā "(cena par 1 m)" |
 | Atlikumā mazāk par 1 m | nerāda |
 | 0 atlikums / atlikums netiek uzskaitīts | nerāda |
 | Dāvanu kartes, apdrukas preces (tips `Customizer`), digitālās preces, 0 € | nerāda |

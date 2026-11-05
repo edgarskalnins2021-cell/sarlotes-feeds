@@ -2,13 +2,10 @@ name: Salidzini XML
 
 on:
   schedule:
-    # 4 reizes dienā pirms katras Salidzini nolasīšanas (08–12, 12–13, 15–16, 18–19).
-    # Laiks UTC: ziemā Rīgā 5:47, 10:47, 13:47, 16:47; vasarā stundu vēlāk – arī der.
-    # Minūte :47, jo pilnās stundās GitHub mēdz kavēties.
-    - cron: '47 3 * * *'
-    - cron: '47 8 * * *'
-    - cron: '47 11 * * *'
-    - cron: '47 14 * * *'
+    # Katras 2 stundas: UTC 4:17–18:17 = ziemā Rīgā 6:17, 8:17 … 20:17 (vasarā stundu vēlāk).
+    # Bieži, jo GitHub plānotos darbus mēdz kavēt vai izlaist; tā fails pirms katras
+    # Salidzini nolasīšanas (08–12, 12–13, 15–16, 18–19) ir svaigs. Minūte :17 – ne pilnā stundā.
+    - cron: '17 4-18/2 * * *'
   workflow_dispatch: # ļauj palaist arī ar roku (Actions → Salidzini XML → Run workflow)
 
 permissions:

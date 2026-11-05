@@ -49,7 +49,7 @@ export const CONFIG = {
     heavyGrams: 3000,
   },
   deliveryDaysLatvia: 3, // "1–3 darbadienas"
-  deliveryDaysShop: 0, // saņemšana veikalā Cēsīs – šodien
+  deliveryDaysShop: 1, // saņemšana veikalā Cēsīs – līdz 1 darba dienai (0 = "šodien" Salidzini rāda kā "0d", kas pircējam mulsina)
 
   // Zīmoli: meklējam produkta nosaukumā (pirmais atrastais), citādi – piegādātājs no saraksta.
   titleBrands: [

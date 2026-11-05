@@ -1,6 +1,6 @@
 # Šarlotes audumi – Salidzini.lv XML fails
 
-4 reizes dienā (5:47, 10:47, 13:47 un 16:47 pēc Latvijas laika) GitHub automātiski nolasa preces
+Katras 2 stundas (6:17–20:17 pēc Latvijas laika) GitHub automātiski nolasa preces
 no Shopify, pārrēķina un uzbūvē `salidzini.xml`. Salidzini.lv šo failu nolasa 08–12, 12–13, 15–16 un 18–19.
 Tajā pašā reizē top arī `kurpirkt.xml` (tās pašas preces Kurpirkt.lv formātā: `manufacturer`, `category`,
 `category_full` ar ">", `delivery_cost_riga`, `used` 0/1).
@@ -25,7 +25,7 @@ tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu
 | Kategorija | Google Shopping lauki, piem. "Audumi >> Kokvilnas audumi"; bez tiem – tips + konkrētākais tags (SEO tagi, kas ir vairāk nekā pusei tipa preču, netiek ņemti) |
 | Zīmols | tikai īsti zīmoli (SCHMETZ, Milward, Prym, DROPS, Alize u.c.) |
 | EAN | tikai derīgi kodi (automātiski ģenerētie netiek likti) |
-| Piegāde | 3,30 € (Omniva), 0 € no 70 €; tikai kurjers – 11,90 € / 15,90 € virs 3 kg; 3 dienas; veikalā – šodien |
+| Piegāde | 3,30 € (Omniva), 0 € no 70 €; tikai kurjers – 11,90 € / 15,90 € virs 3 kg; 3 dienas; veikalā Cēsīs – 1 darba diena (Salidzini rāda "1d") |
 
 Visi skaitļi ir `feed-core.mjs` augšā, blokā `CONFIG` (piem. `minPrice: 0`).
 

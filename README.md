@@ -40,14 +40,15 @@ Visi skaitļi ir `feed-core.mjs` augšā, blokā `CONFIG` (piem. `minPrice: 0`).
 ## Ceno.lv (`ceno.xml`)
 
 Tās pašas preces kā Salidzini/Kurpirkt failos (`buildItems`), ar Ceno pielāgojumiem (`toCenoXml`, `CONFIG.ceno`).
+Formāts pēc https://ceno.lv/pages/xml-file (pārbaudīts 08.11.2026). Ceno datus atjauno reizi dienā.
 Cenas un atlikumi jau ir pārrēķināti uz pārdošanas vienību, otrreiz netiek pārrēķināti.
 
 | Tags | No kurienes |
 |---|---|
 | `name` | produkta + varianta nosaukums; metrā tirgotajām "(cena par 1 m)" – saīsinot nosaukumu, šī norāde paliek |
 | `link` | preces saite, variantiem ar `?variant=` |
-| `price` | faktiskā cena EUR ar PVN; metrā tirgotajām par 1 m |
-| `price_sale` | izslēgts (`salePrice: false`), līdz apstiprināta lauku nozīme; Shopify `compareAtPrice` tiek nolasīts |
+| `price` | cena EUR ar PVN; metrā tirgotajām par 1 m. Akcijas precēm – sākotnējā cena (Shopify `compareAtPrice`) |
+| `price_sale` | tikai akcijas precēm (`compareAtPrice` > cena): cena, ko pircējs maksā, par to pašu vienību |
 | `image` | varianta attēls, citādi produkta attēls; bez attēla prece netiek iekļauta |
 | `manufacturer` | tikai īsti zīmoli (tie paši noteikumi kā Salidzini) |
 | `model` | netiek likts – SKU ir piegādātāja iekšējie kodi, nevis modelis |
@@ -56,10 +57,10 @@ Cenas un atlikumi jau ir pārrēķināti uz pārdošanas vienību, otrreiz netie
 | `category_link` | tikai veikalā publicēta kolekcija, kurā prece ir un kuras nosaukums sakrīt ar kategoriju; citādi nav |
 | `in_stock` | atlikums pilnās pārdošanas vienībās (metrā tirgotajām – pilni metri, uz leju) |
 | `used` | `0`; preces ar defektu / demo / lietotas Ceno failā 1. versijā netiek iekļautas |
-| `delivery_omniva` | 3,30 €, 0 € ja vienas vienības cena ≥ 70 €; nav, ja "tikai kurjers" vai > 30 kg |
-| `delivery_dpd_paku_bode` | 4,99 € (DPD pakomāts); nav, ja "tikai kurjers" vai > 30 kg |
-| `delivery_cost_riga`, `delivery_latvija` | dārgākais šai precei pieejamais veids (kurjers 11,90 € / 15,90 € virs 3 kg) |
-| `delivery_latvijas_pasts`, `delivery_pasta_stacija`, `delivery_circlek`, `delivery_venipak` | netiek piedāvāti – nav |
+| `delivery_omniva` | 3,30 €, 0 € ja vienas vienības cena ≥ 70 €; tukšs, ja "tikai kurjers" vai > 30 kg |
+| `delivery_dpd_paku_bode` | 4,99 € (DPD Pickup pakomāts); tukšs, ja "tikai kurjers" vai > 30 kg |
+| `delivery_cost_riga`, `delivery_latvija` | Ceno: "maksimālā piegādes cena" – dārgākais šai precei pieejamais veids (kurjers 11,90 € / 15,90 € virs 3 kg) |
+| `delivery_latvijas_pasts`, `delivery_pasta_stacija`, `delivery_circlek`, `delivery_venipak` | netiek piedāvāti – tukšs tags (Ceno prasība); tāpat `delivery_omniva`/`delivery_dpd_paku_bode` precēm "tikai kurjers" |
 | `delivery_days_riga`, `delivery_days_latvija` | 3 ("1–3 darba dienas") |
 
 Svars: Shopify svars metrā tirgotajām precēm ir par 0,1 m (piem. kokvilna 20 g), tāpēc 1 m = svars × 10.

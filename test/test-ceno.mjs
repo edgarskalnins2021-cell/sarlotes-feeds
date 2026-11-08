@@ -77,22 +77,24 @@ const d = (h) => by(h);
 assert.equal(d('audums-a').delivery_omniva, '3.30'); assert.equal(d('audums-a').delivery_dpd_paku_bode, '4.99');
 assert.equal(d('audums-a').delivery_cost_riga, '11.90', 'max: kurjers līdz 3 kg');
 assert.equal(d('smags').delivery_cost_riga, '15.90', '350 g par 0,1 m = 3,5 kg par 1 m → kurjers virs 3 kg');
-assert.equal(d('manekens').delivery_omniva, undefined, 'tikai kurjers – pakomāts netiek apsolīts');
-assert.equal(d('manekens').delivery_dpd_paku_bode, undefined);
+assert.equal(d('manekens').delivery_omniva, '', 'tikai kurjers – pakomāts netiek apsolīts (tukšs tags)');
+assert.equal(d('manekens').delivery_dpd_paku_bode, '');
 assert.equal(d('manekens').delivery_latvija, '15.90');
 assert.equal(d('sujmasina').delivery_omniva, '0.00', 'Omniva bez maksas no 70 €');
 assert.equal(d('sujmasina').delivery_cost_riga, '11.90', 'kurjers nav bez maksas');
-assert.equal(d('audums-a').delivery_latvijas_pasts, undefined, 'nepiedāvāts veids nav 0.00');
+assert.equal(d('audums-a').delivery_latvijas_pasts, '', 'nepiedāvāts veids – tukšs tags, nevis 0.00');
+assert.ok(xml.includes('<delivery_circlek></delivery_circlek>') && xml.includes('<delivery_venipak></delivery_venipak>'));
+assert.ok(xml.startsWith('<?xml version="1.0" encoding="utf-8" ?>'));
 assert.equal(d('audums-a').delivery_days_latvija, '3');
 const minCfg = { ...CONFIG, ceno: { ...CONFIG.ceno, deliveryCostMode: 'min' } };
 assert.equal(cenoDelivery(items.find((i) => i.link.endsWith('/audums-a')), minCfg).delivery_latvija, '3.30');
 
-// akcija: pēc noklusējuma bez price_sale, cena = faktiskā
-assert.equal(by('akcija').price, '3.50'); assert.equal(by('akcija').price_sale, undefined);
-assert.equal(stats.compareAtHigher, 1);
-const saleCfg = { ...CONFIG, ceno: { ...CONFIG.ceno, salePrice: true } };
-const sale = toCenoXml(items, saleCfg, {}).xml;
-assert.ok(/<price>4\.50<\/price>\n<price_sale>3\.50<\/price_sale>/.test(sale), 'abas cenas par 1 m');
+// akcija: price = sākotnējā (compareAtPrice), price_sale = faktiskā; abas par 1 m
+assert.equal(by('akcija').price, '4.50'); assert.equal(by('akcija').price_sale, '3.50');
+assert.equal(stats.compareAtHigher, 1); assert.equal(stats.with.price_sale, 1);
+assert.equal(by('audums-a').price_sale, undefined, 'bez akcijas price_sale nav');
+const noSale = toCenoXml(items, { ...CONFIG, ceno: { ...CONFIG.ceno, salePrice: false } }, {}).xml;
+assert.ok(/<price>3\.50<\/price>/.test(noSale) && !noSale.includes('<price_sale>'), 'izslēdzot – tikai faktiskā cena');
 
 // defekts – 1. versijā izlaists; jaunām precēm used = 0
 assert.equal(by('defekts'), undefined); assert.equal(stats.skipped['ar defektu / demo / lietota'], 1);

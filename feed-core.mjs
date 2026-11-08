@@ -69,8 +69,14 @@ export const CONFIG = {
     categorySeparator: ' > ',
     usedNew: '0', // jaunām precēm
     skipUsed: true, // ar defektu / demo / lietotas preces 1. versijā neiekļaujam
-    emptyTags: 'omit', // 'omit' – tukšus neobligātos tagus neliekam; 'empty' – <tag></tag>
-    salePrice: false, // price_sale – tikai pēc lauku nozīmes apstiprināšanas
+    // Ceno instrukcija (ceno.lv/pages/xml-file): "Ja kāda piegāde netiek atbalstīta, tad attiecīgais
+    // tags jāatstāj tukšs" → piegādes tagi vienmēr ir, nepiedāvātajiem – <tag></tag>.
+    // Pārējie neobligātie tagi bez vērtības netiek likti.
+    keepEmptyTags: ['delivery_cost_riga', 'delivery_latvija', 'delivery_omniva', 'delivery_dpd_paku_bode',
+      'delivery_latvijas_pasts', 'delivery_pasta_stacija', 'delivery_circlek', 'delivery_venipak'],
+    // price = sākotnējā cena (Shopify compareAtPrice), price_sale = akcijas cena, ko pircējs maksā
+    // (Ceno paraugs: price 849.99, price_sale 799.99). Tikai ja compareAtPrice > cena.
+    salePrice: true,
     // Piegādes veidi Latvijā (Shopify General profile → Latvija). null = veids netiek piedāvāts.
     delivery: {
       omniva: { price: 3.3, freeFrom: 70, maxGrams: 30000 }, // pakomāts; 0 € no 70 € pirkuma
@@ -344,7 +350,7 @@ export function toCenoXml(items, cfg = CONFIG, ctx = {}) {
   const stats = { items: 0, decimal: 0, skipped: {}, with: { ean: 0, manufacturer: 0, category_link: 0, price_sale: 0 }, compareAtHigher: 0 };
   const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
   const seenLinks = new Set();
-  const out = ["<?xml version='1.0' encoding='utf-8' ?>", '<root>'];
+  const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>']; // kā Ceno paraugā
 
   for (const it of items) {
     if (c.skipUsed && it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
@@ -382,7 +388,7 @@ export function toCenoXml(items, cfg = CONFIG, ctx = {}) {
     out.push('<item>');
     for (const tag of CENO_TAGS) {
       const val = row[tag];
-      if ((val === '' || val == null) && c.emptyTags === 'omit') continue;
+      if ((val === '' || val == null) && !c.keepEmptyTags.includes(tag)) continue;
       out.push(`<${tag}>${escapeXml(val)}</${tag}>`);
     }
     out.push('</item>');

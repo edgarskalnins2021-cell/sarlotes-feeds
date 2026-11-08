@@ -1,0 +1,30 @@
+{
+  "generated": "2026-11-08T22:06:30.345Z",
+  "source": "admin",
+  "products": 6406,
+  "items": 8448,
+  "skipped": {
+    "0 atlikums": 658,
+    "digitāla prece": 57,
+    "atlikumā mazāk par 1 m": 52,
+    "dāvanu karte": 2,
+    "dublikāts": 2,
+    "T-krekli/džemperi": 7,
+    "tips Customizer": 136,
+    "nav publicēts veikalā": 2
+  },
+  "ceno": {
+    "items": 8444,
+    "decimal": 3035,
+    "skipped": {
+      "ar defektu / demo / lietota": 4
+    },
+    "with": {
+      "ean": 532,
+      "manufacturer": 2091,
+      "category_link": 5576,
+      "price_sale": 264
+    },
+    "compareAtHigher": 264
+  }
+}

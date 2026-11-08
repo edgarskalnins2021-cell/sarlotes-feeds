@@ -1,4 +1,4 @@
-// Ģenerē public/salidzini.xml no Shopify datiem.
+// Ģenerē public/salidzini.xml, public/kurpirkt.xml un public/ceno.xml no Shopify datiem.
 //
 // Datu avots:
 //  - ja ir iestatīti SHOPIFY_CLIENT_ID un SHOPIFY_CLIENT_SECRET → Shopify Admin API (pilni dati:
@@ -8,7 +8,8 @@
 // Palaišana: node generate.mjs   (Node 20+, bez papildu bibliotēkām)
 
 import { mkdir, writeFile } from 'node:fs/promises';
-import { CONFIG, buildItems, toXml, toKurpirktXml } from './feed-core.mjs';
+import { pathToFileURL } from 'node:url';
+import { CONFIG, buildItems, toXml, toKurpirktXml, toCenoXml } from './feed-core.mjs';
 
 const STORE = process.env.SHOPIFY_STORE || 'sarlotesaudumi.myshopify.com';
 const API_VERSION = process.env.SHOPIFY_API_VERSION || '2026-10';
@@ -67,7 +68,7 @@ async function gql(token, query, variables = {}) {
 const BULK_QUERY = `{
   productVariants(query: "product_status:active") {
     edges { node {
-      id title price inventoryQuantity
+      id title price compareAtPrice inventoryQuantity
       inventoryItem { tracked requiresShipping measurement { weight { value unit } } }
       lab0: metafield(namespace: "mm-google-shopping", key: "custom_label_0") { value }
       lab1: metafield(namespace: "mm-google-shopping", key: "custom_label_1") { value }
@@ -76,6 +77,7 @@ const BULK_QUERY = `{
       product {
         id title handle productType vendor tags isGiftCard onlineStoreUrl
         featuredMedia { preview { image { url } } }
+        collections { edges { node { id handle title } } }
       }
     } }
   }
@@ -107,7 +109,12 @@ async function fromAdminApi() {
   if (op.status !== 'COMPLETED') throw new Error(`Bulk operācija beidzās ar ${op.status} ${op.errorCode || ''}`);
   if (!op.url) return [];
 
-  const text = await (await fetchRetry(op.url)).text();
+  return parseBulk(await (await fetchRetry(op.url)).text());
+}
+
+// Bulk JSONL → produkti ar variantiem. Bērnu rindas: attēli, svītrkodi un produkta kolekcijas
+// (kolekcijas rindas __parentId var būt gan variants, gan produkts – derīgs ir abi).
+export function parseBulk(text) {
   const variants = new Map();
   const children = [];
   for (const line of text.split('\n')) {
@@ -115,7 +122,14 @@ async function fromAdminApi() {
     const row = JSON.parse(line);
     if (row.__parentId) children.push(row); else variants.set(row.id, row);
   }
+  const productCollections = new Map(); // produkta id → Map(handle → title)
   for (const c of children) {
+    if (String(c.id || '').startsWith('gid://shopify/Collection/')) {
+      const productId = variants.get(c.__parentId)?.product?.id || c.__parentId;
+      if (!productCollections.has(productId)) productCollections.set(productId, new Map());
+      productCollections.get(productId).set(c.handle, c.title);
+      continue;
+    }
     const v = variants.get(c.__parentId);
     if (!v) continue;
     if (c.preview?.image?.url && !v._image) v._image = c.preview.image.url;
@@ -130,12 +144,14 @@ async function fromAdminApi() {
         title: p.title, handle: p.handle, productType: p.productType || '', vendor: p.vendor || '',
         tags: p.tags || [], isGiftCard: !!p.isGiftCard, onlineStore: !!p.onlineStoreUrl,
         image: p.featuredMedia?.preview?.image?.url || '', variants: [],
+        collections: [...(productCollections.get(p.id) || [])].map(([handle, title]) => ({ handle, title })),
       });
     }
     products.get(p.id).variants.push({
       id: v.id,
       title: v.title,
       price: parseFloat(v.price),
+      compareAtPrice: v.compareAtPrice != null ? parseFloat(v.compareAtPrice) : null,
       available: v.inventoryQuantity > 0,
       qty: v.inventoryItem?.tracked ? v.inventoryQuantity : null,
       tracked: v.inventoryItem ? !!v.inventoryItem.tracked : null,
@@ -149,15 +165,38 @@ async function fromAdminApi() {
   return [...products.values()];
 }
 
+// Veikalā publicētās kolekcijas (publiskais /collections.json) – Ceno category_link pārbaudei.
+// Ja neizdodas, category_link vienkārši netiek likts.
+async function fetchPublishedCollections() {
+  const map = new Map();
+  try {
+    for (let page = 1; page <= 20; page++) {
+      const res = await fetchRetry(`${CONFIG.shopUrl}/collections.json?limit=250&page=${page}`, {
+        headers: { 'User-Agent': 'sarlotes-salidzini-feed/1.0' },
+      }, 2);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { collections } = await res.json();
+      if (!collections?.length) break;
+      for (const c of collections) map.set(c.handle, { title: c.title, count: c.products_count });
+      await sleep(500);
+    }
+  } catch (err) {
+    console.log(`Kolekciju sarakstu nevarēja nolasīt (${err.message}) – ceno.xml būs bez category_link.`);
+    return new Map();
+  }
+  return map;
+}
+
 // ---------- Publiskais /products.json ----------
 
 export function normalizeStorefront(list) {
   return list.map((p) => ({
     title: p.title, handle: p.handle, productType: p.product_type || '', vendor: p.vendor || '',
     tags: p.tags || [], isGiftCard: p.product_type === 'Dāvanu kartes', onlineStore: true,
-    image: p.images?.[0]?.src || '',
+    image: p.images?.[0]?.src || '', collections: [],
     variants: p.variants.map((v) => ({
       id: v.id, title: v.title, price: parseFloat(v.price), available: !!v.available,
+      compareAtPrice: v.compare_at_price != null ? parseFloat(v.compare_at_price) : null,
       qty: null, tracked: null, requiresShipping: v.requires_shipping !== false, grams: v.grams || 0,
       image: v.featured_image?.src || '', barcode: '', categoryPath: [],
     })),
@@ -181,27 +220,43 @@ async function fromStorefront() {
 
 // ---------- Galvenā daļa ----------
 
-const useAdmin = !!(CLIENT_ID && CLIENT_SECRET);
-console.log(`Datu avots: ${useAdmin ? 'Shopify Admin API' : 'publiskais /products.json'}`);
-const products = useAdmin ? await fromAdminApi() : await fromStorefront();
-const { items, stats } = buildItems(products, CONFIG);
-if (items.length < 100) throw new Error(`Aizdomīgi maz preču (${items.length}) – fails netiek pārrakstīts.`);
+async function main() {
+  const useAdmin = !!(CLIENT_ID && CLIENT_SECRET);
+  console.log(`Datu avots: ${useAdmin ? 'Shopify Admin API' : 'publiskais /products.json'}`);
+  const products = useAdmin ? await fromAdminApi() : await fromStorefront();
+  const { items, stats } = buildItems(products, CONFIG);
+  if (items.length < 100) throw new Error(`Aizdomīgi maz preču (${items.length}) – fails netiek pārrakstīts.`);
 
-// Drošība: ja preču pēkšņi ir uz pusi mazāk nekā iepriekšējā reizē, kaut kas nav kārtībā
-// (piem. Shopify atdeva nepilnus datus) – tad atstājam veco failu. Apiet var ar FORCE=1.
-try {
-  const prev = await (await fetchRetry(`${PAGES_URL}/stats.json`, { cache: 'no-store' }, 2)).json();
-  if (prev?.items && items.length < prev.items * 0.5 && process.env.FORCE !== '1') {
-    throw new Error(`Preču skaits nokrities no ${prev.items} uz ${items.length} – fails netiek pārrakstīts.`);
+  const ceno = toCenoXml(items, CONFIG, { publishedCollections: await fetchPublishedCollections() });
+  if (ceno.stats.items < 100) throw new Error(`Aizdomīgi maz Ceno preču (${ceno.stats.items}) – faili netiek pārrakstīti.`);
+
+  // Drošība: ja preču pēkšņi ir uz pusi mazāk nekā iepriekšējā reizē, kaut kas nav kārtībā
+  // (piem. Shopify atdeva nepilnus datus) – tad atstājam vecos failus. Apiet var ar FORCE=1.
+  try {
+    const prev = await (await fetchRetry(`${PAGES_URL}/stats.json`, { cache: 'no-store' }, 2)).json();
+    if (prev?.items && items.length < prev.items * 0.5 && process.env.FORCE !== '1') {
+      throw new Error(`Preču skaits nokrities no ${prev.items} uz ${items.length} – fails netiek pārrakstīts.`);
+    }
+    if (prev?.ceno?.items && ceno.stats.items < prev.ceno.items * 0.5 && process.env.FORCE !== '1') {
+      throw new Error(`Preču skaits (Ceno) nokrities no ${prev.ceno.items} uz ${ceno.stats.items} – faili netiek pārrakstīti.`);
+    }
+  } catch (err) {
+    if (err.message.startsWith('Preču skaits')) throw err;
+    console.log(`Iepriekšējo statistiku nevarēja nolasīt (${err.message}) – turpinu.`);
   }
-} catch (err) {
-  if (err.message.startsWith('Preču skaits')) throw err;
-  console.log(`Iepriekšējo statistiku nevarēja nolasīt (${err.message}) – turpinu.`);
+
+  // Visi trīs faili tiek rakstīti tikai tad, ja visi trīs ir izveidoti (citādi izvietošana nenotiek
+  // un publiski paliek iepriekšējā versija).
+  const now = new Date().toISOString();
+  await mkdir(OUT_DIR, { recursive: true });
+  await writeFile(`${OUT_DIR}/salidzini.xml`, toXml(items), 'utf8');
+  await writeFile(`${OUT_DIR}/kurpirkt.xml`, toKurpirktXml(items), 'utf8');
+  await writeFile(`${OUT_DIR}/ceno.xml`, ceno.xml, 'utf8');
+  // "items" = Salidzini/Kurpirkt preču skaits (to izmanto drošības pārbaude); Ceno – atsevišķi.
+  await writeFile(`${OUT_DIR}/stats.json`, JSON.stringify({ generated: now, source: useAdmin ? 'admin' : 'storefront', ...stats, ceno: ceno.stats }, null, 2));
+  await writeFile(`${OUT_DIR}/index.html`, `<!doctype html><meta charset="utf-8"><title>Šarlotes audumi – XML</title><p><a href="salidzini.xml">salidzini.xml</a> · <a href="kurpirkt.xml">kurpirkt.xml</a> · <a href="ceno.xml">ceno.xml</a> · ${items.length} preces (Ceno: ${ceno.stats.items}) · ${now}</p>`);
+  console.log(JSON.stringify({ ...stats, ceno: ceno.stats }, null, 2));
 }
 
-await mkdir(OUT_DIR, { recursive: true });
-await writeFile(`${OUT_DIR}/salidzini.xml`, toXml(items), 'utf8');
-await writeFile(`${OUT_DIR}/kurpirkt.xml`, toKurpirktXml(items), 'utf8');
-await writeFile(`${OUT_DIR}/stats.json`, JSON.stringify({ generated: new Date().toISOString(), source: useAdmin ? 'admin' : 'storefront', ...stats }, null, 2));
-await writeFile(`${OUT_DIR}/index.html`, `<!doctype html><meta charset="utf-8"><title>Šarlotes audumi – XML</title><p><a href="salidzini.xml">salidzini.xml</a> · <a href="kurpirkt.xml">kurpirkt.xml</a> · ${items.length} preces · ${new Date().toISOString()}</p>`);
-console.log(JSON.stringify(stats, null, 2));
+// Palaiž tikai tad, ja failu izpilda tieši (node generate.mjs), nevis importē testos.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();

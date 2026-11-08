@@ -61,6 +61,30 @@ export const CONFIG = {
 
   // Tagi, kas neder kategorijas nosaukumam.
   genericTags: ['new', 'prece', 'decimal', 'apdruka', 'akcija', 'akcijas', 'jaunums', 'jaunumi', 'sale'],
+
+  // Ceno.lv (ceno.xml). Cenas un piegāde – EUR ar PVN, par vienu piedāvājuma vienību
+  // (metrā tirgotajām precēm – par 1 m). Skat. toCenoXml un README.
+  ceno: {
+    nameMax: 200,
+    categorySeparator: ' > ',
+    usedNew: '0', // jaunām precēm
+    skipUsed: true, // ar defektu / demo / lietotas preces 1. versijā neiekļaujam
+    emptyTags: 'omit', // 'omit' – tukšus neobligātos tagus neliekam; 'empty' – <tag></tag>
+    salePrice: false, // price_sale – tikai pēc lauku nozīmes apstiprināšanas
+    // Piegādes veidi Latvijā (Shopify General profile → Latvija). null = veids netiek piedāvāts.
+    delivery: {
+      omniva: { price: 3.3, freeFrom: 70, maxGrams: 30000 }, // pakomāts; 0 € no 70 € pirkuma
+      dpd: { price: 4.99, maxGrams: 30000 }, // DPD pakomāts
+      courier: { light: 11.9, heavy: 15.9, heavyGrams: 3000 },
+      latvijasPasts: null, pastaStacija: null, circlek: null, venipak: null,
+    },
+    // delivery_cost_riga / delivery_latvija: 'max' – dārgākais pieejamais veids (garantēti ne vairāk),
+    // 'min' – lētākais.
+    deliveryCostMode: 'max',
+    deliveryDays: 3, // "1–3 darba dienas" (piegādes lapa)
+    // Kolekcijas, kas nav preču kategorija (category_link tām netiek likts).
+    genericCollections: /^(jaunumi|viss-sortiments|visi-|akcij|audumu-atgriezumi|audumu-izpardosana|dead-stock|2026-gada|bezmaksas|frontpage|all$)/,
+  },
 };
 
 const BRAND_CANON = { prym: 'Prym', schmetz: 'SCHMETZ', drops: 'DROPS', opry: 'Opry', midara: 'MIDARA' };
@@ -206,6 +230,14 @@ export function buildItems(products, cfg = CONFIG) {
         delivery_days_shop: String(cfg.deliveryDaysShop),
         used: cfg.usedPattern?.test(`${p.title} ${v.title || ''}`) ? '1' : '',
         _decimal: decimal,
+        // Iekšējie lauki citām plūsmām (Ceno). toXml / toKurpirktXml tos neizvada.
+        _baseName: cleanName(`${p.title}${variantTitle}`, cfg).replace(/\s+/g, ' ').trim(),
+        _variantId: numericId,
+        _priceNum: price,
+        _compareAt: v.compareAtPrice > 0 ? (decimal ? v.compareAtPrice / cfg.decimalStep : v.compareAtPrice) : null,
+        _grams: decimal ? (v.grams || 0) / cfg.decimalStep : (v.grams || 0), // Shopify svars ir par 0,1 m
+        _courierOnly: courier,
+        _collections: p.collections || [],
       });
     }
   }
@@ -242,6 +274,121 @@ export function toKurpirktXml(items) {
   }
   out.push('</root>', '');
   return out.join('\n');
+}
+
+// ---------- Ceno.lv ----------
+
+const CENO_TAGS = ['name', 'link', 'price', 'price_sale', 'image', 'manufacturer', 'model', 'ean',
+  'category', 'category_full', 'category_link', 'in_stock', 'used',
+  'delivery_cost_riga', 'delivery_latvija', 'delivery_omniva', 'delivery_dpd_paku_bode',
+  'delivery_latvijas_pasts', 'delivery_pasta_stacija', 'delivery_circlek', 'delivery_venipak',
+  'delivery_days_riga', 'delivery_days_latvija'];
+
+// Nosaukums ar garuma robežu, saglabājot vienības norādi beigās ("(cena par 1 m)").
+function cutKeepSuffix(base, suffix, max) {
+  return suffix ? cut(base, max - suffix.length) + suffix : cut(base, max);
+}
+
+const normTitle = (s) => String(s || '').toLowerCase()
+  .replace(/\p{Extended_Pictographic}|️|‍/gu, '')
+  .replace(/^\s*100\s*%\s*/, '')
+  .replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+// Kategorijas saite: tikai publicēta kolekcija, kurā prece tiešām ir un kuras nosaukums
+// sakrīt ar kādu kategorijas līmeni (sākot ar konkrētāko). Citādi – tukšs.
+function cenoCategoryLink(it, parts, cfg, published) {
+  if (!published?.size) return '';
+  const own = (it._collections || []).filter((c) => published.has(c.handle) && !cfg.ceno.genericCollections.test(c.handle));
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const want = normTitle(parts[i]);
+    const hit = own.find((c) => normTitle(published.get(c.handle).title || c.title) === want);
+    if (hit) return `${cfg.shopUrl}/collections/${hit.handle}`;
+  }
+  return '';
+}
+
+// Piegādes cenas vienai piedāvājuma vienībai. '' = veids šai precei netiek piedāvāts.
+export function cenoDelivery(it, cfg = CONFIG) {
+  const d = cfg.ceno.delivery;
+  const g = it._grams || 0;
+  const price = it._priceNum;
+  const lockerOk = (m) => m && !it._courierOnly && g <= m.maxGrams;
+  const out = {
+    omniva: lockerOk(d.omniva) ? (d.omniva.freeFrom && price >= d.omniva.freeFrom ? 0 : d.omniva.price) : null,
+    dpd: lockerOk(d.dpd) ? d.dpd.price : null,
+    courier: d.courier ? (g > d.courier.heavyGrams ? d.courier.heavy : d.courier.light) : null,
+  };
+  const offered = Object.values(out).filter((v) => v != null);
+  const total = offered.length ? (cfg.ceno.deliveryCostMode === 'min' ? Math.min(...offered) : Math.max(...offered)) : null;
+  const m = (v) => (v == null ? '' : money(v));
+  return {
+    delivery_cost_riga: m(total),
+    delivery_latvija: m(total),
+    delivery_omniva: m(out.omniva),
+    delivery_dpd_paku_bode: m(out.dpd),
+    delivery_latvijas_pasts: m(d.latvijasPasts),
+    delivery_pasta_stacija: m(d.pastaStacija),
+    delivery_circlek: m(d.circlek),
+    delivery_venipak: m(d.venipak),
+  };
+}
+
+/**
+ * Ceno.lv XML no buildItems ierakstiem. Cenas un atlikumi jau ir pārrēķināti uz pārdošanas
+ * vienību (metrā tirgotajām – 1 m), tāpēc šeit tos otrreiz nepārrēķina.
+ * ctx.publishedCollections: Map(handle → { title }) – veikalā publicētās kolekcijas (category_link).
+ * Atgriež { xml, stats }.
+ */
+export function toCenoXml(items, cfg = CONFIG, ctx = {}) {
+  const c = cfg.ceno;
+  const stats = { items: 0, decimal: 0, skipped: {}, with: { ean: 0, manufacturer: 0, category_link: 0, price_sale: 0 }, compareAtHigher: 0 };
+  const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
+  const seenLinks = new Set();
+  const out = ["<?xml version='1.0' encoding='utf-8' ?>", '<root>'];
+
+  for (const it of items) {
+    if (c.skipUsed && it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
+    if (!it.image) { skip('nav attēla'); continue; }
+    if (it._decimal && it.in_stock === '') { skip('metrā tirgota, atlikums nav zināms'); continue; }
+    if (seenLinks.has(it.link)) { skip('dublikāts (saite)'); continue; }
+    seenLinks.add(it.link);
+
+    const parts = String(it.category_full || '').split(/\s*>>\s*/).filter(Boolean);
+    const sale = it._compareAt != null && it._compareAt > it._priceNum + 0.004;
+    if (sale) stats.compareAtHigher++;
+    const row = {
+      name: cutKeepSuffix(it._baseName ?? it.name, it._decimal ? cfg.decimalNameSuffix : '', c.nameMax),
+      link: it.link,
+      // Akcija: price = sākotnējā cena, price_sale = cena, ko pircējs maksā (abas par to pašu vienību).
+      price: c.salePrice && sale ? money(it._compareAt) : it.price,
+      price_sale: c.salePrice && sale ? it.price : '',
+      image: it.image,
+      manufacturer: it.brand,
+      model: '',
+      ean: it.ean,
+      category: parts[parts.length - 1] || '',
+      category_full: parts.join(c.categorySeparator),
+      category_link: cenoCategoryLink(it, parts, cfg, ctx.publishedCollections),
+      in_stock: it.in_stock,
+      used: c.usedNew,
+      ...cenoDelivery(it, cfg),
+      delivery_days_riga: String(c.deliveryDays),
+      delivery_days_latvija: String(c.deliveryDays),
+    };
+    for (const k of ['ean', 'manufacturer', 'category_link', 'price_sale']) if (row[k]) stats.with[k]++;
+    if (it._decimal) stats.decimal++;
+    stats.items++;
+
+    out.push('<item>');
+    for (const tag of CENO_TAGS) {
+      const val = row[tag];
+      if ((val === '' || val == null) && c.emptyTags === 'omit') continue;
+      out.push(`<${tag}>${escapeXml(val)}</${tag}>`);
+    }
+    out.push('</item>');
+  }
+  out.push('</root>', '');
+  return { xml: out.join('\n'), stats };
 }
 
 export function toXml(items) {

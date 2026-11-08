@@ -26,7 +26,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - name: Ģenerē XML
+      - name: Noteikumu pārbaudes
+        run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null
+      - name: Ģenerē XML (salidzini, kurpirkt, ceno)
         env:
           SHOPIFY_STORE: sarlotesaudumi.myshopify.com
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
@@ -56,3 +58,49 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  # Pēc izvietošanas nolasa publiskos failus: HTTP 200, derīgs XML, preču skaits sakrīt ar stats.json.
+  # Rezultāts redzams kā piezīmes (annotations) šī darba lapā.
+  verify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Pārbauda publiskos XML
+        env:
+          BASE: https://edgarskalnins2021-cell.github.io/sarlotes-feeds
+          RUN: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, time, urllib.request, xml.etree.ElementTree as ET
+          base, run = os.environ['BASE'], os.environ['RUN']
+          def get(name):
+              last = None
+              for attempt in range(12):  # Pages izplatīšanās var aizņemt dažas minūtes
+                  try:
+                      with urllib.request.urlopen(f'{base}/{name}?v={run}-{attempt}', timeout=60) as r:
+                          return r.status, r.headers.get('content-type', ''), r.read()
+                  except Exception as e:
+                      last = e
+                      time.sleep(20)
+              raise SystemExit(f'::error title={name}::nav pieejams: {last}')
+          _, _, s = get('stats.json')
+          stats = json.loads(s)
+          expect = {'salidzini.xml': stats['items'], 'kurpirkt.xml': stats['items'], 'ceno.xml': stats['ceno']['items']}
+          for name, want in expect.items():
+              status, ctype, body = get(name)
+              root = ET.fromstring(body)
+              items = root.findall('item')
+              prices_ok = all(re.fullmatch(r'\d+\.\d{2}', i.findtext('price') or '') for i in items)
+              links = [i.findtext('link') or '' for i in items]
+              ok = (status == 200 and root.tag == 'root' and len(items) == want and prices_ok
+                    and all(l.startswith('https://sarlotesaudumi.lv/products/') for l in links))
+              msg = f'HTTP {status}, {ctype}, {len(items)} preces (stats.json: {want}), cenas {"OK" if prices_ok else "KĻŪDA"}, unikālas saites {len(set(links))}'
+              print(f'::{"notice" if ok else "error"} title={name}::{msg}')
+              if not ok: raise SystemExit(1)
+          _, _, html = get('index.html')
+          if not all(f'href="{n}"' in html.decode() for n in expect):
+              raise SystemExit('::error title=index.html::trūkst saites uz XML failiem')
+          c = stats['ceno']
+          print(f"::notice title=Ceno::{c['items']} preces, metrā {c['decimal']}, izlaistas {json.dumps(c['skipped'], ensure_ascii=False)}")
+          PY

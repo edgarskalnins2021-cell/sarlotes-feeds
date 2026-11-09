@@ -1,7 +1,7 @@
 # Šarlotes audumi – cenu salīdzināšanas XML faili
 
 Katru stundu (6:17–21:17 pēc Latvijas laika) GitHub automātiski nolasa preces
-no Shopify, pārrēķina un vienā reizē uzbūvē četrus failus:
+no Shopify, pārrēķina un vienā reizē uzbūvē piecus failus (četri Latvijai, viens Igaunijai):
 
 | Fails | Kam | Adrese |
 |---|---|---|
@@ -9,12 +9,14 @@ no Shopify, pārrēķina un vienā reizē uzbūvē četrus failus:
 | `kurpirkt.xml` | Kurpirkt.lv (`manufacturer`, `category`, `category_full` ar ">", `delivery_cost_riga`, `used` 0/1) | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/kurpirkt.xml |
 | `ceno.xml` | Ceno.lv (skat. sadaļu "Ceno.lv") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/ceno.xml |
 | `cenueksperts.xml` | Cenueksperts.lv (skat. sadaļu "Cenueksperts.lv") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/cenueksperts.xml |
+| `hindee.xml` | Hind.ee, Igaunija (skat. sadaļu "Hind.ee") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/hindee.xml |
 
 Grafiks GitHub pusē mēdz kavēties; vajadzības gadījumā: **Actions → Salidzini XML → Run workflow**.
 
 Drošības noteikumi: ja Shopify īslaicīgi neatbild, skripts mēģina vēlreiz; ja preču ir aizdomīgi maz
 (zem 100 vai uz pusi mazāk nekā iepriekš – arī Ceno failā atsevišķi), netiek izvietots neviens fails un
-publiski paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus trīs publiskos XML
+publiski paliek iepriekšējā versija. Ja neizdodas tikai Igaunijas fails, Latvijas faili tiek izvietoti, bet
+`hindee.xml` paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
 (HTTP 200, derīgs XML, preču skaits sakrīt ar `stats.json`). Reizi nedēļā (pirmdienas rītā)
 tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu neaktivitātes dēļ.
 
@@ -82,6 +84,33 @@ https://w.cenueksperts.lv/buj): `<DataFeeds><item_data>…`. Tās pašas preces 
 | `item_inventory`, `item_condition` | `AVAILABLE`, `New` (failā ir tikai preces noliktavā; ar defektu / demo netiek iekļautas) |
 | `item_shipping_charge` | lētākā piegāde Latvijā: 3,30 € (0 € no 70 €), "tikai kurjers" – 11,90 € / 15,90 € |
 
+## Hind.ee (`hindee.xml`, Igaunija)
+
+Igaunijas veikals https://sharlottekangad.ee. Hind.ee XML apraksts nav publisks (to atsūta pēc reģistrācijas),
+tāpēc pagaidām Baltijā ierasts `<root><item>` formāts; kad Hind.ee atsūtīs savu aprakstu, lauku nosaukumus
+pielāgo `feed-core.mjs` → `HINDEE_TAGS` / `toHindeeXml`.
+
+Preces – tās pašas kā Latvijas failos (`buildItems`: atlikums, metrā tirgotās, zem 1 m nerāda, T-krekli u.c. nerāda),
+bet teksti un cena – no Igaunijas veikala publiskā `/products.json` (igauņu valodā, Igaunijas cena ar Igaunijas PVN).
+
+| Tags | No kurienes |
+|---|---|
+| `id` | Shopify varianta ID |
+| `name` | igauņu nosaukums + varianta nosaukums; metrā tirgotajām "(hind 1 m kohta)"; "viimane tükk 50cm" → "tükk 50 cm" |
+| `link` | `https://sharlottekangad.ee/products/<igauņu adrese>`, variantiem ar `?variant=` |
+| `price` | Igaunijas cena, ko pircējs maksā; metrā tirgotajām par 1 m (piem. 0,40 € par 0,1 m → 4,00 €) |
+| `image`, `manufacturer`, `ean` | kā Latvijas failos |
+| `category` | igauņu produkta tips (piem. "Kangas", "Lõng"); "tikai kurjers" precēm – nav |
+| `in_stock` | atlikums (metrā tirgotajām – pilni metri) |
+| `description` | igauņu apraksts (bez HTML, līdz 500 zīmēm) |
+| `delivery_cost` | lētākā piegāde uz Igauniju: Omniva pakiautomaat 5,99 € |
+| `delivery_omniva`, `delivery_dpd`, `delivery_courier` | 5,99 € / 6,99 € (līdz 30 kg, ne "tikai kurjers") / kuller 15,90 € |
+| `delivery_days` | 5 (veikala Igaunijas preču lapās "Eeldatav tarneaeg" ir par 2 darba dienām vēlāk nekā Latvijā) |
+
+Nerāda: preces ar defektu / demo / lietotas, bez attēla, kuru nav Igaunijas veikalā. Bezmaksas piegādes slieksnis
+Igaunijā nav. Drošība: ja preču ir zem 100, uz pusi mazāk nekā iepriekš vai vairāk nekā puse nosaukumu sakrīt ar
+latviešu nosaukumiem, publiski paliek iepriekšējā `hindee.xml` versija.
+
 ## Vienreizēja iestatīšana
 
 ### 1. GitHub
@@ -115,5 +144,6 @@ Repozitorijā: **Settings → Secrets and variables → Actions → New reposito
 node test/test-core.mjs   # Salidzini/Kurpirkt noteikumu pārbaude
 node test/test-ceno.mjs   # Ceno: metri, atlikumi, piegāde, kategorijas saite, akcijas
 node test/test-cenueksperts.mjs  # Cenueksperts: formāts, apraksts, piegāde
-node generate.mjs         # uzbūvē public/salidzini.xml, kurpirkt.xml, ceno.xml (vajag Shopify atslēgas)
+node test/test-hindee.mjs # Hind.ee: igauņu teksti, Igaunijas cena, metri, piegāde uz Igauniju
+node generate.mjs         # uzbūvē visus failus mapē public/ (vajag Shopify atslēgas)
 ```

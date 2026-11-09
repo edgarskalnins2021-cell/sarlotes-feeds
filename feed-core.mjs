@@ -93,6 +93,33 @@ export const CONFIG = {
     // Kolekcijas, kas nav preču kategorija (category_link tām netiek likts).
     genericCollections: /^(jaunumi|viss-sortiments|visi-|akcij|audumu-atgriezumi|audumu-izpardosana|dead-stock|2026-gada|bezmaksas|frontpage|all$)/,
   },
+
+  // Hind.ee (hindee.xml) – Igaunijas veikals sharlottekangad.ee. Nosaukumi, saites, tips, apraksts un cena –
+  // no Igaunijas veikala (igauņu valodā, Igaunijas cena ar PVN); atlikums, svars, attēli, EAN – kā LV failos.
+  hindee: {
+    shopUrl: 'https://sharlottekangad.ee',
+    nameMax: 200,
+    decimalNameSuffix: ' (hind 1 m kohta)', // "(cena par 1 m)"
+    // "viimane tükk 50cm" = "pēdējais gabaliņš 50cm" → "tükk 50 cm" (kā LV failos)
+    nameFixes: [
+      [/\s*[-–]?\s*viimane tükk\s*/gi, ' – tükk '],
+      [/(\d)(cm|mm)\b/g, '$1 $2'],
+      [/(\S)–\s/g, '$1 – '],
+      [/\s–(\S)/g, ' – $1'],
+    ],
+    // Tulkotais "tikai kurjers" tips (AINULT_KULLER, KULLER_AINULT u.c.) nav kategorija.
+    technicalTypePattern: /KULLER|KURIER|COURIER/i,
+    descMax: 500,
+    // Piegāde uz Igauniju (Shopify General profile → Estonia; bez bezmaksas piegādes sliekšņa).
+    delivery: {
+      omniva: { price: 5.99, maxGrams: 30000 }, // pakiautomaat
+      dpd: { price: 6.99, maxGrams: 30000 }, // pakiautomaat
+      courier: 15.9, // kuller, bez svara robežas
+    },
+    // Darba dienas. Veikala Igaunijas preces lapā "Eeldatav tarneaeg" ir 2 darba dienas vēlāk nekā
+    // Latvijā (09.11.2026: LV – 13.11., EE – 17.11.), tāpēc 3 + 2.
+    deliveryDays: 5,
+  },
 };
 
 const BRAND_CANON = { prym: 'Prym', schmetz: 'SCHMETZ', drops: 'DROPS', opry: 'Opry', midara: 'MIDARA' };
@@ -444,6 +471,96 @@ export function toCenuekspertsXml(items, cfg = CONFIG) {
     if (it._decimal) stats.decimal++;
   }
   out.push('</DataFeeds>', '');
+  return { xml: out.join('\n'), stats };
+}
+
+// ---------- Hind.ee (Igaunija) ----------
+// Hind.ee XML apraksts nav publisks (pieejams pēc reģistrācijas), tāpēc pagaidām Baltijā ierasts
+// <root><item> formāts ar skaidriem lauku nosaukumiem; kad Hind.ee atsūtīs savu aprakstu, pielāgo HINDEE_TAGS.
+
+const HINDEE_TAGS = ['id', 'name', 'link', 'price', 'image', 'category', 'manufacturer', 'ean', 'in_stock',
+  'description', 'delivery_cost', 'delivery_omniva', 'delivery_dpd', 'delivery_courier', 'delivery_days'];
+
+// Piegādes cenas uz Igauniju vienai piedāvājuma vienībai. null = veids šai precei netiek piedāvāts.
+export function hindeeDelivery(it, cfg = CONFIG) {
+  const d = cfg.hindee.delivery;
+  const g = it._grams || 0;
+  const lockerOk = (m) => m && !it._courierOnly && g <= m.maxGrams;
+  const out = { omniva: lockerOk(d.omniva) ? d.omniva.price : null, dpd: lockerOk(d.dpd) ? d.dpd.price : null, courier: d.courier ?? null };
+  const offered = Object.values(out).filter((v) => v != null);
+  return { ...out, cheapest: offered.length ? Math.min(...offered) : null };
+}
+
+/**
+ * items – buildItems ieraksti (LV dati: atlikums, svars, attēls, EAN, zīmols, metrā tirgotās preces).
+ * ee – Map(varianta ID → { title, variantTitle, handle, productType, price, description }) no
+ *   Igaunijas veikala (sharlottekangad.ee/products.json): igauņu teksti un Igaunijas cena par Shopify vienību.
+ * Atgriež { xml, stats }.
+ */
+export function toHindeeXml(items, ee, cfg = CONFIG) {
+  const h = cfg.hindee;
+  const stats = { items: 0, decimal: 0, skipped: {}, sameNameAsLv: 0, withCategory: 0 };
+  const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
+  const seenNames = new Set();
+  const seenLinks = new Set();
+  const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>'];
+
+  for (const it of items) {
+    if (it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
+    if (!it.image) { skip('nav attēla'); continue; }
+    if (it._decimal && it.in_stock === '') { skip('metrā tirgota, atlikums nav zināms'); continue; }
+    const e = ee.get(String(it._variantId));
+    if (!e) { skip('nav Igaunijas veikalā'); continue; }
+    if (!(e.price > 0)) { skip('nav Igaunijas cenas'); continue; }
+
+    // Igaunijas cena par Shopify vienību; metrā tirgotajām – par 1 m (Shopify vienība = 0,1 m).
+    const price = it._decimal ? e.price / cfg.decimalStep : e.price;
+    if (price < cfg.minPrice) { skip(`cena zem ${money(cfg.minPrice)} €`); continue; }
+    const variantTitle = e.variantTitle && e.variantTitle !== 'Default Title' ? ` – ${e.variantTitle}` : '';
+    const base = cleanName(`${e.title}${variantTitle}`, h).replace(/\s+/g, ' ').trim();
+    if (base === it._baseName) stats.sameNameAsLv++;
+    const name = cutKeepSuffix(base, it._decimal ? h.decimalNameSuffix : '', h.nameMax);
+    if (seenNames.has(name)) { skip('dublikāts (nosaukums)'); continue; }
+    const multi = String(it.link).includes('?variant=');
+    const link = cut(`${h.shopUrl}/products/${e.handle}${multi ? `?variant=${it._variantId}` : ''}`, 500);
+    if (seenLinks.has(link)) { skip('dublikāts (saite)'); continue; }
+    seenNames.add(name);
+    seenLinks.add(link);
+
+    const type = String(e.productType || '').trim();
+    const category = it._courierOnly || h.technicalTypePattern.test(type) ? '' : type;
+    const d = hindeeDelivery(it, cfg);
+    const m = (v) => (v == null ? '' : money(v));
+    const row = {
+      id: it._variantId,
+      name,
+      link,
+      price: money(price),
+      image: it.image,
+      category,
+      manufacturer: it.brand,
+      ean: it.ean,
+      in_stock: it.in_stock, // metrā tirgotajām – pilni metri
+      description: cut(String(e.description || '').replace(/\s+/g, ' ').trim(), h.descMax),
+      delivery_cost: m(d.cheapest),
+      delivery_omniva: m(d.omniva),
+      delivery_dpd: m(d.dpd),
+      delivery_courier: m(d.courier),
+      delivery_days: String(h.deliveryDays),
+    };
+    if (category) stats.withCategory++;
+    if (it._decimal) stats.decimal++;
+    stats.items++;
+
+    out.push('<item>');
+    for (const tag of HINDEE_TAGS) {
+      const val = row[tag];
+      if (val === '' || val == null) continue;
+      out.push(`<${tag}>${escapeXml(val)}</${tag}>`);
+    }
+    out.push('</item>');
+  }
+  out.push('</root>', '');
   return { xml: out.join('\n'), stats };
 }
 

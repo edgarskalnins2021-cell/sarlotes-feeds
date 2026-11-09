@@ -1,15 +1,17 @@
-// Ģenerē public/salidzini.xml, public/kurpirkt.xml un public/ceno.xml no Shopify datiem.
+// Ģenerē public/salidzini.xml, kurpirkt.xml, ceno.xml, cenueksperts.xml (Latvija) un hindee.xml (Igaunija).
 //
 // Datu avots:
 //  - ja ir iestatīti SHOPIFY_CLIENT_ID un SHOPIFY_CLIENT_SECRET → Shopify Admin API (pilni dati:
 //    precīzs atlikums, kategorijas latviski, EAN);
 //  - citādi → veikala publiskais /products.json (bez atlikuma skaita un EAN).
 //
+// Igaunijas teksti un cenas hindee.xml failam – no Igaunijas veikala publiskā /products.json (sharlottekangad.ee).
+//
 // Palaišana: node generate.mjs   (Node 20+, bez papildu bibliotēkām)
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import { CONFIG, buildItems, toXml, toKurpirktXml, toCenoXml, toCenuekspertsXml } from './feed-core.mjs';
+import { CONFIG, buildItems, toXml, toKurpirktXml, toCenoXml, toCenuekspertsXml, toHindeeXml } from './feed-core.mjs';
 
 const STORE = process.env.SHOPIFY_STORE || 'sarlotesaudumi.myshopify.com';
 const API_VERSION = process.env.SHOPIFY_API_VERSION || '2026-10';
@@ -190,12 +192,15 @@ async function fetchPublishedCollections() {
 
 // ---------- Publiskais /products.json ----------
 
+const htmlToText = (html) => String(html || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+  .replace(/\s+/g, ' ').trim().slice(0, 600);
+
 export function normalizeStorefront(list) {
   return list.map((p) => ({
     title: p.title, handle: p.handle, productType: p.product_type || '', vendor: p.vendor || '',
     tags: p.tags || [], isGiftCard: p.product_type === 'Dāvanu kartes', onlineStore: true,
     image: p.images?.[0]?.src || '', collections: [],
-    description: String(p.body_html || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim().slice(0, 600),
+    description: htmlToText(p.body_html),
     variants: p.variants.map((v) => ({
       id: v.id, title: v.title, price: parseFloat(v.price), available: !!v.available,
       compareAtPrice: v.compare_at_price != null ? parseFloat(v.compare_at_price) : null,
@@ -220,6 +225,64 @@ async function fromStorefront() {
   return normalizeStorefront(all);
 }
 
+// ---------- Igaunija (sharlottekangad.ee) ----------
+
+// Igaunijas veikala /products.json → Map(varianta ID → igauņu teksti un Igaunijas cena).
+export function normalizeEe(list) {
+  const map = new Map();
+  for (const p of list) {
+    const description = htmlToText(p.body_html);
+    for (const v of p.variants || []) {
+      map.set(String(v.id), { title: p.title, variantTitle: v.title, handle: p.handle, productType: p.product_type || '',
+        price: parseFloat(v.price), description });
+    }
+  }
+  return map;
+}
+
+async function fetchEeStorefront() {
+  const host = new URL(CONFIG.hindee.shopUrl).hostname;
+  const all = [];
+  for (let page = 1; page <= 200; page++) {
+    const res = await fetchRetry(`${CONFIG.hindee.shopUrl}/products.json?limit=250&page=${page}`, {
+      headers: { 'User-Agent': 'sarlotes-salidzini-feed/1.0', 'Accept-Language': 'et' },
+    });
+    if (!res.ok) throw new Error(`${host}/products.json lapa ${page}: ${res.status}`);
+    if (new URL(res.url).hostname !== host) throw new Error(`${host} pāradresēja uz ${res.url}`);
+    const { products } = await res.json();
+    if (!products?.length) break;
+    all.push(...products);
+    await sleep(500);
+  }
+  return normalizeEe(all);
+}
+
+// hindee.xml: ja neizdodas (Igaunijas veikals neatbild, aizdomīgi maz preču, nosaukumi nav igauniski),
+// Latvijas faili tiek izvietoti kā parasti, bet hindee.xml paliek iepriekšējā publiskā versija.
+async function buildHindee(items, prev) {
+  try {
+    const r = toHindeeXml(items, await fetchEeStorefront(), CONFIG);
+    if (r.stats.items < 100) throw new Error(`aizdomīgi maz preču (${r.stats.items})`);
+    if (r.stats.sameNameAsLv > r.stats.items * 0.5) {
+      throw new Error(`nosaukumi nav igauņu valodā (${r.stats.sameNameAsLv} no ${r.stats.items} sakrīt ar latviešu)`);
+    }
+    if (prev?.hindee?.items && r.stats.items < prev.hindee.items * 0.5 && process.env.FORCE !== '1') {
+      throw new Error(`preču skaits nokrities no ${prev.hindee.items} uz ${r.stats.items}`);
+    }
+    return r;
+  } catch (err) {
+    console.log(`::warning title=hindee.xml::${err.message} – paliek iepriekšējā versija`);
+    try {
+      const old = await fetchRetry(`${PAGES_URL}/hindee.xml`, { cache: 'no-store' }, 2);
+      if (old.ok && prev?.hindee?.items) {
+        return { xml: await old.text(), stats: { ...prev.hindee, carriedOver: true, error: err.message } };
+      }
+    } catch { /* nav iepriekšējās versijas */ }
+    console.log('hindee.xml šoreiz netiek izveidots.');
+    return null;
+  }
+}
+
 // ---------- Galvenā daļa ----------
 
 async function main() {
@@ -236,8 +299,9 @@ async function main() {
 
   // Drošība: ja preču pēkšņi ir uz pusi mazāk nekā iepriekšējā reizē, kaut kas nav kārtībā
   // (piem. Shopify atdeva nepilnus datus) – tad atstājam vecos failus. Apiet var ar FORCE=1.
+  let prev = null;
   try {
-    const prev = await (await fetchRetry(`${PAGES_URL}/stats.json`, { cache: 'no-store' }, 2)).json();
+    prev = await (await fetchRetry(`${PAGES_URL}/stats.json`, { cache: 'no-store' }, 2)).json();
     if (prev?.items && items.length < prev.items * 0.5 && process.env.FORCE !== '1') {
       throw new Error(`Preču skaits nokrities no ${prev.items} uz ${items.length} – fails netiek pārrakstīts.`);
     }
@@ -252,7 +316,9 @@ async function main() {
     console.log(`Iepriekšējo statistiku nevarēja nolasīt (${err.message}) – turpinu.`);
   }
 
-  // Visi trīs faili tiek rakstīti tikai tad, ja visi trīs ir izveidoti (citādi izvietošana nenotiek
+  const hindee = await buildHindee(items, prev);
+
+  // Latvijas faili tiek rakstīti tikai tad, ja visi ir izveidoti (citādi izvietošana nenotiek
   // un publiski paliek iepriekšējā versija).
   const now = new Date().toISOString();
   await mkdir(OUT_DIR, { recursive: true });
@@ -260,10 +326,12 @@ async function main() {
   await writeFile(`${OUT_DIR}/kurpirkt.xml`, toKurpirktXml(items), 'utf8');
   await writeFile(`${OUT_DIR}/ceno.xml`, ceno.xml, 'utf8');
   await writeFile(`${OUT_DIR}/cenueksperts.xml`, cenu.xml, 'utf8');
-  // "items" = Salidzini/Kurpirkt preču skaits (to izmanto drošības pārbaude); Ceno un Cenueksperts – atsevišķi.
-  const all = { ...stats, ceno: ceno.stats, cenueksperts: cenu.stats };
+  if (hindee) await writeFile(`${OUT_DIR}/hindee.xml`, hindee.xml, 'utf8');
+  // "items" = Salidzini/Kurpirkt preču skaits (to izmanto drošības pārbaude); pārējie – atsevišķi.
+  const all = { ...stats, ceno: ceno.stats, cenueksperts: cenu.stats, ...(hindee ? { hindee: hindee.stats } : {}) };
   await writeFile(`${OUT_DIR}/stats.json`, JSON.stringify({ generated: now, source: useAdmin ? 'admin' : 'storefront', ...all }, null, 2));
-  await writeFile(`${OUT_DIR}/index.html`, `<!doctype html><meta charset="utf-8"><title>Šarlotes audumi – XML</title><p><a href="salidzini.xml">salidzini.xml</a> · <a href="kurpirkt.xml">kurpirkt.xml</a> · <a href="ceno.xml">ceno.xml</a> · <a href="cenueksperts.xml">cenueksperts.xml</a> · ${items.length} preces (Ceno: ${ceno.stats.items}, Cenueksperts: ${cenu.stats.items}) · ${now}</p>`);
+  const hindeeLink = hindee ? ` · <a href="hindee.xml">hindee.xml</a>` : '';
+  await writeFile(`${OUT_DIR}/index.html`, `<!doctype html><meta charset="utf-8"><title>Šarlotes audumi – XML</title><p><a href="salidzini.xml">salidzini.xml</a> · <a href="kurpirkt.xml">kurpirkt.xml</a> · <a href="ceno.xml">ceno.xml</a> · <a href="cenueksperts.xml">cenueksperts.xml</a>${hindeeLink} · ${items.length} preces (Ceno: ${ceno.stats.items}, Cenueksperts: ${cenu.stats.items}${hindee ? `, Hind.ee: ${hindee.stats.items}` : ''}) · ${now}</p>`);
   console.log(JSON.stringify(all, null, 2));
 }
 

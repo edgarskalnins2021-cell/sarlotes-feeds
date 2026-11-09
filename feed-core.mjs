@@ -499,11 +499,32 @@ export function hindeeDelivery(it, cfg = CONFIG) {
  */
 export function toHindeeXml(items, ee, cfg = CONFIG) {
   const h = cfg.hindee;
-  const stats = { items: 0, decimal: 0, skipped: {}, sameNameAsLv: 0, withCategory: 0 };
+  const stats = { items: 0, decimal: 0, skipped: {}, sameNameAsLv: 0, withCategory: 0, categoryFromLv: 0 };
   const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
   const seenNames = new Set();
   const seenLinks = new Set();
   const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>'];
+  const eeType = (it, e) => {
+    const type = String(e?.productType || '').trim();
+    return it._courierOnly || h.technicalTypePattern.test(type) ? '' : type;
+  };
+
+  // Precēm bez Shopify tipa: LV kategorija → igauņu tips, ko tai pašai LV kategorijai lieto citas preces
+  // (tikai ja vismaz 5 preces un ≥ 60 % no tām ir ar vienu un to pašu tipu).
+  const votes = new Map();
+  for (const it of items) {
+    const t = eeType(it, ee.get(String(it._variantId)));
+    if (!t || !it.category_full) continue;
+    if (!votes.has(it.category_full)) votes.set(it.category_full, new Map());
+    const m = votes.get(it.category_full);
+    m.set(t, (m.get(t) || 0) + 1);
+  }
+  const typeByLvCategory = new Map();
+  for (const [cat, m] of votes) {
+    const total = [...m.values()].reduce((a, b) => a + b, 0);
+    const [best, n] = [...m].sort((a, b) => b[1] - a[1])[0];
+    if (total >= 5 && n / total >= 0.6) typeByLvCategory.set(cat, best);
+  }
 
   for (const it of items) {
     if (it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
@@ -527,8 +548,11 @@ export function toHindeeXml(items, ee, cfg = CONFIG) {
     seenNames.add(name);
     seenLinks.add(link);
 
-    const type = String(e.productType || '').trim();
-    const category = it._courierOnly || h.technicalTypePattern.test(type) ? '' : type;
+    let category = eeType(it, e);
+    if (!category && typeByLvCategory.has(it.category_full)) {
+      category = typeByLvCategory.get(it.category_full);
+      stats.categoryFromLv++;
+    }
     const d = hindeeDelivery(it, cfg);
     const m = (v) => (v == null ? '' : money(v));
     const row = {

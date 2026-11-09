@@ -100,7 +100,7 @@ bet teksti un cena – no Igaunijas veikala publiskā `/products.json` (igauņu 
 | `link` | `https://sharlottekangad.ee/products/<igauņu adrese>`, variantiem ar `?variant=` |
 | `price` | Igaunijas cena, ko pircējs maksā; metrā tirgotajām par 1 m (piem. 0,40 € par 0,1 m → 4,00 €) |
 | `image`, `manufacturer`, `ean` | kā Latvijas failos |
-| `category` | igauņu produkta tips (piem. "Kangas", "Lõng"); "tikai kurjers" precēm – nav |
+| `category` | igauņu produkta tips (piem. "Kangas", "Lõng"); precēm bez tipa – tips, ko lieto citas preces ar to pašu LV kategoriju (≥ 5 preces, ≥ 60 %); citādi nav |
 | `in_stock` | atlikums (metrā tirgotajām – pilni metri) |
 | `description` | igauņu apraksts (bez HTML, līdz 500 zīmēm) |
 | `delivery_cost` | lētākā piegāde uz Igauniju: Omniva pakiautomaat 5,99 € |

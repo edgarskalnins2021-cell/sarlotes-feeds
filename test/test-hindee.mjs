@@ -22,7 +22,12 @@ const smags = p({ title: 'Smags audums', handle: 'smags', tags: ['decimal'], var
 const defekts = p({ title: 'Trikotāža ar defektu', handle: 'def', tags: ['decimal'], variants: [v({ price: 0.79, qty: 50 })] });
 const navEe = p({ title: 'Tikai Latvijā', handle: 'tikai-lv' });
 const latviski = p({ title: 'Lentīte', handle: 'lentite', productType: 'Lentes', variants: [v({ price: 0.8, qty: 5 })] });
-const products = [melns, mazs, gabals, drops, manekens, smags, defekts, navEe, latviski];
+// Kategorija precei bez Shopify tipa: no citām precēm ar to pašu LV kategoriju (≥ 5, ≥ 60 %)
+const kp = ['Audumi', 'Kokvilnas audumi'];
+const kokv = [1, 2, 3, 4, 5].map((i) => p({ title: `Kokvilna ${i}`, handle: `kokv-${i}`, variants: [v({ price: 3, qty: 2, categoryPath: kp })] }));
+const bezTipa = p({ title: 'Kokvilna bez tipa', handle: 'bez-tipa', productType: '', variants: [v({ price: 3, qty: 2, categoryPath: kp })] });
+const vienreiz = p({ title: 'Reta lieta', handle: 'reta', productType: '', variants: [v({ price: 3, qty: 2, categoryPath: ['Retums'] })] });
+const products = [melns, mazs, gabals, drops, manekens, smags, defekts, navEe, latviski, ...kokv, bezTipa, vienreiz];
 
 // Igaunijas veikala /products.json (igauņu teksti, Igaunijas cenas ar 24 % PVN)
 const eeJson = [
@@ -36,6 +41,9 @@ const eeJson = [
   { title: 'Raske kangas', handle: 'raske', product_type: 'Kangas', variants: [{ id: vid(smags), title: 'Default Title', price: '1.54' }] },
   { title: 'Trikoo defektiga', handle: 'trikoo', product_type: 'Kangas', variants: [{ id: vid(defekts), title: 'Default Title', price: '0.81' }] },
   { title: 'Lentīte', handle: 'lentite', product_type: 'Paelad', variants: [{ id: vid(latviski), title: 'Default Title', price: '0.82' }] },
+  ...kokv.map((k, i) => ({ title: `Puuvill ${i}`, handle: `puuvill-${i}`, product_type: 'Kangas', variants: [{ id: vid(k), title: 'Default Title', price: '3.07' }] })),
+  { title: 'Puuvill ilma tüübita', handle: 'ilma-tuubita', product_type: '', variants: [{ id: vid(bezTipa), title: 'Default Title', price: '3.07' }] },
+  { title: 'Haruldane asi', handle: 'haruldane', product_type: '', variants: [{ id: vid(vienreiz), title: 'Default Title', price: '3.07' }] },
 ];
 
 const { items } = buildItems(products, CONFIG);
@@ -73,6 +81,8 @@ const mk = by('mannekeen');
 assert.equal(mk.delivery_cost, '15.90'); assert.equal(mk.delivery_omniva, undefined); assert.equal(mk.category, undefined);
 assert.deepEqual(hindeeDelivery({ _grams: 31000, _courierOnly: false }, CONFIG), { omniva: null, dpd: null, courier: 15.9, cheapest: 15.9 });
 assert.equal(by('raske').delivery_cost, '5.99', '3,5 kg – pakiautomaat līdz 30 kg');
+assert.equal(by('ilma-tuubita').category, 'Kangas'); assert.equal(by('haruldane').category, undefined);
+assert.equal(stats.categoryFromLv, 1);
 // Nosaukums, kas sakrīt ar LV, tiek uzskaitīts (drošības pārbaudei)
 assert.equal(stats.sameNameAsLv, 1);
 // Visas saites – Igaunijas domēns, unikālas; cenas formātā 0.00

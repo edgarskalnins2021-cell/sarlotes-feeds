@@ -1,6 +1,6 @@
 # Šarlotes audumi – cenu salīdzināšanas XML faili
 
-Katras 2 stundas (6:17–20:17 pēc Latvijas laika) GitHub automātiski nolasa preces
+Katru stundu (6:17–21:17 pēc Latvijas laika) GitHub automātiski nolasa preces
 no Shopify, pārrēķina un vienā reizē uzbūvē četrus failus:
 
 | Fails | Kam | Adrese |

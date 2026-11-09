@@ -2,10 +2,11 @@ name: Salidzini XML
 
 on:
   schedule:
-    # Katras 2 stundas: UTC 4:17–18:17 = ziemā Rīgā 6:17, 8:17 … 20:17 (vasarā stundu vēlāk).
+    # Katru stundu: UTC 4:17–19:17 = ziemā Rīgā 6:17, 7:17 … 21:17 (vasarā stundu vēlāk).
+    # Cenueksperts.lv datus nolasa vismaz reizi stundā.
     # Bieži, jo GitHub plānotos darbus mēdz kavēt vai izlaist; tā fails pirms katras
     # Salidzini nolasīšanas (08–12, 12–13, 15–16, 18–19) ir svaigs. Minūte :17 – ne pilnā stundā.
-    - cron: '17 4-18/2 * * *'
+    - cron: '17 4-19 * * *'
   workflow_dispatch: # ļauj palaist arī ar roku (Actions → Salidzini XML → Run workflow)
 
 permissions:

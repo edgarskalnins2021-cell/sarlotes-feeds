@@ -28,8 +28,8 @@ jobs:
         with:
           node-version: '24'
       - name: Noteikumu pārbaudes
-        run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null && node test/test-cenueksperts.mjs > /dev/null && node test/test-hindee.mjs > /dev/null
-      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts, hindee)
+        run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null && node test/test-cenueksperts.mjs > /dev/null && node test/test-hindee.mjs > /dev/null && node test/test-kaina24.mjs > /dev/null
+      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts, hindee, kaina24)
         env:
           SHOPIFY_STORE: sarlotesaudumi.myshopify.com
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
@@ -93,8 +93,11 @@ jobs:
                     'kurpirkt.xml': (stats['items'], 'root', 'item', 'price', 'link', lv),
                     'ceno.xml': (stats['ceno']['items'], 'root', 'item', 'price', 'link', lv),
                     'cenueksperts.xml': (stats['cenueksperts']['items'], 'DataFeeds', 'item_data', 'item_price', 'item_page_url', lv)}
-          if stats.get('hindee', {}).get('items'):  # Igaunija; ja Igaunijas veikals neatbildēja – iepriekšējā versija
+          # Igaunija un Lietuva; ja valsts veikals neatbildēja – iepriekšējā versija (vai fails šoreiz nav)
+          if stats.get('hindee', {}).get('items'):
               expect['hindee.xml'] = (stats['hindee']['items'], 'root', 'item', 'price', 'link', 'https://sharlottekangad.ee/products/')
+          if stats.get('kaina24', {}).get('items'):
+              expect['kaina24.xml'] = (stats['kaina24']['items'], 'products', 'product', 'price', 'product_url', 'https://sarlotesaudiniai.lt/products/')
           for name, (want, root_tag, item_tag, price_tag, link_tag, prefix) in expect.items():
               status, ctype, body = get(name)
               root = ET.fromstring(body)
@@ -109,7 +112,7 @@ jobs:
           _, _, html = get('index.html')
           if not all(f'href="{n}"' in html.decode() for n in expect):
               raise SystemExit('::error title=index.html::trūkst saites uz XML failiem')
-          for key, title in (('ceno', 'Ceno'), ('cenueksperts', 'Cenueksperts'), ('hindee', 'Hind.ee')):
+          for key, title in (('ceno', 'Ceno'), ('cenueksperts', 'Cenueksperts'), ('hindee', 'Hind.ee'), ('kaina24', 'Kaina24')):
               c = stats.get(key)
               if not c:
                   print(f'::warning title={title}::fails šoreiz netika izveidots'); continue

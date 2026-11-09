@@ -119,6 +119,33 @@ export const CONFIG = {
     // Darba dienas. Veikala Igaunijas preces lapā "Eeldatav tarneaeg" ir 2 darba dienas vēlāk nekā
     // Latvijā (09.11.2026: LV – 13.11., EE – 17.11.), tāpēc 3 + 2.
     deliveryDays: 5,
+    countryLabel: 'Igaunijas',
+  },
+
+  // Kaina24.lt (kaina24.xml) – Lietuvas veikals sarlotesaudiniai.lt. Tāpat kā Hind.ee: lietuviešu teksti
+  // un Lietuvas cena no Lietuvas veikala, atlikums u.c. – kā LV failos. Kaina24 un Hind.ee ir viens uzņēmums
+  // (UAB Elektroninės prekybos centras).
+  kaina24: {
+    shopUrl: 'https://sarlotesaudiniai.lt',
+    countryLabel: 'Lietuvas',
+    nameMax: 200,
+    decimalNameSuffix: ' (kaina už 1 m)', // "(cena par 1 m)"
+    // "paskutinis gabalėlis 50cm" = "pēdējais gabaliņš 50cm" → "gabalas 50 cm" (kā LV failos)
+    nameFixes: [
+      [/\s*[-–]?\s*paskutinis gabalėlis\s*/gi, ' – gabalas '],
+      [/(\d)(cm|mm)\b/g, '$1 $2'],
+      [/(\S)–\s/g, '$1 – '],
+      [/\s–(\S)/g, ' – $1'],
+    ],
+    technicalTypePattern: /KURJER|KULLER|COURIER/i,
+    // category_name ir obligāts: ja nav ne tipa, ne LV kategorijas atbilsmes – vispārīgā kategorija.
+    defaultCategory: 'Siuvimo ir rankdarbių prekės',
+    descMax: 1000,
+    // Piegāde uz Lietuvu (Shopify General profile → Lithuania; bez bezmaksas piegādes sliekšņa):
+    // pakomāts – lētākais (Omniva 5,99 €; DPD 6,99 €), līdz 30 kg, ne "tikai kurjers"; kurjers 15,90 €.
+    delivery: { parcelLocker: { price: 5.99, maxGrams: 30000 }, home: 15.9 },
+    // Veikala Lietuvas preču lapā "Numatomas pristatymo laikas" – tāpat kā Igaunijā (09.11.2026 → 17.11.).
+    deliveryDays: '5',
   },
 };
 
@@ -492,28 +519,28 @@ export function hindeeDelivery(it, cfg = CONFIG) {
 }
 
 /**
- * items – buildItems ieraksti (LV dati: atlikums, svars, attēls, EAN, zīmols, metrā tirgotās preces).
- * ee – Map(varianta ID → { title, variantTitle, handle, productType, price, description }) no
- *   Igaunijas veikala (sharlottekangad.ee/products.json): igauņu teksti un Igaunijas cena par Shopify vienību.
- * Atgriež { xml, stats }.
+ * Kopīgais solis ārvalstu veikaliem (Igaunija, Lietuva): buildItems ieraksti (LV dati – atlikums, svars,
+ * attēls, EAN, zīmols, metrā tirgotās preces) + attiecīgās valsts veikala teksti un cena.
+ * store – Map(varianta ID → { title, variantTitle, handle, productType, price, description }) no
+ *   valsts veikala /products.json (cena par Shopify vienību, ar tās valsts PVN).
+ * h – valsts iestatījumi (CONFIG.hindee / CONFIG.kaina24). Atgriež { rows, stats }.
  */
-export function toHindeeXml(items, ee, cfg = CONFIG) {
-  const h = cfg.hindee;
+function localizeItems(items, store, h, cfg) {
   const stats = { items: 0, decimal: 0, skipped: {}, sameNameAsLv: 0, withCategory: 0, categoryFromLv: 0 };
   const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
   const seenNames = new Set();
   const seenLinks = new Set();
-  const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>'];
-  const eeType = (it, e) => {
+  const rows = [];
+  const localType = (it, e) => {
     const type = String(e?.productType || '').trim();
     return it._courierOnly || h.technicalTypePattern.test(type) ? '' : type;
   };
 
-  // Precēm bez Shopify tipa: LV kategorija → igauņu tips, ko tai pašai LV kategorijai lieto citas preces
+  // Precēm bez Shopify tipa: LV kategorija → vietējais tips, ko tai pašai LV kategorijai lieto citas preces
   // (tikai ja vismaz 5 preces un ≥ 60 % no tām ir ar vienu un to pašu tipu).
   const votes = new Map();
   for (const it of items) {
-    const t = eeType(it, ee.get(String(it._variantId)));
+    const t = localType(it, store.get(String(it._variantId)));
     if (!t || !it.category_full) continue;
     if (!votes.has(it.category_full)) votes.set(it.category_full, new Map());
     const m = votes.get(it.category_full);
@@ -530,11 +557,11 @@ export function toHindeeXml(items, ee, cfg = CONFIG) {
     if (it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
     if (!it.image) { skip('nav attēla'); continue; }
     if (it._decimal && it.in_stock === '') { skip('metrā tirgota, atlikums nav zināms'); continue; }
-    const e = ee.get(String(it._variantId));
-    if (!e) { skip('nav Igaunijas veikalā'); continue; }
-    if (!(e.price > 0)) { skip('nav Igaunijas cenas'); continue; }
+    const e = store.get(String(it._variantId));
+    if (!e) { skip(`nav ${h.countryLabel} veikalā`); continue; }
+    if (!(e.price > 0)) { skip(`nav ${h.countryLabel} cenas`); continue; }
 
-    // Igaunijas cena par Shopify vienību; metrā tirgotajām – par 1 m (Shopify vienība = 0,1 m).
+    // Vietējā cena par Shopify vienību; metrā tirgotajām – par 1 m (Shopify vienība = 0,1 m).
     const price = it._decimal ? e.price / cfg.decimalStep : e.price;
     if (price < cfg.minPrice) { skip(`cena zem ${money(cfg.minPrice)} €`); continue; }
     const variantTitle = e.variantTitle && e.variantTitle !== 'Default Title' ? ` – ${e.variantTitle}` : '';
@@ -548,34 +575,46 @@ export function toHindeeXml(items, ee, cfg = CONFIG) {
     seenNames.add(name);
     seenLinks.add(link);
 
-    let category = eeType(it, e);
+    let category = localType(it, e);
     if (!category && typeByLvCategory.has(it.category_full)) {
       category = typeByLvCategory.get(it.category_full);
       stats.categoryFromLv++;
     }
+    if (category) stats.withCategory++;
+    if (it._decimal) stats.decimal++;
+    stats.items++;
+    rows.push({ it, name, link, price, category,
+      description: cut(String(e.description || '').replace(/\s+/g, ' ').trim(), h.descMax) });
+  }
+  return { rows, stats };
+}
+
+/** Hind.ee: items + Igaunijas veikala dati (sharlottekangad.ee/products.json). Atgriež { xml, stats }. */
+export function toHindeeXml(items, ee, cfg = CONFIG) {
+  const h = cfg.hindee;
+  const { rows, stats } = localizeItems(items, ee, h, cfg);
+  const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>'];
+  const m = (v) => (v == null ? '' : money(v));
+  for (const r of rows) {
+    const it = r.it;
     const d = hindeeDelivery(it, cfg);
-    const m = (v) => (v == null ? '' : money(v));
     const row = {
       id: it._variantId,
-      name,
-      link,
-      price: money(price),
+      name: r.name,
+      link: r.link,
+      price: money(r.price),
       image: it.image,
-      category,
+      category: r.category,
       manufacturer: it.brand,
       ean: it.ean,
       in_stock: it.in_stock, // metrā tirgotajām – pilni metri
-      description: cut(String(e.description || '').replace(/\s+/g, ' ').trim(), h.descMax),
+      description: r.description,
       delivery_cost: m(d.cheapest),
       delivery_omniva: m(d.omniva),
       delivery_dpd: m(d.dpd),
       delivery_courier: m(d.courier),
       delivery_days: String(h.deliveryDays),
     };
-    if (category) stats.withCategory++;
-    if (it._decimal) stats.decimal++;
-    stats.items++;
-
     out.push('<item>');
     for (const tag of HINDEE_TAGS) {
       const val = row[tag];
@@ -586,6 +625,47 @@ export function toHindeeXml(items, ee, cfg = CONFIG) {
   }
   out.push('</root>', '');
   return { xml: out.join('\n'), stats };
+}
+
+// ---------- Kaina24.lt (Lietuva) ----------
+// Oficiālais formāts: https://www.kaina24.lt/xml/example.xml (pārbaudīts 09.11.2026).
+// Obligāti: product id, title, price, condition, image_url, product_url, category_name.
+
+const cdata = (s) => `<![CDATA[${String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
+
+/** Kaina24.lt: items + Lietuvas veikala dati (sarlotesaudiniai.lt/products.json). Atgriež { xml, stats }. */
+export function toKaina24Xml(items, lt, cfg = CONFIG) {
+  const k = cfg.kaina24;
+  const { rows, stats } = localizeItems(items, lt, k, cfg);
+  stats.defaultCategory = 0;
+  const out = ['<?xml version="1.0" encoding="UTF-8"?>', '<products>'];
+  for (const r of rows) {
+    const it = r.it;
+    const g = it._grams || 0;
+    const locker = !it._courierOnly && g <= k.delivery.parcelLocker.maxGrams;
+    let category = r.category;
+    if (!category) { category = k.defaultCategory; stats.defaultCategory++; }
+    const tag = (name, val) => (val === '' || val == null ? '' : `<${name}>${escapeXml(val)}</${name}>`);
+    out.push(`<product id="${escapeXml(it._variantId)}">`);
+    out.push(tag('product_id', it._variantId));
+    out.push(`<title>${cdata(r.name)}</title>`);
+    out.push(tag('price', money(r.price)));
+    out.push(tag('condition', 'new')); // preces ar defektu / demo / lietotas netiek iekļautas
+    if (it.in_stock !== '') out.push(tag('stock', it.in_stock)); // metrā tirgotajām – pilni metri
+    if (it.ean) out.push(tag('ean_code', it.ean));
+    if (it.brand) out.push(`<manufacturer>${cdata(it.brand)}</manufacturer>`);
+    out.push(`<image_url>${cdata(it.image)}</image_url>`);
+    out.push(`<product_url>${cdata(r.link)}</product_url>`);
+    out.push(`<category_name>${cdata(category)}</category_name>`);
+    if (r.description) out.push(`<description>${cdata(r.description)}</description>`);
+    out.push('<delivery>');
+    out.push(`<home_delivery>${tag('working_days', k.deliveryDays)}${tag('price', money(k.delivery.home))}</home_delivery>`);
+    if (locker) out.push(`<parcel_locker_delivery>${tag('working_days', k.deliveryDays)}${tag('price', money(k.delivery.parcelLocker.price))}</parcel_locker_delivery>`);
+    out.push('</delivery>');
+    out.push('</product>');
+  }
+  out.push('</products>', '');
+  return { xml: out.filter(Boolean).join("\n") + "\n", stats };
 }
 
 export function toXml(items) {

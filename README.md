@@ -1,7 +1,7 @@
 # Šarlotes audumi – cenu salīdzināšanas XML faili
 
 Katru stundu (6:17–21:17 pēc Latvijas laika) GitHub automātiski nolasa preces
-no Shopify, pārrēķina un vienā reizē uzbūvē piecus failus (četri Latvijai, viens Igaunijai):
+no Shopify, pārrēķina un vienā reizē uzbūvē sešus failus (četri Latvijai, viens Igaunijai, viens Lietuvai):
 
 | Fails | Kam | Adrese |
 |---|---|---|
@@ -10,13 +10,14 @@ no Shopify, pārrēķina un vienā reizē uzbūvē piecus failus (četri Latvija
 | `ceno.xml` | Ceno.lv (skat. sadaļu "Ceno.lv") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/ceno.xml |
 | `cenueksperts.xml` | Cenueksperts.lv (skat. sadaļu "Cenueksperts.lv") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/cenueksperts.xml |
 | `hindee.xml` | Hind.ee, Igaunija (skat. sadaļu "Hind.ee") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/hindee.xml |
+| `kaina24.xml` | Kaina24.lt, Lietuva (skat. sadaļu "Kaina24.lt") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/kaina24.xml |
 
 Grafiks GitHub pusē mēdz kavēties; vajadzības gadījumā: **Actions → Salidzini XML → Run workflow**.
 
 Drošības noteikumi: ja Shopify īslaicīgi neatbild, skripts mēģina vēlreiz; ja preču ir aizdomīgi maz
 (zem 100 vai uz pusi mazāk nekā iepriekš – arī Ceno failā atsevišķi), netiek izvietots neviens fails un
-publiski paliek iepriekšējā versija. Ja neizdodas tikai Igaunijas fails, Latvijas faili tiek izvietoti, bet
-`hindee.xml` paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
+publiski paliek iepriekšējā versija. Ja neizdodas tikai Igaunijas vai Lietuvas fails, Latvijas faili tiek
+izvietoti, bet `hindee.xml` / `kaina24.xml` paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
 (HTTP 200, derīgs XML, preču skaits sakrīt ar `stats.json`). Reizi nedēļā (pirmdienas rītā)
 tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu neaktivitātes dēļ.
 
@@ -111,6 +112,27 @@ Nerāda: preces ar defektu / demo / lietotas, bez attēla, kuru nav Igaunijas ve
 Igaunijā nav. Drošība: ja preču ir zem 100, uz pusi mazāk nekā iepriekš vai vairāk nekā puse nosaukumu sakrīt ar
 latviešu nosaukumiem, publiski paliek iepriekšējā `hindee.xml` versija.
 
+## Kaina24.lt (`kaina24.xml`, Lietuva)
+
+Lietuvas veikals https://sarlotesaudiniai.lt. Formāts – Kaina24 oficiālais paraugs https://www.kaina24.lt/xml/example.xml
+(pārbaudīts 09.11.2026): `<products><product id="…">`. Kaina24 un Hind.ee ir viens uzņēmums (UAB Elektroninės prekybos
+centras). Preces un drošības noteikumi – tāpat kā Hind.ee (kopīgā funkcija `localizeItems`), teksti un cena – no
+Lietuvas veikala publiskā `/products.json` (Lietuvā PVN 21 %, tāpēc cenas sakrīt ar Latvijas).
+
+| Tags | No kurienes |
+|---|---|
+| `product id`, `product_id` | Shopify varianta ID |
+| `title` | lietuviešu nosaukums + varianta nosaukums; metrā tirgotajām "(kaina už 1 m)"; "paskutinis gabalėlis 50cm" → "gabalas 50 cm" |
+| `price` | Lietuvas cena; metrā tirgotajām par 1 m |
+| `condition` | `new` (preces ar defektu / demo / lietotas netiek iekļautas) |
+| `stock` | atlikums (metrā tirgotajām – pilni metri) |
+| `ean_code`, `manufacturer`, `image_url` | kā Latvijas failos |
+| `product_url` | `https://sarlotesaudiniai.lt/products/<lietuviešu adrese>`, variantiem ar `?variant=` |
+| `category_name` | lietuviešu produkta tips; bez tipa – pēc LV kategorijas (kā Hind.ee); citādi "Siuvimo ir rankdarbių prekės" (lauks obligāts) |
+| `description` | lietuviešu apraksts (CDATA, bez HTML, līdz 1000 zīmēm) |
+| `delivery/home_delivery` | kurjers 15,90 €, 5 darba dienas |
+| `delivery/parcel_locker_delivery` | lētākais pakomāts (Omniva) 5,99 €, 5 darba dienas; nav "tikai kurjers" precēm un > 30 kg |
+
 ## Vienreizēja iestatīšana
 
 ### 1. GitHub
@@ -145,5 +167,6 @@ node test/test-core.mjs   # Salidzini/Kurpirkt noteikumu pārbaude
 node test/test-ceno.mjs   # Ceno: metri, atlikumi, piegāde, kategorijas saite, akcijas
 node test/test-cenueksperts.mjs  # Cenueksperts: formāts, apraksts, piegāde
 node test/test-hindee.mjs # Hind.ee: igauņu teksti, Igaunijas cena, metri, piegāde uz Igauniju
+node test/test-kaina24.mjs # Kaina24: oficiālā struktūra, lietuviešu teksti, metri, piegāde uz Lietuvu
 node generate.mjs         # uzbūvē visus failus mapē public/ (vajag Shopify atslēgas)
 ```

@@ -1,13 +1,14 @@
 # Šarlotes audumi – cenu salīdzināšanas XML faili
 
 Katras 2 stundas (6:17–20:17 pēc Latvijas laika) GitHub automātiski nolasa preces
-no Shopify, pārrēķina un vienā reizē uzbūvē trīs failus:
+no Shopify, pārrēķina un vienā reizē uzbūvē četrus failus:
 
 | Fails | Kam | Adrese |
 |---|---|---|
 | `salidzini.xml` | Salidzini.lv (nolasa 08–12, 12–13, 15–16, 18–19) | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/salidzini.xml |
 | `kurpirkt.xml` | Kurpirkt.lv (`manufacturer`, `category`, `category_full` ar ">", `delivery_cost_riga`, `used` 0/1) | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/kurpirkt.xml |
 | `ceno.xml` | Ceno.lv (skat. sadaļu "Ceno.lv") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/ceno.xml |
+| `cenueksperts.xml` | Cenueksperts.lv (skat. sadaļu "Cenueksperts.lv") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/cenueksperts.xml |
 
 Grafiks GitHub pusē mēdz kavēties; vajadzības gadījumā: **Actions → Salidzini XML → Run workflow**.
 
@@ -66,6 +67,21 @@ Cenas un atlikumi jau ir pārrēķināti uz pārdošanas vienību, otrreiz netie
 Svars: Shopify svars metrā tirgotajām precēm ir par 0,1 m (piem. kokvilna 20 g), tāpēc 1 m = svars × 10.
 Ceno faktu skaits un izlaišanas iemesli – `stats.json` laukā `ceno` (`items` laukā paliek Salidzini/Kurpirkt skaits).
 
+## Cenueksperts.lv (`cenueksperts.xml`)
+
+Formāts pēc Cenueksperts parauga (https://static.guenstiger.de/download/productfileexample.xml, saite no
+https://w.cenueksperts.lv/buj): `<DataFeeds><item_data>…`. Tās pašas preces un cenas kā pārējos failos.
+
+| Tags | No kurienes |
+|---|---|
+| `item_unique_id` | Shopify varianta ID (nemainīgs) |
+| `item_manufacturer`, `item_upc` | zīmols un derīgs EAN (kā Salidzini); tukšus neliek |
+| `item_name`, `item_page_url`, `item_image_url`, `item_price` | kā Salidzini (metrā tirgotajām – cena par 1 m, "(cena par 1 m)") |
+| `item_category` | kategorija ar " / " |
+| `item_short_desc` | produkta apraksts no Shopify (bez HTML, līdz 500 zīmēm); bez apraksta prece netiek iekļauta (obligāts lauks) |
+| `item_inventory`, `item_condition` | `AVAILABLE`, `New` (failā ir tikai preces noliktavā; ar defektu / demo netiek iekļautas) |
+| `item_shipping_charge` | lētākā piegāde Latvijā: 3,30 € (0 € no 70 €), "tikai kurjers" – 11,90 € / 15,90 € |
+
 ## Vienreizēja iestatīšana
 
 ### 1. GitHub
@@ -98,5 +114,6 @@ Repozitorijā: **Settings → Secrets and variables → Actions → New reposito
 ```
 node test/test-core.mjs   # Salidzini/Kurpirkt noteikumu pārbaude
 node test/test-ceno.mjs   # Ceno: metri, atlikumi, piegāde, kategorijas saite, akcijas
+node test/test-cenueksperts.mjs  # Cenueksperts: formāts, apraksts, piegāde
 node generate.mjs         # uzbūvē public/salidzini.xml, kurpirkt.xml, ceno.xml (vajag Shopify atslēgas)
 ```

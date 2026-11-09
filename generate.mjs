@@ -9,7 +9,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import { CONFIG, buildItems, toXml, toKurpirktXml, toCenoXml } from './feed-core.mjs';
+import { CONFIG, buildItems, toXml, toKurpirktXml, toCenoXml, toCenuekspertsXml } from './feed-core.mjs';
 
 const STORE = process.env.SHOPIFY_STORE || 'sarlotesaudumi.myshopify.com';
 const API_VERSION = process.env.SHOPIFY_API_VERSION || '2026-10';
@@ -77,6 +77,7 @@ const BULK_QUERY = `{
       product {
         id title handle productType vendor tags isGiftCard onlineStoreUrl
         featuredMedia { preview { image { url } } }
+        description(truncateAt: 600)
         collections { edges { node { id handle title } } }
       }
     } }
@@ -143,7 +144,7 @@ export function parseBulk(text) {
       products.set(p.id, {
         title: p.title, handle: p.handle, productType: p.productType || '', vendor: p.vendor || '',
         tags: p.tags || [], isGiftCard: !!p.isGiftCard, onlineStore: !!p.onlineStoreUrl,
-        image: p.featuredMedia?.preview?.image?.url || '', variants: [],
+        image: p.featuredMedia?.preview?.image?.url || '', variants: [], description: p.description || '',
         collections: [...(productCollections.get(p.id) || [])].map(([handle, title]) => ({ handle, title })),
       });
     }
@@ -194,6 +195,7 @@ export function normalizeStorefront(list) {
     title: p.title, handle: p.handle, productType: p.product_type || '', vendor: p.vendor || '',
     tags: p.tags || [], isGiftCard: p.product_type === 'Dāvanu kartes', onlineStore: true,
     image: p.images?.[0]?.src || '', collections: [],
+    description: String(p.body_html || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim().slice(0, 600),
     variants: p.variants.map((v) => ({
       id: v.id, title: v.title, price: parseFloat(v.price), available: !!v.available,
       compareAtPrice: v.compare_at_price != null ? parseFloat(v.compare_at_price) : null,
@@ -229,6 +231,8 @@ async function main() {
 
   const ceno = toCenoXml(items, CONFIG, { publishedCollections: await fetchPublishedCollections() });
   if (ceno.stats.items < 100) throw new Error(`Aizdomīgi maz Ceno preču (${ceno.stats.items}) – faili netiek pārrakstīti.`);
+  const cenu = toCenuekspertsXml(items, CONFIG);
+  if (cenu.stats.items < 100) throw new Error(`Aizdomīgi maz Cenueksperts preču (${cenu.stats.items}) – faili netiek pārrakstīti.`);
 
   // Drošība: ja preču pēkšņi ir uz pusi mazāk nekā iepriekšējā reizē, kaut kas nav kārtībā
   // (piem. Shopify atdeva nepilnus datus) – tad atstājam vecos failus. Apiet var ar FORCE=1.
@@ -239,6 +243,9 @@ async function main() {
     }
     if (prev?.ceno?.items && ceno.stats.items < prev.ceno.items * 0.5 && process.env.FORCE !== '1') {
       throw new Error(`Preču skaits (Ceno) nokrities no ${prev.ceno.items} uz ${ceno.stats.items} – faili netiek pārrakstīti.`);
+    }
+    if (prev?.cenueksperts?.items && cenu.stats.items < prev.cenueksperts.items * 0.5 && process.env.FORCE !== '1') {
+      throw new Error(`Preču skaits (Cenueksperts) nokrities no ${prev.cenueksperts.items} uz ${cenu.stats.items} – faili netiek pārrakstīti.`);
     }
   } catch (err) {
     if (err.message.startsWith('Preču skaits')) throw err;
@@ -252,10 +259,12 @@ async function main() {
   await writeFile(`${OUT_DIR}/salidzini.xml`, toXml(items), 'utf8');
   await writeFile(`${OUT_DIR}/kurpirkt.xml`, toKurpirktXml(items), 'utf8');
   await writeFile(`${OUT_DIR}/ceno.xml`, ceno.xml, 'utf8');
-  // "items" = Salidzini/Kurpirkt preču skaits (to izmanto drošības pārbaude); Ceno – atsevišķi.
-  await writeFile(`${OUT_DIR}/stats.json`, JSON.stringify({ generated: now, source: useAdmin ? 'admin' : 'storefront', ...stats, ceno: ceno.stats }, null, 2));
-  await writeFile(`${OUT_DIR}/index.html`, `<!doctype html><meta charset="utf-8"><title>Šarlotes audumi – XML</title><p><a href="salidzini.xml">salidzini.xml</a> · <a href="kurpirkt.xml">kurpirkt.xml</a> · <a href="ceno.xml">ceno.xml</a> · ${items.length} preces (Ceno: ${ceno.stats.items}) · ${now}</p>`);
-  console.log(JSON.stringify({ ...stats, ceno: ceno.stats }, null, 2));
+  await writeFile(`${OUT_DIR}/cenueksperts.xml`, cenu.xml, 'utf8');
+  // "items" = Salidzini/Kurpirkt preču skaits (to izmanto drošības pārbaude); Ceno un Cenueksperts – atsevišķi.
+  const all = { ...stats, ceno: ceno.stats, cenueksperts: cenu.stats };
+  await writeFile(`${OUT_DIR}/stats.json`, JSON.stringify({ generated: now, source: useAdmin ? 'admin' : 'storefront', ...all }, null, 2));
+  await writeFile(`${OUT_DIR}/index.html`, `<!doctype html><meta charset="utf-8"><title>Šarlotes audumi – XML</title><p><a href="salidzini.xml">salidzini.xml</a> · <a href="kurpirkt.xml">kurpirkt.xml</a> · <a href="ceno.xml">ceno.xml</a> · <a href="cenueksperts.xml">cenueksperts.xml</a> · ${items.length} preces (Ceno: ${ceno.stats.items}, Cenueksperts: ${cenu.stats.items}) · ${now}</p>`);
+  console.log(JSON.stringify(all, null, 2));
 }
 
 // Palaiž tikai tad, ja failu izpilda tieši (node generate.mjs), nevis importē testos.

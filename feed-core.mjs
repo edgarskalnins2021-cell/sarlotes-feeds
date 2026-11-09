@@ -246,6 +246,7 @@ export function buildItems(products, cfg = CONFIG) {
         _grams: decimal ? (v.grams || 0) / cfg.decimalStep : (v.grams || 0), // Shopify svars ir par 0,1 m
         _courierOnly: courier,
         _collections: p.collections || [],
+        _desc: p.description || '',
       });
     }
   }
@@ -396,6 +397,53 @@ export function toCenoXml(items, cfg = CONFIG, ctx = {}) {
     out.push('</item>');
   }
   out.push('</root>', '');
+  return { xml: out.join('\n'), stats };
+}
+
+// ---------- Cenueksperts.lv ----------
+// Formāts: https://static.guenstiger.de/download/productfileexample.xml (saite no w.cenueksperts.lv/buj).
+// Obligāti: nosaukums, cena, URL, apraksts, attēla URL. Cenas un atlikumi jau ir par pārdošanas vienību.
+
+const CENUEKSPERTS_TAGS = ['item_unique_id', 'item_manufacturer', 'item_name', 'item_category', 'item_short_desc',
+  'item_page_url', 'item_image_url', 'item_upc', 'item_price', 'item_inventory', 'item_condition', 'item_shipping_charge'];
+
+export function toCenuekspertsXml(items, cfg = CONFIG) {
+  const stats = { items: 0, decimal: 0, skipped: {} };
+  const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
+  const seen = new Set();
+  const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<DataFeeds>'];
+  for (const it of items) {
+    if (it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
+    if (!it.image) { skip('nav attēla'); continue; }
+    const desc = cut(String(it._desc || '').replace(/\s+/g, ' ').trim(), 500);
+    if (!desc) { skip('nav apraksta'); continue; }
+    if (seen.has(it.link)) { skip('dublikāts (saite)'); continue; }
+    seen.add(it.link);
+    const row = {
+      item_unique_id: it._variantId,
+      item_manufacturer: it.brand,
+      item_name: it.name,
+      item_category: String(it.category_full || '').split(/\s*>>\s*/).filter(Boolean).join(' / '),
+      item_short_desc: desc,
+      item_page_url: it.link,
+      item_image_url: it.image,
+      item_upc: it.ean,
+      item_price: it.price, // cena, ko pircējs maksā (metrā tirgotajām – par 1 m)
+      item_inventory: 'AVAILABLE', // failā ir tikai preces, kas ir noliktavā
+      item_condition: 'New',
+      item_shipping_charge: it.delivery_latvija, // lētākā piegāde Latvijā (kā Salidzini)
+    };
+    out.push('<item_data>');
+    for (const tag of CENUEKSPERTS_TAGS) {
+      const val = row[tag];
+      if (val === '' || val == null) continue;
+      out.push(`<${tag}>${escapeXml(val)}</${tag}>`);
+    }
+    out.push('</item_data>');
+    stats.items++;
+    if (it._decimal) stats.decimal++;
+  }
+  out.push('</DataFeeds>', '');
   return { xml: out.join('\n'), stats };
 }
 

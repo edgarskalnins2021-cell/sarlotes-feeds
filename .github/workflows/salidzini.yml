@@ -27,8 +27,8 @@ jobs:
         with:
           node-version: '24'
       - name: Noteikumu pārbaudes
-        run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null
-      - name: Ģenerē XML (salidzini, kurpirkt, ceno)
+        run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null && node test/test-cenueksperts.mjs > /dev/null
+      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts)
         env:
           SHOPIFY_STORE: sarlotesaudumi.myshopify.com
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
@@ -86,14 +86,18 @@ jobs:
               raise SystemExit(f'::error title={name}::nav pieejams: {last}')
           _, _, s = get('stats.json')
           stats = json.loads(s)
-          expect = {'salidzini.xml': stats['items'], 'kurpirkt.xml': stats['items'], 'ceno.xml': stats['ceno']['items']}
-          for name, want in expect.items():
+          # fails: (gaidāmais skaits, saknes tags, preces tags, cenas tags, saites tags)
+          expect = {'salidzini.xml': (stats['items'], 'root', 'item', 'price', 'link'),
+                    'kurpirkt.xml': (stats['items'], 'root', 'item', 'price', 'link'),
+                    'ceno.xml': (stats['ceno']['items'], 'root', 'item', 'price', 'link'),
+                    'cenueksperts.xml': (stats['cenueksperts']['items'], 'DataFeeds', 'item_data', 'item_price', 'item_page_url')}
+          for name, (want, root_tag, item_tag, price_tag, link_tag) in expect.items():
               status, ctype, body = get(name)
               root = ET.fromstring(body)
-              items = root.findall('item')
-              prices_ok = all(re.fullmatch(r'\d+\.\d{2}', i.findtext('price') or '') for i in items)
-              links = [i.findtext('link') or '' for i in items]
-              ok = (status == 200 and root.tag == 'root' and len(items) == want and prices_ok
+              items = root.findall(item_tag)
+              prices_ok = all(re.fullmatch(r'\d+\.\d{2}', i.findtext(price_tag) or '') for i in items)
+              links = [i.findtext(link_tag) or '' for i in items]
+              ok = (status == 200 and root.tag == root_tag and len(items) == want and prices_ok
                     and all(l.startswith('https://sarlotesaudumi.lv/products/') for l in links))
               msg = f'HTTP {status}, {ctype}, {len(items)} preces (stats.json: {want}), cenas {"OK" if prices_ok else "KĻŪDA"}, unikālas saites {len(set(links))}'
               print(f'::{"notice" if ok else "error"} title={name}::{msg}')
@@ -101,6 +105,7 @@ jobs:
           _, _, html = get('index.html')
           if not all(f'href="{n}"' in html.decode() for n in expect):
               raise SystemExit('::error title=index.html::trūkst saites uz XML failiem')
-          c = stats['ceno']
-          print(f"::notice title=Ceno::{c['items']} preces, metrā {c['decimal']}, izlaistas {json.dumps(c['skipped'], ensure_ascii=False)}")
+          for key, title in (('ceno', 'Ceno'), ('cenueksperts', 'Cenueksperts')):
+              c = stats[key]
+              print(f"::notice title={title}::{c['items']} preces, metrā {c['decimal']}, izlaistas {json.dumps(c['skipped'], ensure_ascii=False)}")
           PY

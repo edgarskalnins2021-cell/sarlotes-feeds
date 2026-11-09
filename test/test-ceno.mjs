@@ -89,12 +89,11 @@ assert.equal(d('audums-a').delivery_days_latvija, '3');
 const minCfg = { ...CONFIG, ceno: { ...CONFIG.ceno, deliveryCostMode: 'min' } };
 assert.equal(cenoDelivery(items.find((i) => i.link.endsWith('/audums-a')), minCfg).delivery_latvija, '3.30');
 
-// akcija: price = sākotnējā (compareAtPrice), price_sale = faktiskā; abas par 1 m
-assert.equal(by('akcija').price, '4.50'); assert.equal(by('akcija').price_sale, '3.50');
-assert.equal(stats.compareAtHigher, 1); assert.equal(stats.with.price_sale, 1);
-assert.equal(by('audums-a').price_sale, undefined, 'bez akcijas price_sale nav');
-const noSale = toCenoXml(items, { ...CONFIG, ceno: { ...CONFIG.ceno, salePrice: false } }, {}).xml;
-assert.ok(/<price>3\.50<\/price>/.test(noSale) && !noSale.includes('<price_sale>'), 'izslēdzot – tikai faktiskā cena');
+// akcija: pēc noklusējuma <price> = cena, ko pircējs maksā (Ceno kartiņā rāda tikai <price>)
+assert.equal(by('akcija').price, '3.50'); assert.equal(by('akcija').price_sale, undefined);
+assert.equal(stats.compareAtHigher, 1); assert.equal(stats.with.price_sale, 0);
+const withSale = toCenoXml(items, { ...CONFIG, ceno: { ...CONFIG.ceno, salePrice: true } }, {}).xml;
+assert.ok(/<price>4\.50<\/price>\n<price_sale>3\.50<\/price_sale>/.test(withSale), 'ieslēdzot – abas cenas par 1 m');
 
 // defekts – 1. versijā izlaists; jaunām precēm used = 0
 assert.equal(by('defekts'), undefined); assert.equal(stats.skipped['ar defektu / demo / lietota'], 1);

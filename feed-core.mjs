@@ -74,9 +74,11 @@ export const CONFIG = {
     // Pārējie neobligātie tagi bez vērtības netiek likti.
     keepEmptyTags: ['delivery_cost_riga', 'delivery_latvija', 'delivery_omniva', 'delivery_dpd_paku_bode',
       'delivery_latvijas_pasts', 'delivery_pasta_stacija', 'delivery_circlek', 'delivery_venipak'],
-    // price = sākotnējā cena (Shopify compareAtPrice), price_sale = akcijas cena, ko pircējs maksā
-    // (Ceno paraugs: price 849.99, price_sale 799.99). Tikai ja compareAtPrice > cena.
-    salePrice: true,
+    // false: <price> = cena, ko pircējs maksā; price_sale netiek likts.
+    // (Pārbaudīts 09.11.2026: Ceno kartiņā rāda tikai <price>, price_sale nerāda – ar true akcijas
+    // preces izskatītos dārgākas, piem. 3.90 € vietā 3.30 €.)
+    // true: price = sākotnējā cena (Shopify compareAtPrice), price_sale = akcijas cena.
+    salePrice: false,
     // Piegādes veidi Latvijā (Shopify General profile → Latvija). null = veids netiek piedāvāts.
     delivery: {
       omniva: { price: 3.3, freeFrom: 70, maxGrams: 30000 }, // pakomāts; 0 € no 70 € pirkuma

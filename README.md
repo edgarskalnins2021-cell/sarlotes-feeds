@@ -47,8 +47,8 @@ Cenas un atlikumi jau ir pārrēķināti uz pārdošanas vienību, otrreiz netie
 |---|---|
 | `name` | produkta + varianta nosaukums; metrā tirgotajām "(cena par 1 m)" – saīsinot nosaukumu, šī norāde paliek |
 | `link` | preces saite, variantiem ar `?variant=` |
-| `price` | cena EUR ar PVN; metrā tirgotajām par 1 m. Akcijas precēm – sākotnējā cena (Shopify `compareAtPrice`) |
-| `price_sale` | tikai akcijas precēm (`compareAtPrice` > cena): cena, ko pircējs maksā, par to pašu vienību |
+| `price` | cena, ko pircējs maksā, EUR ar PVN; metrā tirgotajām par 1 m (arī akcijas precēm) |
+| `price_sale` | netiek likts (`salePrice: false`): Ceno kartiņā rāda tikai `price`, tāpēc akcijas cena jāliek tur |
 | `image` | varianta attēls, citādi produkta attēls; bez attēla prece netiek iekļauta |
 | `manufacturer` | tikai īsti zīmoli (tie paši noteikumi kā Salidzini) |
 | `model` | netiek likts – SKU ir piegādātāja iekšējie kodi, nevis modelis |

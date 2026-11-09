@@ -95,7 +95,7 @@ jobs:
                     'cenueksperts.xml': (stats['cenueksperts']['items'], 'DataFeeds', 'item_data', 'item_price', 'item_page_url', lv)}
           # Igaunija un Lietuva; ja valsts veikals neatbildēja – iepriekšējā versija (vai fails šoreiz nav)
           if stats.get('hindee', {}).get('items'):
-              expect['hindee.xml'] = (stats['hindee']['items'], 'root', 'item', 'price', 'link', 'https://sharlottekangad.ee/products/')
+              expect['hindee.xml'] = (stats['hindee']['items'], 'products', 'product', 'price', 'product_url', 'https://sharlottekangad.ee/products/')
           if stats.get('kaina24', {}).get('items'):
               expect['kaina24.xml'] = (stats['kaina24']['items'], 'products', 'product', 'price', 'product_url', 'https://sarlotesaudiniai.lt/products/')
           for name, (want, root_tag, item_tag, price_tag, link_tag, prefix) in expect.items():

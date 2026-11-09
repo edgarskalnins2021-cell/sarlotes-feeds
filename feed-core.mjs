@@ -96,6 +96,7 @@ export const CONFIG = {
 
   // Hind.ee (hindee.xml) – Igaunijas veikals sharlottekangad.ee. Nosaukumi, saites, tips, apraksts un cena –
   // no Igaunijas veikala (igauņu valodā, Igaunijas cena ar PVN); atlikums, svars, attēli, EAN – kā LV failos.
+  // Formāts – Hind.ee oficiālais paraugs https://www.hind.ee/xml/example.xml (tāds pats kā Kaina24).
   hindee: {
     shopUrl: 'https://sharlottekangad.ee',
     nameMax: 200,
@@ -109,16 +110,15 @@ export const CONFIG = {
     ],
     // Tulkotais "tikai kurjers" tips (AINULT_KULLER, KULLER_AINULT u.c.) nav kategorija.
     technicalTypePattern: /KULLER|KURIER|COURIER/i,
-    descMax: 500,
-    // Piegāde uz Igauniju (Shopify General profile → Estonia; bez bezmaksas piegādes sliekšņa).
-    delivery: {
-      omniva: { price: 5.99, maxGrams: 30000 }, // pakiautomaat
-      dpd: { price: 6.99, maxGrams: 30000 }, // pakiautomaat
-      courier: 15.9, // kuller, bez svara robežas
-    },
+    // category_name ir obligāts: ja nav ne tipa, ne LV kategorijas atbilsmes – vispārīgā kategorija.
+    defaultCategory: 'Õmblus- ja käsitöötarbed',
+    descMax: 1000,
+    // Piegāde uz Igauniju (Shopify General profile → Estonia; bez bezmaksas piegādes sliekšņa):
+    // pakiautomaat – lētākais (Omniva 5,99 €; DPD 6,99 €), līdz 30 kg, ne "tikai kurjers"; kuller 15,90 €.
+    delivery: { parcelLocker: { price: 5.99, maxGrams: 30000 }, home: 15.9 },
     // Darba dienas. Veikala Igaunijas preces lapā "Eeldatav tarneaeg" ir 2 darba dienas vēlāk nekā
     // Latvijā (09.11.2026: LV – 13.11., EE – 17.11.), tāpēc 3 + 2.
-    deliveryDays: 5,
+    deliveryDays: '5',
     countryLabel: 'Igaunijas',
   },
 
@@ -501,22 +501,10 @@ export function toCenuekspertsXml(items, cfg = CONFIG) {
   return { xml: out.join('\n'), stats };
 }
 
-// ---------- Hind.ee (Igaunija) ----------
-// Hind.ee XML apraksts nav publisks (pieejams pēc reģistrācijas), tāpēc pagaidām Baltijā ierasts
-// <root><item> formāts ar skaidriem lauku nosaukumiem; kad Hind.ee atsūtīs savu aprakstu, pielāgo HINDEE_TAGS.
-
-const HINDEE_TAGS = ['id', 'name', 'link', 'price', 'image', 'category', 'manufacturer', 'ean', 'in_stock',
-  'description', 'delivery_cost', 'delivery_omniva', 'delivery_dpd', 'delivery_courier', 'delivery_days'];
-
-// Piegādes cenas uz Igauniju vienai piedāvājuma vienībai. null = veids šai precei netiek piedāvāts.
-export function hindeeDelivery(it, cfg = CONFIG) {
-  const d = cfg.hindee.delivery;
-  const g = it._grams || 0;
-  const lockerOk = (m) => m && !it._courierOnly && g <= m.maxGrams;
-  const out = { omniva: lockerOk(d.omniva) ? d.omniva.price : null, dpd: lockerOk(d.dpd) ? d.dpd.price : null, courier: d.courier ?? null };
-  const offered = Object.values(out).filter((v) => v != null);
-  return { ...out, cheapest: offered.length ? Math.min(...offered) : null };
-}
+// ---------- Hind.ee (Igaunija) un Kaina24.lt (Lietuva) ----------
+// Abi ir viens uzņēmums (UAB Elektroninės prekybos centras) ar vienu un to pašu XML formātu:
+// https://www.hind.ee/xml/example.xml un https://www.kaina24.lt/xml/example.xml (pārbaudīts 09.11.2026).
+// Obligāti: product id, title, price, condition, image_url, product_url, category_name.
 
 /**
  * Kopīgais solis ārvalstu veikaliem (Igaunija, Lietuva): buildItems ieraksti (LV dati – atlikums, svars,
@@ -589,54 +577,11 @@ function localizeItems(items, store, h, cfg) {
   return { rows, stats };
 }
 
-/** Hind.ee: items + Igaunijas veikala dati (sharlottekangad.ee/products.json). Atgriež { xml, stats }. */
-export function toHindeeXml(items, ee, cfg = CONFIG) {
-  const h = cfg.hindee;
-  const { rows, stats } = localizeItems(items, ee, h, cfg);
-  const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>'];
-  const m = (v) => (v == null ? '' : money(v));
-  for (const r of rows) {
-    const it = r.it;
-    const d = hindeeDelivery(it, cfg);
-    const row = {
-      id: it._variantId,
-      name: r.name,
-      link: r.link,
-      price: money(r.price),
-      image: it.image,
-      category: r.category,
-      manufacturer: it.brand,
-      ean: it.ean,
-      in_stock: it.in_stock, // metrā tirgotajām – pilni metri
-      description: r.description,
-      delivery_cost: m(d.cheapest),
-      delivery_omniva: m(d.omniva),
-      delivery_dpd: m(d.dpd),
-      delivery_courier: m(d.courier),
-      delivery_days: String(h.deliveryDays),
-    };
-    out.push('<item>');
-    for (const tag of HINDEE_TAGS) {
-      const val = row[tag];
-      if (val === '' || val == null) continue;
-      out.push(`<${tag}>${escapeXml(val)}</${tag}>`);
-    }
-    out.push('</item>');
-  }
-  out.push('</root>', '');
-  return { xml: out.join('\n'), stats };
-}
-
-// ---------- Kaina24.lt (Lietuva) ----------
-// Oficiālais formāts: https://www.kaina24.lt/xml/example.xml (pārbaudīts 09.11.2026).
-// Obligāti: product id, title, price, condition, image_url, product_url, category_name.
-
 const cdata = (s) => `<![CDATA[${String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
 
-/** Kaina24.lt: items + Lietuvas veikala dati (sarlotesaudiniai.lt/products.json). Atgriež { xml, stats }. */
-export function toKaina24Xml(items, lt, cfg = CONFIG) {
-  const k = cfg.kaina24;
-  const { rows, stats } = localizeItems(items, lt, k, cfg);
+// Kopīgais XML (Hind.ee / Kaina24). k – valsts iestatījumi. Atgriež { xml, stats }.
+function toProductsXml(items, store, k, cfg) {
+  const { rows, stats } = localizeItems(items, store, k, cfg);
   stats.defaultCategory = 0;
   const out = ['<?xml version="1.0" encoding="UTF-8"?>', '<products>'];
   for (const r of rows) {
@@ -666,6 +611,16 @@ export function toKaina24Xml(items, lt, cfg = CONFIG) {
   }
   out.push('</products>', '');
   return { xml: out.filter(Boolean).join("\n") + "\n", stats };
+}
+
+/** Hind.ee: items + Igaunijas veikala dati (sharlottekangad.ee/products.json). */
+export function toHindeeXml(items, ee, cfg = CONFIG) {
+  return toProductsXml(items, ee, cfg.hindee, cfg);
+}
+
+/** Kaina24.lt: items + Lietuvas veikala dati (sarlotesaudiniai.lt/products.json). */
+export function toKaina24Xml(items, lt, cfg = CONFIG) {
+  return toProductsXml(items, lt, cfg.kaina24, cfg);
 }
 
 export function toXml(items) {

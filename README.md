@@ -87,26 +87,21 @@ https://w.cenueksperts.lv/buj): `<DataFeeds><item_data>…`. Tās pašas preces 
 
 ## Hind.ee (`hindee.xml`, Igaunija)
 
-Igaunijas veikals https://sharlottekangad.ee. Hind.ee XML apraksts nav publisks (to atsūta pēc reģistrācijas),
-tāpēc pagaidām Baltijā ierasts `<root><item>` formāts; kad Hind.ee atsūtīs savu aprakstu, lauku nosaukumus
-pielāgo `feed-core.mjs` → `HINDEE_TAGS` / `toHindeeXml`.
+Igaunijas veikals https://sharlottekangad.ee. Formāts – Hind.ee oficiālais paraugs https://www.hind.ee/xml/example.xml
+(lapā nav saites, bet fails ir; pārbaudīts 09.11.2026). Tas ir tieši tāds pats kā Kaina24 – abi portāli pieder
+UAB Elektroninės prekybos centras –, tāpēc abiem failiem ir kopīgs kods (`localizeItems` + `toProductsXml`).
 
 Preces – tās pašas kā Latvijas failos (`buildItems`: atlikums, metrā tirgotās, zem 1 m nerāda, T-krekli u.c. nerāda),
 bet teksti un cena – no Igaunijas veikala publiskā `/products.json` (igauņu valodā, Igaunijas cena ar Igaunijas PVN).
+Lauki – kā tabulā sadaļā "Kaina24.lt", ar šīm atšķirībām:
 
-| Tags | No kurienes |
+| Tags | Igaunijā |
 |---|---|
-| `id` | Shopify varianta ID |
-| `name` | igauņu nosaukums + varianta nosaukums; metrā tirgotajām "(hind 1 m kohta)"; "viimane tükk 50cm" → "tükk 50 cm" |
-| `link` | `https://sharlottekangad.ee/products/<igauņu adrese>`, variantiem ar `?variant=` |
-| `price` | Igaunijas cena, ko pircējs maksā; metrā tirgotajām par 1 m (piem. 0,40 € par 0,1 m → 4,00 €) |
-| `image`, `manufacturer`, `ean` | kā Latvijas failos |
-| `category` | igauņu produkta tips (piem. "Kangas", "Lõng"); precēm bez tipa – tips, ko lieto citas preces ar to pašu LV kategoriju (≥ 5 preces, ≥ 60 %); citādi nav |
-| `in_stock` | atlikums (metrā tirgotajām – pilni metri) |
-| `description` | igauņu apraksts (bez HTML, līdz 500 zīmēm) |
-| `delivery_cost` | lētākā piegāde uz Igauniju: Omniva pakiautomaat 5,99 € |
-| `delivery_omniva`, `delivery_dpd`, `delivery_courier` | 5,99 € / 6,99 € (līdz 30 kg, ne "tikai kurjers") / kuller 15,90 € |
-| `delivery_days` | 5 (veikala Igaunijas preču lapās "Eeldatav tarneaeg" ir par 2 darba dienām vēlāk nekā Latvijā) |
+| `title` | igauņu nosaukums; metrā tirgotajām "(hind 1 m kohta)"; "viimane tükk 50cm" → "tükk 50 cm" |
+| `price` | Igaunijas cena (piem. 0,40 € par 0,1 m → 4,00 €) |
+| `product_url` | `https://sharlottekangad.ee/products/<igauņu adrese>` |
+| `category_name` | igauņu tips (piem. "Kangas", "Lõng"); bez tipa – pēc LV kategorijas; citādi "Õmblus- ja käsitöötarbed" |
+| `delivery` | kuller 15,90 €, pakiautomaat (Omniva) 5,99 €, 5 darba dienas (veikala Igaunijas preču lapās "Eeldatav tarneaeg" ir par 2 darba dienām vēlāk nekā Latvijā) |
 
 Nerāda: preces ar defektu / demo / lietotas, bez attēla, kuru nav Igaunijas veikalā. Bezmaksas piegādes slieksnis
 Igaunijā nav. Drošība: ja preču ir zem 100, uz pusi mazāk nekā iepriekš vai vairāk nekā puse nosaukumu sakrīt ar
@@ -116,7 +111,7 @@ latviešu nosaukumiem, publiski paliek iepriekšējā `hindee.xml` versija.
 
 Lietuvas veikals https://sarlotesaudiniai.lt. Formāts – Kaina24 oficiālais paraugs https://www.kaina24.lt/xml/example.xml
 (pārbaudīts 09.11.2026): `<products><product id="…">`. Kaina24 un Hind.ee ir viens uzņēmums (UAB Elektroninės prekybos
-centras). Preces un drošības noteikumi – tāpat kā Hind.ee (kopīgā funkcija `localizeItems`), teksti un cena – no
+centras). Preces un drošības noteikumi – tāpat kā Hind.ee (kopīgās funkcijas `localizeItems`, `toProductsXml`), teksti un cena – no
 Lietuvas veikala publiskā `/products.json` (Lietuvā PVN 21 %, tāpēc cenas sakrīt ar Latvijas).
 
 | Tags | No kurienes |
@@ -166,7 +161,7 @@ Repozitorijā: **Settings → Secrets and variables → Actions → New reposito
 node test/test-core.mjs   # Salidzini/Kurpirkt noteikumu pārbaude
 node test/test-ceno.mjs   # Ceno: metri, atlikumi, piegāde, kategorijas saite, akcijas
 node test/test-cenueksperts.mjs  # Cenueksperts: formāts, apraksts, piegāde
-node test/test-hindee.mjs # Hind.ee: igauņu teksti, Igaunijas cena, metri, piegāde uz Igauniju
+node test/test-hindee.mjs # Hind.ee: oficiālā struktūra, igauņu teksti, Igaunijas cena, metri, piegāde uz Igauniju
 node test/test-kaina24.mjs # Kaina24: oficiālā struktūra, lietuviešu teksti, metri, piegāde uz Lietuvu
 node generate.mjs         # uzbūvē visus failus mapē public/ (vajag Shopify atslēgas)
 ```

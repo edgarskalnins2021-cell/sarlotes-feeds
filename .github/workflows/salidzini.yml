@@ -28,8 +28,8 @@ jobs:
         with:
           node-version: '24'
       - name: Noteikumu pārbaudes
-        run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null && node test/test-cenueksperts.mjs > /dev/null && node test/test-hindee.mjs > /dev/null && node test/test-kaina24.mjs > /dev/null
-      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts, hindee, kaina24)
+        run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null && node test/test-cenueksperts.mjs > /dev/null && node test/test-hindee.mjs > /dev/null && node test/test-kaina24.mjs > /dev/null && node test/test-google.mjs > /dev/null
+      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts, hindee, kaina24, google-lv)
         env:
           SHOPIFY_STORE: sarlotesaudumi.myshopify.com
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
@@ -87,8 +87,9 @@ jobs:
               raise SystemExit(f'::error title={name}::nav pieejams: {last}')
           _, _, s = get('stats.json')
           stats = json.loads(s)
-          # fails: (gaidāmais skaits, saknes tags, preces tags, cenas tags, saites tags, saites sākums)
+          # fails: (gaidāmais skaits, saknes tags, preces ceļš, cenas tags, saites tags, saites sākums[, cenas formāts])
           lv = 'https://sarlotesaudumi.lv/products/'
+          G = '{http://base.google.com/ns/1.0}'
           expect = {'salidzini.xml': (stats['items'], 'root', 'item', 'price', 'link', lv),
                     'kurpirkt.xml': (stats['items'], 'root', 'item', 'price', 'link', lv),
                     'ceno.xml': (stats['ceno']['items'], 'root', 'item', 'price', 'link', lv),
@@ -98,21 +99,28 @@ jobs:
               expect['hindee.xml'] = (stats['hindee']['items'], 'products', 'product', 'price', 'product_url', 'https://sharlottekangad.ee/products/')
           if stats.get('kaina24', {}).get('items'):
               expect['kaina24.xml'] = (stats['kaina24']['items'], 'products', 'product', 'price', 'product_url', 'https://sarlotesaudiniai.lt/products/')
-          for name, (want, root_tag, item_tag, price_tag, link_tag, prefix) in expect.items():
+          # Google Merchant Center (RSS 2.0, g: lauki, cena "0.39 EUR")
+          if stats.get('google', {}).get('items'):
+              expect['google-lv.xml'] = (stats['google']['items'], 'rss', 'channel/item', G + 'price', G + 'link', lv, r'\d+\.\d{2} EUR')
+          for name, (want, root_tag, item_tag, price_tag, link_tag, prefix, *fmt) in expect.items():
               status, ctype, body = get(name)
               root = ET.fromstring(body)
               items = root.findall(item_tag)
-              prices_ok = all(re.fullmatch(r'\d+\.\d{2}', i.findtext(price_tag) or '') for i in items)
+              prices_ok = all(re.fullmatch(fmt[0] if fmt else r'\d+\.\d{2}', i.findtext(price_tag) or '') for i in items)
               links = [i.findtext(link_tag) or '' for i in items]
               ok = (status == 200 and root.tag == root_tag and len(items) == want and prices_ok
                     and all(l.startswith(prefix) for l in links))
+              if name == 'google-lv.xml':  # Google: unikāli ID līdz 50 zīmēm, nosaukums līdz 150, apraksts līdz 5000
+                  ids = [i.findtext(G + 'id') or '' for i in items]
+                  ok = ok and len(set(ids)) == len(ids) and all(0 < len(x) <= 50 for x in ids) \
+                      and all(0 < len(i.findtext(G + 'title') or '') <= 150 and 0 < len(i.findtext(G + 'description') or '') <= 5000 for i in items)
               msg = f'HTTP {status}, {ctype}, {len(items)} preces (stats.json: {want}), cenas {"OK" if prices_ok else "KĻŪDA"}, unikālas saites {len(set(links))}'
               print(f'::{"notice" if ok else "error"} title={name}::{msg}')
               if not ok: raise SystemExit(1)
           _, _, html = get('index.html')
           if not all(f'href="{n}"' in html.decode() for n in expect):
               raise SystemExit('::error title=index.html::trūkst saites uz XML failiem')
-          for key, title in (('ceno', 'Ceno'), ('cenueksperts', 'Cenueksperts'), ('hindee', 'Hind.ee'), ('kaina24', 'Kaina24')):
+          for key, title in (('ceno', 'Ceno'), ('cenueksperts', 'Cenueksperts'), ('hindee', 'Hind.ee'), ('kaina24', 'Kaina24'), ('google', 'Google')):
               c = stats.get(key)
               if not c:
                   print(f'::warning title={title}::fails šoreiz netika izveidots'); continue

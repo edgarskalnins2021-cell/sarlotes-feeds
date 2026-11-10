@@ -1,7 +1,8 @@
 # Šarlotes audumi – cenu salīdzināšanas XML faili
 
 Katru stundu (6:17–21:17 pēc Latvijas laika) GitHub automātiski nolasa preces
-no Shopify, pārrēķina un vienā reizē uzbūvē sešus failus (četri Latvijai, viens Igaunijai, viens Lietuvai):
+no Shopify, pārrēķina un vienā reizē uzbūvē septiņus failus (četri Latvijas cenu salīdzinātājiem, viens Igaunijai,
+viens Lietuvai un viens Google Merchant Center – latviski):
 
 | Fails | Kam | Adrese |
 |---|---|---|
@@ -11,13 +12,14 @@ no Shopify, pārrēķina un vienā reizē uzbūvē sešus failus (četri Latvija
 | `cenueksperts.xml` | Cenueksperts.lv (skat. sadaļu "Cenueksperts.lv") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/cenueksperts.xml |
 | `hindee.xml` | Hind.ee, Igaunija (skat. sadaļu "Hind.ee") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/hindee.xml |
 | `kaina24.xml` | Kaina24.lt, Lietuva (skat. sadaļu "Kaina24.lt") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/kaina24.xml |
+| `google-lv.xml` | Google Merchant Center, Latvija, latviešu valodā (skat. sadaļu "Google") – vēl nav pieslēgts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lv.xml |
 
 Grafiks GitHub pusē mēdz kavēties; vajadzības gadījumā: **Actions → Salidzini XML → Run workflow**.
 
 Drošības noteikumi: ja Shopify īslaicīgi neatbild, skripts mēģina vēlreiz; ja preču ir aizdomīgi maz
 (zem 100 vai uz pusi mazāk nekā iepriekš – arī Ceno failā atsevišķi), netiek izvietots neviens fails un
 publiski paliek iepriekšējā versija. Ja neizdodas tikai Igaunijas vai Lietuvas fails, Latvijas faili tiek
-izvietoti, bet `hindee.xml` / `kaina24.xml` paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
+izvietoti, bet `hindee.xml` / `kaina24.xml` / `google-lv.xml` paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
 (HTTP 200, derīgs XML, preču skaits sakrīt ar `stats.json`). Reizi nedēļā (pirmdienas rītā)
 tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu neaktivitātes dēļ.
 
@@ -128,6 +130,39 @@ Lietuvas veikala publiskā `/products.json` (Lietuvā PVN 21 %, tāpēc cenas sa
 | `delivery/home_delivery` | kurjers 15,90 €, 5 darba dienas |
 | `delivery/parcel_locker_delivery` | lētākais pakomāts (Omniva) 5,99 €, 5 darba dienas; nav "tikai kurjers" precēm un > 30 kg |
 
+## Google Merchant Center (`google-lv.xml`, Latvija, latviski)
+
+Pašlaik (10.11.2026) Google Latvijai latviešu valodu **neatbalsta**: Merchant Center valodu sarakstā Latvijai
+latviešu nav, un Shopify Google & YouTube lietotne raksta "Latvian – This language isn't supported by Google in
+this country". Tāpēc Shopify lietotne sūta preces angliski (avots "Shopify App API"). Šis fails ir gatavs brīdim,
+kad Google latviešu valodu ieslēgs: tad Merchant Center pievieno **jaunu primāro avotu → Add products from a file →
+Enter a link to your file** ar šo adresi, valsts Latvija, valoda latviešu (pieslēdz tikai tad, ne agrāk).
+
+Formāts: RSS 2.0 ar `g:` laukiem (https://support.google.com/merchants/answer/7052112). Preces – tās pašas kā
+Salidzini (noliktavā; metrā tirgotās – vismaz 1 m; bez dāvanu kartēm, apdrukas precēm, defektiem/demo).
+
+| Lauks | No kurienes |
+|---|---|
+| `g:id` | `shopify_ZZ_{produkta ID}_{varianta ID}` – tāds pats kā Shopify lietotnes angliskajām precēm (Google: viena prece visās valodās – viens ID) |
+| `g:title` | latviskais produkta + varianta nosaukums (līdz 150 zīmēm), bez "(cena par 1 m)" un emocijzīmēm |
+| `g:description` | pilns latviskais apraksts no `sarlotesaudumi.lv/products.json` (bez HTML un saitēm, līdz 5000 zīmēm); ja nav – no Shopify Admin; ja nav arī tur – nosaukums |
+| `g:link` | latviskā preces lapa `https://sarlotesaudumi.lv/products/...`, variantiem ar `?variant=` |
+| `g:image_link`, `g:additional_image_link` | varianta / produkta attēls; līdz 10 papildu attēliem (variantu precēm – tikai kopīgie un šī varianta, ne citu krāsu) |
+| `g:price` | **cena par Shopify vienību, kā preces lapā** (metrā tirgotajām – par 10 cm, piem. `0.39 EUR`), EUR ar PVN |
+| `g:unit_pricing_measure`, `g:unit_pricing_base_measure` | metrā tirgotajām `10cm` un `1m` – Google parāda arī "3,90 €/m" (ES prasība precēm, ko pārdod pēc garuma) |
+| `g:sale_price` | netiek likts (`salePrice: false`, kā Ceno) |
+| `g:availability`, `g:condition` | `in_stock`, `new` |
+| `g:brand`, `g:gtin`, `g:identifier_exists` | tikai īsti zīmoli; GTIN – derīgs EAN, ne veikala iekšējie diapazoni (2…, 02…, 04…); bez GTIN – `identifier_exists=no` |
+| `g:item_group_id`, `g:item_group_title`, `g:variant_option` | variantu precēm: `shopify_ZZ_{produkta ID}`, produkta nosaukums, Shopify opcijas (piem. "Krāsa: Rozā – #12") |
+| `g:color`, `g:size`, `g:pattern` | no opcijām "Krāsa" (bez kodiem: "Balta – #650" → "Balta"; tikai cipari – netiek likts), "Izmērs"/"Adatas izmērs"/"Garums", "Motīvs" |
+| `g:google_product_category` | pēc Shopify produkta tipa (oficiālās taksonomijas ID, piem. Audums → 47, Dzija → 2669); neskaidriem tipiem – Google nosaka pats |
+| `g:product_type` | LV kategorija, piem. "Audumi > Kokvilnas audumi" |
+| `g:shipping` | tikai precēm "tikai kurjers" un > 30 kg: kurjers 11,90 € / 15,90 € (virs 3 kg), 0–1 + 1–2 darba dienas. Pārējām – Merchant Center konta piegādes politika (Latvija: 3,30 €, no 70 € bez maksas, 1–3 darba dienas, pasūtījumi līdz 11:00) |
+| `g:shipping_weight`, `g:ships_from_country` | Shopify svars par vienību (g); `LV` |
+| `g:custom_label_0…4` | LV kategorija, apakškategorija, "metrā"/"gabalos", cenu grupa, "akcija" (Google Ads kampaņu dalīšanai; pircēji neredz) |
+
+Pašizmaksa (`cost_of_goods_sold`) un atlikuma skaits failā netiek likti – fails ir publisks.
+
 ## Vienreizēja iestatīšana
 
 ### 1. GitHub
@@ -163,5 +198,6 @@ node test/test-ceno.mjs   # Ceno: metri, atlikumi, piegāde, kategorijas saite, 
 node test/test-cenueksperts.mjs  # Cenueksperts: formāts, apraksts, piegāde
 node test/test-hindee.mjs # Hind.ee: oficiālā struktūra, igauņu teksti, Igaunijas cena, metri, piegāde uz Igauniju
 node test/test-kaina24.mjs # Kaina24: oficiālā struktūra, lietuviešu teksti, metri, piegāde uz Lietuvu
+node test/test-google.mjs # Google: RSS/g: lauki, ID, cena par 10 cm + vienības cena, varianti, attēli, piegāde
 node generate.mjs         # uzbūvē visus failus mapē public/ (vajag Shopify atslēgas)
 ```

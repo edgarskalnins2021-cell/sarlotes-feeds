@@ -1,5 +1,5 @@
-// Ģenerē public/salidzini.xml, kurpirkt.xml, ceno.xml, cenueksperts.xml (Latvija), hindee.xml (Igaunija)
-// un kaina24.xml (Lietuva).
+// Ģenerē public/salidzini.xml, kurpirkt.xml, ceno.xml, cenueksperts.xml (Latvija), hindee.xml (Igaunija),
+// kaina24.xml (Lietuva) un google-lv.xml (Google Merchant Center, latviski).
 //
 // Datu avots:
 //  - ja ir iestatīti SHOPIFY_CLIENT_ID un SHOPIFY_CLIENT_SECRET → Shopify Admin API (pilni dati:
@@ -7,13 +7,14 @@
 //  - citādi → veikala publiskais /products.json (bez atlikuma skaita un EAN).
 //
 // Igaunijas un Lietuvas teksti un cenas – no valsts veikala publiskā /products.json (sharlottekangad.ee,
-// sarlotesaudiniai.lt).
+// sarlotesaudiniai.lt). Google failam pilnais apraksts, attēli un variantu opcijas – no sarlotesaudumi.lv/products.json.
 //
 // Palaišana: node generate.mjs   (Node 20+, bez papildu bibliotēkām)
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import { CONFIG, buildItems, toXml, toKurpirktXml, toCenoXml, toCenuekspertsXml, toHindeeXml, toKaina24Xml } from './feed-core.mjs';
+import { CONFIG, buildItems, toXml, toKurpirktXml, toCenoXml, toCenuekspertsXml, toHindeeXml, toKaina24Xml,
+  toGoogleXml, htmlToPlain } from './feed-core.mjs';
 
 const STORE = process.env.SHOPIFY_STORE || 'sarlotesaudumi.myshopify.com';
 const API_VERSION = process.env.SHOPIFY_API_VERSION || '2026-10';
@@ -146,7 +147,7 @@ export function parseBulk(text) {
     const p = v.product;
     if (!products.has(p.id)) {
       products.set(p.id, {
-        title: p.title, handle: p.handle, productType: p.productType || '', vendor: p.vendor || '',
+        id: p.id, title: p.title, handle: p.handle, productType: p.productType || '', vendor: p.vendor || '',
         tags: p.tags || [], isGiftCard: !!p.isGiftCard, onlineStore: !!p.onlineStoreUrl,
         image: p.featuredMedia?.preview?.image?.url || '', variants: [], description: p.description || '',
         collections: [...(productCollections.get(p.id) || [])].map(([handle, title]) => ({ handle, title })),
@@ -199,7 +200,7 @@ const htmlToText = (html) => String(html || '').replace(/<[^>]+>/g, ' ').replace
 
 export function normalizeStorefront(list) {
   return list.map((p) => ({
-    title: p.title, handle: p.handle, productType: p.product_type || '', vendor: p.vendor || '',
+    id: p.id, title: p.title, handle: p.handle, productType: p.product_type || '', vendor: p.vendor || '',
     tags: p.tags || [], isGiftCard: p.product_type === 'Dāvanu kartes', onlineStore: true,
     image: p.images?.[0]?.src || '', collections: [],
     description: htmlToText(p.body_html),
@@ -243,7 +244,7 @@ export function normalizeEe(list) {
 }
 export const normalizeStore = normalizeEe;
 
-async function fetchStore(shopUrl, lang) {
+async function fetchStoreRaw(shopUrl, lang) {
   const host = new URL(shopUrl).hostname;
   const all = [];
   for (let page = 1; page <= 200; page++) {
@@ -257,7 +258,56 @@ async function fetchStore(shopUrl, lang) {
     all.push(...products);
     await sleep(500);
   }
-  return normalizeStore(all);
+  return all;
+}
+
+async function fetchStore(shopUrl, lang) {
+  return normalizeStore(await fetchStoreRaw(shopUrl, lang));
+}
+
+// ---------- Google Merchant Center (google-lv.xml) ----------
+
+// Latvijas veikala /products.json → Map(varianta ID → pilns apraksts, attēli, variantu opcijas) Google failam.
+export function normalizeLvStore(list) {
+  const map = new Map();
+  for (const p of list) {
+    const description = htmlToPlain(p.body_html, CONFIG.google.descMax);
+    const images = (p.images || []).filter((im) => im?.src).map((im) => ({ src: im.src, variantIds: (im.variant_ids || []).map(String) }));
+    const names = (p.options || []).map((o) => o.name);
+    for (const v of p.variants || []) {
+      const options = names.map((name, i) => ({ name, value: v[`option${i + 1}`] })).filter((o) => o.value != null && o.value !== '');
+      map.set(String(v.id), { productId: String(p.id), handle: p.handle, description, images, options });
+    }
+  }
+  return map;
+}
+
+// google-lv.xml: ja Latvijas veikala /products.json nav nolasāms vai rezultāts aizdomīgs – paliek iepriekšējā
+// versija (ja tādas nav – fails bez papildu attēliem un variantu opcijām, apraksts no Shopify Admin).
+async function buildGoogle(items, prev) {
+  const file = 'google-lv.xml';
+  try {
+    const store = normalizeLvStore(await fetchStoreRaw(CONFIG.shopUrl, 'lv'));
+    if (store.size < 100) throw new Error(`aizdomīgi maz variantu veikala /products.json (${store.size})`);
+    const r = toGoogleXml(items, store, CONFIG);
+    if (r.stats.items < 100) throw new Error(`aizdomīgi maz preču (${r.stats.items})`);
+    if (r.stats.enriched < r.stats.items * 0.5) throw new Error(`/products.json atrastas tikai ${r.stats.enriched} no ${r.stats.items} precēm`);
+    if (prev?.google?.items && r.stats.items < prev.google.items * 0.5 && process.env.FORCE !== '1') {
+      throw new Error(`preču skaits nokrities no ${prev.google.items} uz ${r.stats.items}`);
+    }
+    return r;
+  } catch (err) {
+    console.log(`::warning title=${file}::${err.message} – paliek iepriekšējā versija`);
+    try {
+      const old = await fetchRetry(`${PAGES_URL}/${file}`, { cache: 'no-store' }, 2);
+      if (old.ok && prev?.google?.items) {
+        return { xml: await old.text(), stats: { ...prev.google, carriedOver: true, error: err.message } };
+      }
+    } catch { /* nav iepriekšējās versijas */ }
+    const r = toGoogleXml(items, new Map(), CONFIG);
+    if (r.stats.items < 100) { console.log(`${file} šoreiz netiek izveidots.`); return null; }
+    return { xml: r.xml, stats: { ...r.stats, error: err.message } };
+  }
 }
 
 // Ārvalstu fails (hindee.xml, kaina24.xml): ja neizdodas (veikals neatbild, aizdomīgi maz preču, nosaukumi
@@ -326,6 +376,8 @@ async function main() {
 
   const foreign = [];
   for (const f of FOREIGN) foreign.push({ ...f, result: await buildForeign(f, items, prev) });
+  // Google Merchant Center (latviski) – tāds pats ieraksts kā ārvalstu failiem (fails, saite, skaits).
+  foreign.push({ key: 'google', file: 'google-lv.xml', title: 'Google', result: await buildGoogle(items, prev) });
 
   // Latvijas faili tiek rakstīti tikai tad, ja visi ir izveidoti (citādi izvietošana nenotiek
   // un publiski paliek iepriekšējā versija).

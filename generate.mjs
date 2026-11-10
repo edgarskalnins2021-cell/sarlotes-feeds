@@ -1,5 +1,6 @@
 // Ģenerē public/salidzini.xml, kurpirkt.xml, ceno.xml, cenueksperts.xml (Latvija), hindee.xml (Igaunija),
-// kaina24.xml (Lietuva) un google-lv.xml (Google Merchant Center, latviski).
+// kaina24.xml (Lietuva), google-lv.xml (Google Merchant Center, latviski) un google-ee-en.xml / google-lt-en.xml
+// (Google Merchant Center Igaunijai un Lietuvai, angliski).
 //
 // Datu avots:
 //  - ja ir iestatīti SHOPIFY_CLIENT_ID un SHOPIFY_CLIENT_SECRET → Shopify Admin API (pilni dati:
@@ -14,7 +15,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { CONFIG, buildItems, toXml, toKurpirktXml, toCenoXml, toCenuekspertsXml, toHindeeXml, toKaina24Xml,
-  toGoogleXml, htmlToPlain } from './feed-core.mjs';
+  toGoogleXml, htmlToPlain, BALTIC_LETTERS } from './feed-core.mjs';
 
 const STORE = process.env.SHOPIFY_STORE || 'sarlotesaudumi.myshopify.com';
 const API_VERSION = process.env.SHOPIFY_API_VERSION || '2026-10';
@@ -244,15 +245,17 @@ export function normalizeEe(list) {
 }
 export const normalizeStore = normalizeEe;
 
-async function fetchStoreRaw(shopUrl, lang) {
+// prefix – valodas ceļš (piem. '/en'); ja veikals pāradresē uz citu domēnu vai prom no šī ceļa – kļūda.
+async function fetchStoreRaw(shopUrl, lang, prefix = '') {
   const host = new URL(shopUrl).hostname;
   const all = [];
   for (let page = 1; page <= 200; page++) {
-    const res = await fetchRetry(`${shopUrl}/products.json?limit=250&page=${page}`, {
+    const res = await fetchRetry(`${shopUrl}${prefix}/products.json?limit=250&page=${page}`, {
       headers: { 'User-Agent': 'sarlotes-salidzini-feed/1.0', 'Accept-Language': lang },
     });
-    if (!res.ok) throw new Error(`${host}/products.json lapa ${page}: ${res.status}`);
-    if (new URL(res.url).hostname !== host) throw new Error(`${host} pāradresēja uz ${res.url}`);
+    if (!res.ok) throw new Error(`${host}${prefix}/products.json lapa ${page}: ${res.status}`);
+    const final = new URL(res.url);
+    if (final.hostname !== host || !final.pathname.startsWith(`${prefix}/products.json`)) throw new Error(`${host}${prefix} pāradresēja uz ${res.url}`);
     const { products } = await res.json();
     if (!products?.length) break;
     all.push(...products);
@@ -265,10 +268,10 @@ async function fetchStore(shopUrl, lang) {
   return normalizeStore(await fetchStoreRaw(shopUrl, lang));
 }
 
-// ---------- Google Merchant Center (google-lv.xml) ----------
+// ---------- Google Merchant Center (google-lv.xml, google-ee-en.xml, google-lt-en.xml) ----------
 
-// Latvijas veikala /products.json → Map(varianta ID → pilns apraksts, attēli, variantu opcijas) Google failam.
-export function normalizeLvStore(list) {
+// Veikala /products.json → Map(varianta ID → teksti, cena, pilns apraksts, attēli, variantu opcijas) Google failiem.
+export function normalizeGoogleStore(list) {
   const map = new Map();
   for (const p of list) {
     const description = htmlToPlain(p.body_html, CONFIG.google.descMax);
@@ -276,11 +279,13 @@ export function normalizeLvStore(list) {
     const names = (p.options || []).map((o) => o.name);
     for (const v of p.variants || []) {
       const options = names.map((name, i) => ({ name, value: v[`option${i + 1}`] })).filter((o) => o.value != null && o.value !== '');
-      map.set(String(v.id), { productId: String(p.id), handle: p.handle, description, images, options });
+      map.set(String(v.id), { productId: String(p.id), handle: p.handle, title: p.title, variantTitle: v.title,
+        productType: p.product_type || '', price: parseFloat(v.price), description, images, options });
     }
   }
   return map;
 }
+export const normalizeLvStore = normalizeGoogleStore;
 
 // google-lv.xml: ja Latvijas veikala /products.json nav nolasāms vai rezultāts aizdomīgs – paliek iepriekšējā
 // versija (ja tādas nav – fails bez papildu attēliem un variantu opcijām, apraksts no Shopify Admin).
@@ -309,6 +314,39 @@ async function buildGoogle(items, prev) {
     return { xml: r.xml, stats: { ...r.stats, error: err.message } };
   }
 }
+
+// google-ee-en.xml / google-lt-en.xml: valsts domēna angļu versija (/en/products.json). Ja neizdodas vai rezultāts
+// aizdomīgs (maz preču, teksti nav angliski) – paliek iepriekšējā versija; ja tādas nav – fails šoreiz netiek izveidots.
+async function buildGoogleMarket({ key, file, market }, items, prev) {
+  try {
+    const list = await fetchStoreRaw(market.shopUrl, 'en', market.pathPrefix);
+    const nonEnglish = list.filter((p) => BALTIC_LETTERS.test(p.title || '')).length;
+    if (list.length && nonEnglish > list.length * CONFIG.googleMarkets.common.maxNonEnglishShare) {
+      throw new Error(`${nonEnglish} no ${list.length} nosaukumiem nav angliski`);
+    }
+    const r = toGoogleXml(items, normalizeGoogleStore(list), CONFIG, market);
+    if (r.stats.items < 100) throw new Error(`aizdomīgi maz preču (${r.stats.items})`);
+    if (prev?.[key]?.items && r.stats.items < prev[key].items * 0.5 && process.env.FORCE !== '1') {
+      throw new Error(`preču skaits nokrities no ${prev[key].items} uz ${r.stats.items}`);
+    }
+    return r;
+  } catch (err) {
+    console.log(`::warning title=${file}::${err.message} – paliek iepriekšējā versija`);
+    try {
+      const old = await fetchRetry(`${PAGES_URL}/${file}`, { cache: 'no-store' }, 2);
+      if (old.ok && prev?.[key]?.items) {
+        return { xml: await old.text(), stats: { ...prev[key], carriedOver: true, error: err.message } };
+      }
+    } catch { /* nav iepriekšējās versijas */ }
+    console.log(`${file} šoreiz netiek izveidots.`);
+    return null;
+  }
+}
+
+const GOOGLE_MARKETS = [
+  { key: 'googleEe', title: 'Google EE (EN)', market: CONFIG.googleMarkets.ee },
+  { key: 'googleLt', title: 'Google LT (EN)', market: CONFIG.googleMarkets.lt },
+].map((f) => ({ ...f, file: f.market.file }));
 
 // Ārvalstu fails (hindee.xml, kaina24.xml): ja neizdodas (veikals neatbild, aizdomīgi maz preču, nosaukumi
 // nav attiecīgajā valodā), Latvijas faili tiek izvietoti kā parasti, bet šis fails paliek iepriekšējā versija.
@@ -378,6 +416,8 @@ async function main() {
   for (const f of FOREIGN) foreign.push({ ...f, result: await buildForeign(f, items, prev) });
   // Google Merchant Center (latviski) – tāds pats ieraksts kā ārvalstu failiem (fails, saite, skaits).
   foreign.push({ key: 'google', file: 'google-lv.xml', title: 'Google', result: await buildGoogle(items, prev) });
+  // Google Merchant Center Igaunijai un Lietuvai (angliski, katrai savs konts un domēns).
+  for (const f of GOOGLE_MARKETS) foreign.push({ ...f, result: await buildGoogleMarket(f, items, prev) });
 
   // Latvijas faili tiek rakstīti tikai tad, ja visi ir izveidoti (citādi izvietošana nenotiek
   // un publiski paliek iepriekšējā versija).

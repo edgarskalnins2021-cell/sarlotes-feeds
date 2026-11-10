@@ -1,8 +1,8 @@
 # Šarlotes audumi – cenu salīdzināšanas XML faili
 
 Katru stundu (6:17–21:17 pēc Latvijas laika) GitHub automātiski nolasa preces
-no Shopify, pārrēķina un vienā reizē uzbūvē septiņus failus (četri Latvijas cenu salīdzinātājiem, viens Igaunijai,
-viens Lietuvai un viens Google Merchant Center – latviski):
+no Shopify, pārrēķina un vienā reizē uzbūvē deviņus failus (četri Latvijas cenu salīdzinātājiem, viens Igaunijai,
+viens Lietuvai un trīs Google Merchant Center – Latvijai latviski, Igaunijai un Lietuvai angliski):
 
 | Fails | Kam | Adrese |
 |---|---|---|
@@ -13,13 +13,15 @@ viens Lietuvai un viens Google Merchant Center – latviski):
 | `hindee.xml` | Hind.ee, Igaunija (skat. sadaļu "Hind.ee") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/hindee.xml |
 | `kaina24.xml` | Kaina24.lt, Lietuva (skat. sadaļu "Kaina24.lt") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/kaina24.xml |
 | `google-lv.xml` | Google Merchant Center, Latvija, latviešu valodā (skat. sadaļu "Google") – vēl nav pieslēgts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lv.xml |
+| `google-ee-en.xml` | Google Merchant Center, Igaunija, angliski (sharlottekangad.ee/en) – sava konta | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-ee-en.xml |
+| `google-lt-en.xml` | Google Merchant Center, Lietuva, angliski (sarlotesaudiniai.lt/en) – sava konta | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lt-en.xml |
 
 Grafiks GitHub pusē mēdz kavēties; vajadzības gadījumā: **Actions → Salidzini XML → Run workflow**.
 
 Drošības noteikumi: ja Shopify īslaicīgi neatbild, skripts mēģina vēlreiz; ja preču ir aizdomīgi maz
 (zem 100 vai uz pusi mazāk nekā iepriekš – arī Ceno failā atsevišķi), netiek izvietots neviens fails un
 publiski paliek iepriekšējā versija. Ja neizdodas tikai Igaunijas vai Lietuvas fails, Latvijas faili tiek
-izvietoti, bet `hindee.xml` / `kaina24.xml` / `google-lv.xml` paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
+izvietoti, bet `hindee.xml` / `kaina24.xml` / `google-*.xml` paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
 (HTTP 200, derīgs XML, preču skaits sakrīt ar `stats.json`). Reizi nedēļā (pirmdienas rītā)
 tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu neaktivitātes dēļ.
 
@@ -163,6 +165,23 @@ Salidzini (noliktavā; metrā tirgotās – vismaz 1 m; bez dāvanu kartēm, apd
 
 Pašizmaksa (`cost_of_goods_sold`) un atlikuma skaits failā netiek likti – fails ir publisks.
 
+### Igaunija un Lietuva angliski (`google-ee-en.xml`, `google-lt-en.xml`)
+
+Igauņu un lietuviešu valodu Google vēl neatbalsta, angļu – jā. Katram domēnam savs Merchant Center konts
+(Google: viens konts – viens apstiprināts domēns; vienus un tos pašus preču ID vairākos kontos lietot drīkst).
+Tas pats kods kā `google-lv.xml`, atšķirības:
+
+| Lauks | Igaunijā / Lietuvā |
+|---|---|
+| `g:link` | valsts domēna angļu lapa `https://sharlottekangad.ee/en/products/...` / `https://sarlotesaudiniai.lt/en/products/...` |
+| `g:title`, `g:description`, `g:product_type`, `g:variant_option` | no valsts veikala `/en/products.json`; "last piece 50cm" → "piece 50 cm". Ja nosaukums nav iztulkots (sakrīt ar latvisko) – prece netiek iekļauta; ja nav iztulkots apraksts – tā vietā angliskais nosaukums |
+| `g:price` | valsts cena par Shopify vienību (Igaunijā ar 24 % PVN), metrā tirgotajām + vienības cena 10cm / 1m |
+| `g:shipping` | katrai precei: Omniva pakomāts 5,99 € (ne "tikai kurjers", līdz 30 kg) un kurjers 15,90 €; 0–1 + 3–4 darba dienas |
+| `g:custom_label_*` | angliski: tips, "by the metre"/"by the piece", cenu grupa, "sale" |
+
+Drošība: ja `/en/` pāradresē prom vai vairāk nekā 25 % nosaukumu nav angliski – paliek iepriekšējā versija.
+Pārbaudes darbs pēc katras izvietošanas atver 3 nejaušas preču lapas kā Google robots (Storebot-Google).
+
 ## Vienreizēja iestatīšana
 
 ### 1. GitHub
@@ -198,6 +217,6 @@ node test/test-ceno.mjs   # Ceno: metri, atlikumi, piegāde, kategorijas saite, 
 node test/test-cenueksperts.mjs  # Cenueksperts: formāts, apraksts, piegāde
 node test/test-hindee.mjs # Hind.ee: oficiālā struktūra, igauņu teksti, Igaunijas cena, metri, piegāde uz Igauniju
 node test/test-kaina24.mjs # Kaina24: oficiālā struktūra, lietuviešu teksti, metri, piegāde uz Lietuvu
-node test/test-google.mjs # Google: RSS/g: lauki, ID, cena par 10 cm + vienības cena, varianti, attēli, piegāde
+node test/test-google.mjs # Google: RSS/g: lauki, ID, cena par 10 cm + vienības cena, varianti, attēli, piegāde; EE/LT angliski
 node generate.mjs         # uzbūvē visus failus mapē public/ (vajag Shopify atslēgas)
 ```

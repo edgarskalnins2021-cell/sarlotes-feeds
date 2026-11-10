@@ -171,9 +171,9 @@ export const CONFIG = {
     shipsFrom: 'LV',
     // Variantu opcijas (Shopify opcijas nosaukums) → Google krāsa / izmērs / raksts. Visas opcijas tiek
     // nodotas arī kā variant_option (nosaukums + vērtība).
-    colorOption: /^(krāsa|krāsas|tonis|krāsu variants|colou?r)$/i,
-    sizeOption: /^(izmērs|adatas izmērs|garums|diametrs|size)$/i,
-    patternOption: /^(motīvs|raksts|pattern)$/i,
+    colorOption: /^(krāsa|krāsas|tonis|krāsu variants|colou?r|tone|shade)$/i,
+    sizeOption: /^(izmērs|adatas izmērs|garums|diametrs|size|needle size|length|diameter)$/i,
+    patternOption: /^(motīvs|raksts|pattern|motif)$/i,
     // custom_label_3 – cenu grupa (metrā tirgotajām – cena par 1 m)
     priceBands: [5, 20, 50],
     // Google produktu kategorija pēc Shopify produkta tipa. ID no oficiālās taksonomijas
@@ -217,6 +217,41 @@ export const CONFIG = {
     // Jauktiem tipiem – pēc nosaukuma ("Adatas": drošības adatas un šujmašīnu adatas).
     categoryByTitle: {
       'Adatas': [[/drošības adat/i, 6101], [/(šujmašīnu|overloka|koverloka)[^,]*adat/i, 4579]], // Safety Pins; Sewing Machine Needles
+    },
+  },
+
+  // Google Merchant Center Igaunijai un Lietuvai – ANGLISKI (igauņu un lietuviešu valodu Google vēl neatbalsta).
+  // Katram domēnam savs Merchant Center konts. Teksti, saites (/en/), cena un tips – no valsts veikala angļu versijas
+  // (/en/products.json); preces, atlikums, svars, EAN, zīmols, Google kategorija – kā google-lv.xml. Piegāde – failā
+  // katrai precei (Shopify General profile → Estonia / Lithuania, bez bezmaksas piegādes sliekšņa).
+  googleMarkets: {
+    ee: {
+      file: 'google-ee-en.xml', shopUrl: 'https://sharlottekangad.ee', pathPrefix: '/en', country: 'EE',
+      countryLabel: 'Igaunijas', storeName: 'Šarlotte kangad',
+    },
+    lt: {
+      file: 'google-lt-en.xml', shopUrl: 'https://sarlotesaudiniai.lt', pathPrefix: '/en', country: 'LT',
+      countryLabel: 'Lietuvas', storeName: 'Šarlotės audiniai',
+    },
+    // Kopīgie iestatījumi abām valstīm
+    common: {
+      // "last piece 50cm" (= "pēdējais gabaliņš") → "piece 50 cm" (kā LV failos; Google: bez steidzinoša teksta)
+      nameFixes: [
+        [/\s*[-–]?\s*last piece,?\s*/gi, ' – piece '],
+        [/(\d)(cm|mm)\b/g, '$1 $2'],
+        [/(\S)–\s/g, '$1 – '],
+        [/\s–(\S)/g, ' – $1'],
+      ],
+      technicalTypePattern: /COURIER|KURJER|KULLER/i,
+      // Pakomāts (lētākais – Omniva 5,99 €; DPD 6,99 €) līdz 30 kg, ne "tikai kurjers"; kurjers 15,90 €.
+      shipping: {
+        locker: { service: 'Omniva parcel locker', price: 5.99, maxGrams: 30000 },
+        courier: { service: 'Courier', price: 15.9 },
+        // Latvijā 1–3 darba dienas; Igaunijā un Lietuvā veikala lapā +2 dienas → 3–5 (kā Hind.ee / Kaina24: 5)
+        handling: [0, 1], transit: [3, 4],
+      },
+      // Ja vairāk par šo daļu nosaukumu satur baltu burtus – /en/ nav angliski (droši vien pāradresācija) → nepublicē.
+      maxNonEnglishShare: 0.25,
     },
   },
 };
@@ -376,6 +411,7 @@ export function buildItems(products, cfg = CONFIG) {
         // Google failam: Shopify dati par vienu Shopify vienību (metrā tirgotajām – par 0,1 m), kā preces lapā.
         _productId: p.id != null ? String(p.id).split('/').pop() : '',
         _productTitle: cleanName(p.title, cfg).replace(/\s+/g, ' ').trim(),
+        _lvTitle: p.title,
         _productType: p.productType || '',
         _variantCount: p.variants.length,
         _unitPrice: v.price,
@@ -803,50 +839,99 @@ function priceBand(n, bands) {
 
 const grams1 = (n) => String(Math.round(n * 10) / 10);
 
+function priceBandEn(n, bands) {
+  if (n < bands[0]) return `under ${bands[0]} €`;
+  for (let i = 1; i < bands.length; i++) if (n < bands[i]) return `${bands[i - 1]}–${bands[i]} €`;
+  return `over ${bands[bands.length - 1]} €`;
+}
+
+const normCmp = (s) => String(s ?? '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+export const BALTIC_LETTERS = /[āčēģīķļņšūžõäöüąęėįų]/i;
+
 /**
  * Google Merchant Center XML (RSS 2.0, g: lauki) no buildItems ierakstiem.
- * store – Map(varianta ID → { productId, handle, description, images: [{ src, variantIds[] }], options: [{ name, value }] })
- *   no Latvijas veikala /products.json; ja preces tur nav – apraksts no Shopify Admin (līdz 600 zīmēm), bez papildu attēliem.
+ * store – Map(varianta ID → { productId, handle, title, variantTitle, productType, price, description,
+ *   images: [{ src, variantIds[] }], options: [{ name, value }] }) no veikala /products.json.
+ * Bez market – Latvija latviski (google-lv.xml): saites, cena, nosaukums – no Shopify Admin; no store tikai pilns
+ *   apraksts, papildu attēli un variantu opcijas (ja preces tur nav – Admin apraksts līdz 600 zīmēm).
+ * Ar market (CONFIG.googleMarkets.ee / .lt) – citas valsts domēns angliski: saite, nosaukums, apraksts, cena un tips –
+ *   no tās valsts veikala /en/products.json (store); prece bez angliskā nosaukuma netiek iekļauta; piegāde katrai precei.
  * Atgriež { xml, stats }.
  */
-export function toGoogleXml(items, store = new Map(), cfg = CONFIG) {
+export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = null) {
   const g = cfg.google;
+  const m = market ? { ...cfg.googleMarkets.common, ...market } : null;
   const stats = { items: 0, decimal: 0, enriched: 0, skipped: {}, with: { gtin: 0, brand: 0, color: 0, size: 0, pattern: 0,
     variant_option: 0, item_group_id: 0, additional_image_link: 0, google_product_category: 0, shipping: 0, sale_price: 0 } };
+  if (m) stats.descriptionIsTitle = 0;
   const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
   const seenIds = new Set();
   const seenLinks = new Set();
-  const out = ['<?xml version="1.0" encoding="UTF-8"?>', `<rss version="2.0" xmlns:g="${GOOGLE_NS}">`, '<channel>',
-    '<title>Šarlotes audumi</title>', `<link>${escapeXml(cfg.shopUrl)}</link>`,
-    '<description>Šarlotes audumi – audumi, dzija un šūšanas piederumi (Latvija, latviešu valodā)</description>'];
+  const out = ['<?xml version="1.0" encoding="UTF-8"?>', `<rss version="2.0" xmlns:g="${GOOGLE_NS}">`, '<channel>'];
+  if (m) {
+    out.push(`<title>${escapeXml(m.storeName)}</title>`, `<link>${escapeXml(m.shopUrl + m.pathPrefix)}</link>`,
+      `<description>${escapeXml(m.storeName)} – fabrics, yarn and sewing supplies (${m.country}, English)</description>`);
+  } else {
+    out.push('<title>Šarlotes audumi</title>', `<link>${escapeXml(cfg.shopUrl)}</link>`,
+      '<description>Šarlotes audumi – audumi, dzija un šūšanas piederumi (Latvija, latviešu valodā)</description>');
+  }
   const tag = (name, val) => (val === '' || val == null ? null : `<g:${name}>${escapeXml(val)}</g:${name}>`);
+  const shippingTag = (country, service, price, s) => `<g:shipping><g:country>${country}</g:country><g:service>${escapeXml(service)}</g:service>`
+    + `<g:price>${money(price)} EUR</g:price><g:min_handling_time>${s.handling[0]}</g:min_handling_time>`
+    + `<g:max_handling_time>${s.handling[1]}</g:max_handling_time><g:min_transit_time>${s.transit[0]}</g:min_transit_time>`
+    + `<g:max_transit_time>${s.transit[1]}</g:max_transit_time></g:shipping>`;
 
   for (const it of items) {
     if (it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
     if (!it.image) { skip('nav attēla'); continue; }
     if (it._decimal && it.in_stock === '') { skip('metrā tirgota, atlikums nav zināms'); continue; }
     const e = store.get(String(it._variantId));
+    if (m) {
+      if (!e) { skip(`nav ${m.countryLabel} veikalā`); continue; }
+      if (!(e.price > 0)) { skip(`nav ${m.countryLabel} cenas`); continue; }
+      if (normCmp(e.title) === normCmp(it._lvTitle ?? it._productTitle)) { skip('nav iztulkots angliski'); continue; }
+    }
     const productId = it._productId || e?.productId || '';
     if (!productId) { skip('nav produkta ID'); continue; }
     const id = `${g.idPrefix}${productId}_${it._variantId}`;
+    const multi = (it._variantCount ?? 1) > 1 || String(it.link).includes('?variant=');
+    const link = m ? cut(`${m.shopUrl}${m.pathPrefix}/products/${e.handle}${multi ? `?variant=${it._variantId}` : ''}`, 500) : it.link;
     if (seenIds.has(id)) { skip('dublikāts (ID)'); continue; }
-    if (seenLinks.has(it.link)) { skip('dublikāts (saite)'); continue; }
+    if (seenLinks.has(link)) { skip('dublikāts (saite)'); continue; }
     seenIds.add(id);
-    seenLinks.add(it.link);
+    seenLinks.add(link);
 
-    const title = cut(noEmoji(it._baseName ?? it.name), g.titleMax);
-    const description = (e && e.description) || plainText(it._desc, g.descMax) || title;
-    const unit = it._unitPrice ?? (it._decimal ? it._priceNum * cfg.decimalStep : it._priceNum);
-    const compareAt = it._unitCompareAt ?? null;
+    let title;
+    let description;
+    let groupTitle;
+    let unit;
+    let productType;
+    if (m) {
+      const variantTitle = multi && e.variantTitle && e.variantTitle !== 'Default Title' ? ` – ${e.variantTitle}` : '';
+      title = cut(noEmoji(cleanName(`${e.title}${variantTitle}`, m)), g.titleMax);
+      groupTitle = cut(noEmoji(cleanName(e.title, m)), g.titleMax);
+      // Apraksts, kas nav iztulkots (sakrīt ar latvisko), netiek likts – tā vietā angliskais nosaukums.
+      const translated = e.description && normCmp(e.description).slice(0, 120) !== normCmp(it._desc).slice(0, 120);
+      description = translated ? e.description : title;
+      if (!translated) stats.descriptionIsTitle++;
+      unit = e.price;
+      productType = it._courierOnly || m.technicalTypePattern.test(e.productType || '') ? '' : (e.productType || '');
+    } else {
+      title = cut(noEmoji(it._baseName ?? it.name), g.titleMax);
+      groupTitle = cut(noEmoji(it._productTitle || title), g.titleMax);
+      description = (e && e.description) || plainText(it._desc, g.descMax) || title;
+      unit = it._unitPrice ?? (it._decimal ? it._priceNum * cfg.decimalStep : it._priceNum);
+      const parts = String(it.category_full || '').split(/\s*>>\s*/).filter(Boolean);
+      productType = parts.length ? parts.join(' > ')
+        : (it._courierOnly || it._productType === cfg.courierOnlyType ? '' : it._productType || '');
+    }
+    const compareAt = m ? null : (it._unitCompareAt ?? null);
     const sale = g.salePrice && compareAt != null && compareAt > unit + 0.004;
     const grams = it._unitGrams ?? 0;
-    const multi = (it._variantCount ?? 1) > 1 || String(it.link).includes('?variant=');
     const v = multi ? googleVariant(e, g) : { color: '', size: '', pattern: '', options: [] };
     const gtin = googleGtin(it.ean);
     const category = googleCategory(it, g);
     const parts = String(it.category_full || '').split(/\s*>>\s*/).filter(Boolean);
-    const productType = parts.length ? parts.join(' > ')
-      : (it._courierOnly || it._productType === cfg.courierOnlyType ? '' : it._productType || '');
     // Papildu attēli: bez galvenā; variantu precēm – tikai kopīgie un šī varianta attēli (ne citu krāsu).
     const main = imgKey(it.image);
     const extra = [];
@@ -857,17 +942,30 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG) {
       if (multi && im.variantIds?.length && !im.variantIds.includes(String(it._variantId))) continue;
       extra.push(im.src);
     }
-    // Piegāde precēm, kurām pakomāts neder (tikai kurjers vai > 30 kg); pārējām – konta piegādes politika.
-    const lockerOk = !it._courierOnly && grams <= (cfg.ceno.delivery.omniva?.maxGrams ?? 30000);
-    const courier = cfg.ceno.delivery.courier;
-    const shipPrice = lockerOk ? null : (grams > courier.heavyGrams ? courier.heavy : courier.light);
+    // Piegāde. Latvija: failā tikai precēm, kurām pakomāts neder (tikai kurjers vai > 30 kg); pārējām – konta politika.
+    // Igaunija / Lietuva: katrai precei – pakomāts (ja der) un kurjers.
+    const ships = [];
+    if (m) {
+      const s = m.shipping;
+      if (!it._courierOnly && grams <= s.locker.maxGrams) ships.push(shippingTag(m.country, s.locker.service, s.locker.price, s));
+      ships.push(shippingTag(m.country, s.courier.service, s.courier.price, s));
+    } else {
+      const lockerOk = !it._courierOnly && grams <= (cfg.ceno.delivery.omniva?.maxGrams ?? 30000);
+      const courier = cfg.ceno.delivery.courier;
+      if (!lockerOk) ships.push(shippingTag(g.shipping.country, g.shipping.service, grams > courier.heavyGrams ? courier.heavy : courier.light, g.shipping));
+    }
+    const salePrice = it._compareAt != null && it._compareAt > it._priceNum + 0.004;
+    const perSaleUnit = m ? (it._decimal ? unit / cfg.decimalStep : unit) : it._priceNum;
+    const labels = m
+      ? [cut(productType, 100), '', it._decimal ? 'by the metre' : 'by the piece', priceBandEn(perSaleUnit, g.priceBands), salePrice ? 'sale' : '']
+      : [cut(parts[0] || '', 100), cut(parts[1] || '', 100), it._decimal ? 'metrā' : 'gabalos', priceBand(it._priceNum, g.priceBands), salePrice ? 'akcija' : ''];
 
     const row = [
       '<item>',
       tag('id', id),
       tag('title', title),
       tag('description', description),
-      tag('link', it.link),
+      tag('link', link),
       tag('image_link', it.image),
       ...extra.map((u) => tag('additional_image_link', u)),
       tag('availability', 'in_stock'),
@@ -880,24 +978,17 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG) {
       tag('gtin', gtin),
       gtin ? null : tag('identifier_exists', 'no'),
       multi ? tag('item_group_id', `${g.idPrefix}${productId}`) : null,
-      multi ? tag('item_group_title', cut(noEmoji(it._productTitle || title), g.titleMax)) : null,
+      multi ? tag('item_group_title', groupTitle) : null,
       ...v.options.map((o) => `<g:variant_option><g:name>${escapeXml(o.name)}</g:name><g:value>${escapeXml(o.value)}</g:value></g:variant_option>`),
       tag('color', v.color),
       tag('size', v.size),
       tag('pattern', v.pattern),
       tag('google_product_category', category),
       tag('product_type', cut(productType, 750)),
-      shipPrice == null ? null : `<g:shipping><g:country>${g.shipping.country}</g:country><g:service>${escapeXml(g.shipping.service)}</g:service>`
-        + `<g:price>${money(shipPrice)} EUR</g:price><g:min_handling_time>${g.shipping.handling[0]}</g:min_handling_time>`
-        + `<g:max_handling_time>${g.shipping.handling[1]}</g:max_handling_time><g:min_transit_time>${g.shipping.transit[0]}</g:min_transit_time>`
-        + `<g:max_transit_time>${g.shipping.transit[1]}</g:max_transit_time></g:shipping>`,
+      ...ships,
       grams > 0 ? tag('shipping_weight', `${grams1(grams)} g`) : null,
       tag('ships_from_country', g.shipsFrom),
-      tag('custom_label_0', cut(parts[0] || '', 100)),
-      tag('custom_label_1', cut(parts[1] || '', 100)),
-      tag('custom_label_2', it._decimal ? 'metrā' : 'gabalos'),
-      tag('custom_label_3', priceBand(it._priceNum, g.priceBands)),
-      tag('custom_label_4', it._compareAt != null && it._compareAt > it._priceNum + 0.004 ? 'akcija' : ''),
+      ...labels.map((val, i) => tag(`custom_label_${i}`, val)),
       '</item>',
     ].filter(Boolean);
     out.push(row.join('\n'));
@@ -915,7 +1006,7 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG) {
     if (multi) w.item_group_id++;
     if (extra.length) w.additional_image_link++;
     if (category) w.google_product_category++;
-    if (shipPrice != null) w.shipping++;
+    if (ships.length) w.shipping++;
     if (sale) w.sale_price++;
   }
   out.push('</channel>', '</rss>', '');

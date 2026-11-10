@@ -1,4 +1,4 @@
-// Google Merchant Center (google-lv.xml) pārbaudes: node test/test-google.mjs
+// Google Merchant Center (google-lv.xml, google-ee-en.xml, google-lt-en.xml) pārbaudes: node test/test-google.mjs
 import assert from 'node:assert/strict';
 import { buildItems, toGoogleXml, googleGtin, googleColor, htmlToPlain, CONFIG } from '../feed-core.mjs';
 import { normalizeLvStore } from '../generate.mjs';
@@ -36,8 +36,10 @@ const defekts = p({ title: 'Trikotāža ar defektu', handle: 'def', variants: [v
 const bezAttela = p({ title: 'Bez attēla', handle: 'bez-att', image: '', variants: [v({ price: 2, qty: 5 })] });
 // Bez tipa un bez LV kategorijas (nav ne product_type, ne google_product_category)
 const bezTipa = p({ title: 'Lieta', handle: 'lieta', productType: '', variants: [v({ price: 2, qty: 5 })] });
+// "pēdējais gabaliņš" (angliski "last piece")
+const samts = p({ title: 'Samts – purpursarkans – pēdējais gabaliņš 75cm', handle: 'samts', variants: [v({ price: 6.5, qty: 1 })] });
 
-const products = [audums, mazs, drops, manekens, vieglsKurjers, rullis, drosibas, schmetz, lineals, defekts, bezAttela, bezTipa];
+const products = [audums, mazs, drops, manekens, vieglsKurjers, rullis, drosibas, schmetz, lineals, defekts, bezAttela, bezTipa, samts];
 const { items } = buildItems(products, CONFIG);
 
 // Latvijas veikala /products.json (pilns apraksts, attēli ar variantu piesaisti, opcijas)
@@ -183,4 +185,69 @@ assert.equal(googleColor('Daudzkrāsaina'), '');
 assert.equal(htmlToPlain('<p>A&#8211;B &laquo;x&raquo;</p><p>www.piemers.lv</p>'), 'A–B «x»');
 assert.equal(htmlToPlain('x '.repeat(4000), 5000).length <= 5000, true);
 
-console.log('Google pārbaudes izietas:', JSON.stringify(stats));
+// ---------- Igaunija angliski (google-ee-en.xml; Lietuva – tas pats kods ar citu domēnu) ----------
+const enJson = [
+  { id: Number(pid(audums)), title: '100% cotton fabric – beige checks', handle: 'cotton-fabric-beige-checks', product_type: 'Fabric',
+    body_html: '<p>Cotton 100% &amp; soft.</p>', options: [{ name: 'Title' }], images: [],
+    variants: [{ id: Number(vid(audums)), title: 'Default Title', option1: 'Default Title', price: '0.40' }] },
+  { id: Number(pid(drops)), title: 'DROPS Air yarn – 50 g / 150 m', handle: 'drops-air-yarn', product_type: 'Yarn',
+    body_html: '<p>Īss apraksts no Admin.</p>', options: [{ name: 'Color' }], images: [],
+    variants: [{ id: Number(vid(drops, 0)), title: 'Pink – #12', option1: 'Pink – #12', price: '5.43' },
+      { id: Number(vid(drops, 1)), title: '599', option1: '599', price: '5.43' }] },
+  { id: Number(pid(manekens)), title: "Dressmaker's dummy", handle: 'dressmakers-dummy', product_type: 'COURIER_ONLY', body_html: '<p>Adjustable.</p>',
+    options: [{ name: 'Title' }], images: [], variants: [{ id: Number(vid(manekens)), title: 'Default Title', option1: 'Default Title', price: '184.36' }] },
+  { id: Number(pid(rullis)), title: 'Fabric roll', handle: 'fabric-roll', product_type: 'Fabric', body_html: '<p>Roll.</p>',
+    options: [{ name: 'Title' }], images: [], variants: [{ id: Number(vid(rullis)), title: 'Default Title', option1: 'Default Title', price: '410.00' }] },
+  { id: Number(pid(lineals)), title: 'Lineāls <30 cm> & "zīmulis"', handle: 'lineals', product_type: 'Rulers', body_html: '',
+    options: [{ name: 'Title' }], images: [], variants: [{ id: Number(vid(lineals)), title: 'Default Title', option1: 'Default Title', price: '5.10' }] },
+  { id: Number(pid(samts)), title: 'Velvet – purple – last piece, 75cm', handle: 'velvet-purple', product_type: 'Fabric', body_html: '<p>Velvet.</p>',
+    options: [{ name: 'Title' }], images: [], variants: [{ id: Number(vid(samts)), title: 'Default Title', option1: 'Default Title', price: '6.66' }] },
+];
+const ee = toGoogleXml(items, normalizeLvStore(enJson), CONFIG, CONFIG.googleMarkets.ee);
+assert.ok(ee.xml.includes('<channel>\n<title>Šarlotte kangad</title>\n<link>https://sharlottekangad.ee/en</link>\n'));
+const eeRows = [...ee.xml.matchAll(/<item>\n([\s\S]*?)\n<\/item>/g)].map((mm) => {
+  const body = mm[1];
+  const all = (t) => [...body.matchAll(new RegExp(`<g:${t}>([^<]*)</g:${t}>`, 'g'))].map((x) => x[1]);
+  return { body, all, val: (t) => all(t)[0] };
+});
+assert.equal(eeRows.length, ee.stats.items);
+const ebi = (h) => eeRows.find((r) => r.val('link').includes(`/en/products/${h}`));
+for (const r of eeRows) {
+  assert.ok(r.val('link').startsWith('https://sharlottekangad.ee/en/products/'));
+  assert.match(r.val('price'), /^\d+\.\d{2} EUR$/);
+  assert.ok(r.body.includes('<g:shipping><g:country>EE</g:country><g:service>Courier</g:service><g:price>15.90 EUR</g:price>'), 'kurjers vienmēr');
+  assert.equal(r.val('ships_from_country'), 'LV');
+}
+const ea = ebi('cotton-fabric-beige-checks');
+assert.equal(ea.val('id'), `shopify_ZZ_${pid(audums)}_${vid(audums)}`, 'tas pats ID kā Latvijā');
+assert.equal(ea.val('title'), '100% cotton fabric – beige checks');
+assert.equal(ea.val('description'), 'Cotton 100% &amp; soft.');
+assert.equal(ea.val('price'), '0.40 EUR', 'Igaunijas cena par 10 cm');
+assert.equal(ea.val('unit_pricing_measure'), '10cm'); assert.equal(ea.val('unit_pricing_base_measure'), '1m');
+assert.equal(ea.val('product_type'), 'Fabric'); assert.equal(ea.val('google_product_category'), '47');
+assert.equal(ea.val('custom_label_0'), 'Fabric'); assert.equal(ea.val('custom_label_2'), 'by the metre');
+assert.equal(ea.val('custom_label_3'), 'under 5 €', '4,00 € par 1 m');
+assert.ok(ea.body.includes('<g:service>Omniva parcel locker</g:service><g:price>5.99 EUR</g:price><g:min_handling_time>0</g:min_handling_time>'
+  + '<g:max_handling_time>1</g:max_handling_time><g:min_transit_time>3</g:min_transit_time><g:max_transit_time>4</g:max_transit_time>'));
+const pink = eeRows.find((r) => r.val('id') === `shopify_ZZ_${pid(drops)}_${vid(drops, 0)}`);
+assert.equal(pink.val('title'), 'DROPS Air yarn – 50 g / 150 m – Pink – #12');
+assert.equal(pink.val('link'), `https://sharlottekangad.ee/en/products/drops-air-yarn?variant=${vid(drops, 0)}`);
+assert.equal(pink.val('item_group_title'), 'DROPS Air yarn – 50 g / 150 m');
+assert.ok(pink.body.includes('<g:variant_option><g:name>Color</g:name><g:value>Pink – #12</g:value></g:variant_option>'));
+assert.equal(pink.val('color'), 'Pink');
+assert.equal(pink.val('description'), pink.val('title'), 'neiztulkots apraksts → angliskais nosaukums');
+const dm = ebi('dressmakers-dummy');
+assert.ok(!dm.body.includes('Omniva'), 'tikai kurjers'); assert.equal(dm.val('product_type'), undefined);
+assert.ok(!ebi('fabric-roll').body.includes('Omniva'), '> 30 kg – tikai kurjers');
+assert.equal(ebi('velvet-purple').val('title'), 'Velvet – purple – piece 75 cm');
+assert.equal(ebi('lineals'), undefined, 'neiztulkots nosaukums – nerāda');
+assert.equal(ee.stats.skipped['nav iztulkots angliski'], 1);
+assert.ok(ee.stats.skipped['nav Igaunijas veikalā'] >= 1);
+assert.equal(ee.stats.descriptionIsTitle, 2);
+// Lietuva: tā pati loģika, cits domēns un valsts
+const lt = toGoogleXml(items, normalizeLvStore(enJson), CONFIG, CONFIG.googleMarkets.lt);
+assert.ok(lt.xml.includes('<g:link>https://sarlotesaudiniai.lt/en/products/cotton-fabric-beige-checks</g:link>'));
+assert.ok(lt.xml.includes('<g:country>LT</g:country>') && !lt.xml.includes('<g:country>EE</g:country>'));
+assert.ok(lt.xml.includes('<title>Šarlotės audiniai</title>'));
+
+console.log('Google pārbaudes izietas:', JSON.stringify(stats), '| EE:', JSON.stringify(ee.stats));

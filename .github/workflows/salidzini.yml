@@ -29,7 +29,7 @@ jobs:
           node-version: '24'
       - name: Noteikumu pārbaudes
         run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null && node test/test-cenueksperts.mjs > /dev/null && node test/test-hindee.mjs > /dev/null && node test/test-kaina24.mjs > /dev/null && node test/test-google.mjs > /dev/null
-      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts, hindee, kaina24, google-lv)
+      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts, hindee, kaina24, google-lv, google-ee-en, google-lt-en)
         env:
           SHOPIFY_STORE: sarlotesaudumi.myshopify.com
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
@@ -99,9 +99,25 @@ jobs:
               expect['hindee.xml'] = (stats['hindee']['items'], 'products', 'product', 'price', 'product_url', 'https://sharlottekangad.ee/products/')
           if stats.get('kaina24', {}).get('items'):
               expect['kaina24.xml'] = (stats['kaina24']['items'], 'products', 'product', 'price', 'product_url', 'https://sarlotesaudiniai.lt/products/')
-          # Google Merchant Center (RSS 2.0, g: lauki, cena "0.39 EUR")
-          if stats.get('google', {}).get('items'):
-              expect['google-lv.xml'] = (stats['google']['items'], 'rss', 'channel/item', G + 'price', G + 'link', lv, r'\d+\.\d{2} EUR')
+          # Google Merchant Center (RSS 2.0, g: lauki, cena "0.39 EUR"): Latvija latviski, Igaunija un Lietuva angliski
+          for key, name, prefix in (('google', 'google-lv.xml', lv),
+                                    ('googleEe', 'google-ee-en.xml', 'https://sharlottekangad.ee/en/products/'),
+                                    ('googleLt', 'google-lt-en.xml', 'https://sarlotesaudiniai.lt/en/products/')):
+              if stats.get(key, {}).get('items'):
+                  expect[name] = (stats[key]['items'], 'rss', 'channel/item', G + 'price', G + 'link', prefix, r'\d+\.\d{2} EUR')
+          def page_check(links):
+              # 3 nejaušas preču lapas kā Google robots (Storebot-Google): vai atveras (200) bez pāradresācijas
+              import random
+              res = []
+              for url in random.sample(links, min(3, len(links))):
+                  try:
+                      req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (compatible; Storebot-Google/1.0; +http://www.google.com/storebot.html)'})
+                      with urllib.request.urlopen(req, timeout=60) as r:
+                          final = r.geturl()
+                          res.append(str(r.status) + ('' if final.split('?')[0] == url.split('?')[0] else f' → {final}'))
+                  except Exception as e:
+                      res.append(f'kļūda: {e}')
+              return ', lapas ' + ' / '.join(res)
           for name, (want, root_tag, item_tag, price_tag, link_tag, prefix, *fmt) in expect.items():
               status, ctype, body = get(name)
               root = ET.fromstring(body)
@@ -110,20 +126,25 @@ jobs:
               links = [i.findtext(link_tag) or '' for i in items]
               ok = (status == 200 and root.tag == root_tag and len(items) == want and prices_ok
                     and all(l.startswith(prefix) for l in links))
-              if name == 'google-lv.xml':  # Google: unikāli ID līdz 50 zīmēm, nosaukums līdz 150, apraksts līdz 5000
+              if name.startswith('google-'):  # Google: unikāli ID līdz 50 zīmēm, nosaukums līdz 150, apraksts līdz 5000
                   ids = [i.findtext(G + 'id') or '' for i in items]
                   ok = ok and len(set(ids)) == len(ids) and all(0 < len(x) <= 50 for x in ids) \
                       and all(0 < len(i.findtext(G + 'title') or '') <= 150 and 0 < len(i.findtext(G + 'description') or '') <= 5000 for i in items)
               msg = f'HTTP {status}, {ctype}, {len(items)} preces (stats.json: {want}), cenas {"OK" if prices_ok else "KĻŪDA"}, unikālas saites {len(set(links))}'
+              if name.startswith('google-'): msg += page_check(links)
               print(f'::{"notice" if ok else "error"} title={name}::{msg}')
               if not ok: raise SystemExit(1)
           _, _, html = get('index.html')
           if not all(f'href="{n}"' in html.decode() for n in expect):
               raise SystemExit('::error title=index.html::trūkst saites uz XML failiem')
-          for key, title in (('ceno', 'Ceno'), ('cenueksperts', 'Cenueksperts'), ('hindee', 'Hind.ee'), ('kaina24', 'Kaina24'), ('google', 'Google')):
+          # Statistika – viena piezīme (GitHub rāda līdz 10 piezīmēm vienā solī)
+          lines = []
+          for key, title in (('ceno', 'Ceno'), ('cenueksperts', 'Cenueksperts'), ('hindee', 'Hind.ee'), ('kaina24', 'Kaina24'),
+                             ('google', 'Google LV'), ('googleEe', 'Google EE (EN)'), ('googleLt', 'Google LT (EN)')):
               c = stats.get(key)
               if not c:
-                  print(f'::warning title={title}::fails šoreiz netika izveidots'); continue
+                  lines.append(f'{title}: fails šoreiz netika izveidots'); continue
               extra = f", iepriekšējā versija ({c.get('error', '')})" if c.get('carriedOver') else ''
-              print(f"::notice title={title}::{c['items']} preces, metrā {c['decimal']}, izlaistas {json.dumps(c['skipped'], ensure_ascii=False)}{extra}")
+              lines.append(f"{title}: {c['items']} preces, metrā {c['decimal']}, izlaistas {json.dumps(c['skipped'], ensure_ascii=False)}{extra}")
+          print('::notice title=Statistika::' + '%0A'.join(lines))
           PY

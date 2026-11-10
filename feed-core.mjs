@@ -226,11 +226,11 @@ export const CONFIG = {
   // katrai precei (Shopify General profile → Estonia / Lithuania, bez bezmaksas piegādes sliekšņa).
   googleMarkets: {
     ee: {
-      file: 'google-ee-en.xml', shopUrl: 'https://sharlottekangad.ee', pathPrefix: '/en', country: 'EE',
+      file: 'google-ee-en.xml.gz', shopUrl: 'https://sharlottekangad.ee', pathPrefix: '/en', country: 'EE',
       countryLabel: 'Igaunijas', storeName: 'Šarlotte kangad',
     },
     lt: {
-      file: 'google-lt-en.xml', shopUrl: 'https://sarlotesaudiniai.lt', pathPrefix: '/en', country: 'LT',
+      file: 'google-lt-en.xml.gz', shopUrl: 'https://sarlotesaudiniai.lt', pathPrefix: '/en', country: 'LT',
       countryLabel: 'Lietuvas', storeName: 'Šarlotės audiniai',
     },
     // Kopīgie iestatījumi abām valstīm

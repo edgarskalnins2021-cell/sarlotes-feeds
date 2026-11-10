@@ -1,6 +1,6 @@
 // Ģenerē public/salidzini.xml, kurpirkt.xml, ceno.xml, cenueksperts.xml (Latvija), hindee.xml (Igaunija),
-// kaina24.xml (Lietuva), google-lv.xml (Google Merchant Center, latviski) un google-ee-en.xml / google-lt-en.xml
-// (Google Merchant Center Igaunijai un Lietuvai, angliski).
+// kaina24.xml (Lietuva), google-lv.xml.gz (Google Merchant Center, latviski) un google-ee-en.xml.gz / google-lt-en.xml.gz
+// (Google Merchant Center Igaunijai un Lietuvai, angliski; saspiesti .gz).
 //
 // Datu avots:
 //  - ja ir iestatīti SHOPIFY_CLIENT_ID un SHOPIFY_CLIENT_SECRET → Shopify Admin API (pilni dati:
@@ -13,6 +13,7 @@
 // Palaišana: node generate.mjs   (Node 20+, bez papildu bibliotēkām)
 
 import { mkdir, writeFile } from 'node:fs/promises';
+import { gzipSync, gunzipSync } from 'node:zlib';
 import { pathToFileURL } from 'node:url';
 import { CONFIG, buildItems, toXml, toKurpirktXml, toCenoXml, toCenuekspertsXml, toHindeeXml, toKaina24Xml,
   toGoogleXml, htmlToPlain, BALTIC_LETTERS } from './feed-core.mjs';
@@ -268,7 +269,17 @@ async function fetchStore(shopUrl, lang) {
   return normalizeStore(await fetchStoreRaw(shopUrl, lang));
 }
 
-// ---------- Google Merchant Center (google-lv.xml, google-ee-en.xml, google-lt-en.xml) ----------
+// ---------- Google Merchant Center (google-lv.xml.gz, google-ee-en.xml.gz, google-lt-en.xml.gz) ----------
+// Google faili ir lieli (~20 MB katrs), tāpēc tiek publicēti saspiesti (.gz) – Merchant Center tos pieņem
+// (https://support.google.com/merchants/answer/12631822), un GitHub Pages izvietošana paliek ātra.
+
+// Iepriekšējā publicētā versija kā teksts (.gz tiek atspiests).
+async function fetchPrevious(file) {
+  const res = await fetchRetry(`${PAGES_URL}/${file}`, { cache: 'no-store' }, 2);
+  if (!res.ok) return null;
+  const buf = Buffer.from(await res.arrayBuffer());
+  return buf[0] === 0x1f && buf[1] === 0x8b ? gunzipSync(buf).toString('utf8') : buf.toString('utf8');
+}
 
 // Veikala /products.json → Map(varianta ID → teksti, cena, pilns apraksts, attēli, variantu opcijas) Google failiem.
 export function normalizeGoogleStore(list) {
@@ -290,7 +301,7 @@ export const normalizeLvStore = normalizeGoogleStore;
 // google-lv.xml: ja Latvijas veikala /products.json nav nolasāms vai rezultāts aizdomīgs – paliek iepriekšējā
 // versija (ja tādas nav – fails bez papildu attēliem un variantu opcijām, apraksts no Shopify Admin).
 async function buildGoogle(items, prev) {
-  const file = 'google-lv.xml';
+  const file = 'google-lv.xml.gz';
   try {
     const store = normalizeLvStore(await fetchStoreRaw(CONFIG.shopUrl, 'lv'));
     if (store.size < 100) throw new Error(`aizdomīgi maz variantu veikala /products.json (${store.size})`);
@@ -304,10 +315,8 @@ async function buildGoogle(items, prev) {
   } catch (err) {
     console.log(`::warning title=${file}::${err.message} – paliek iepriekšējā versija`);
     try {
-      const old = await fetchRetry(`${PAGES_URL}/${file}`, { cache: 'no-store' }, 2);
-      if (old.ok && prev?.google?.items) {
-        return { xml: await old.text(), stats: { ...prev.google, carriedOver: true, error: err.message } };
-      }
+      const old = prev?.google?.items ? await fetchPrevious(file) : null;
+      if (old) return { xml: old, stats: { ...prev.google, carriedOver: true, error: err.message } };
     } catch { /* nav iepriekšējās versijas */ }
     const r = toGoogleXml(items, new Map(), CONFIG);
     if (r.stats.items < 100) { console.log(`${file} šoreiz netiek izveidots.`); return null; }
@@ -333,10 +342,8 @@ async function buildGoogleMarket({ key, file, market }, items, prev) {
   } catch (err) {
     console.log(`::warning title=${file}::${err.message} – paliek iepriekšējā versija`);
     try {
-      const old = await fetchRetry(`${PAGES_URL}/${file}`, { cache: 'no-store' }, 2);
-      if (old.ok && prev?.[key]?.items) {
-        return { xml: await old.text(), stats: { ...prev[key], carriedOver: true, error: err.message } };
-      }
+      const old = prev?.[key]?.items ? await fetchPrevious(file) : null;
+      if (old) return { xml: old, stats: { ...prev[key], carriedOver: true, error: err.message } };
     } catch { /* nav iepriekšējās versijas */ }
     console.log(`${file} šoreiz netiek izveidots.`);
     return null;
@@ -346,7 +353,7 @@ async function buildGoogleMarket({ key, file, market }, items, prev) {
 const GOOGLE_MARKETS = [
   { key: 'googleEe', title: 'Google EE (EN)', market: CONFIG.googleMarkets.ee },
   { key: 'googleLt', title: 'Google LT (EN)', market: CONFIG.googleMarkets.lt },
-].map((f) => ({ ...f, file: f.market.file }));
+].map((f) => ({ ...f, file: f.market.file, gzip: true }));
 
 // Ārvalstu fails (hindee.xml, kaina24.xml): ja neizdodas (veikals neatbild, aizdomīgi maz preču, nosaukumi
 // nav attiecīgajā valodā), Latvijas faili tiek izvietoti kā parasti, bet šis fails paliek iepriekšējā versija.
@@ -415,7 +422,7 @@ async function main() {
   const foreign = [];
   for (const f of FOREIGN) foreign.push({ ...f, result: await buildForeign(f, items, prev) });
   // Google Merchant Center (latviski) – tāds pats ieraksts kā ārvalstu failiem (fails, saite, skaits).
-  foreign.push({ key: 'google', file: 'google-lv.xml', title: 'Google', result: await buildGoogle(items, prev) });
+  foreign.push({ key: 'google', file: 'google-lv.xml.gz', title: 'Google', gzip: true, result: await buildGoogle(items, prev) });
   // Google Merchant Center Igaunijai un Lietuvai (angliski, katrai savs konts un domēns).
   for (const f of GOOGLE_MARKETS) foreign.push({ ...f, result: await buildGoogleMarket(f, items, prev) });
 
@@ -427,7 +434,11 @@ async function main() {
   await writeFile(`${OUT_DIR}/kurpirkt.xml`, toKurpirktXml(items), 'utf8');
   await writeFile(`${OUT_DIR}/ceno.xml`, ceno.xml, 'utf8');
   await writeFile(`${OUT_DIR}/cenueksperts.xml`, cenu.xml, 'utf8');
-  for (const f of foreign) if (f.result) await writeFile(`${OUT_DIR}/${f.file}`, f.result.xml, 'utf8');
+  for (const f of foreign) {
+    if (!f.result) continue;
+    if (f.gzip) await writeFile(`${OUT_DIR}/${f.file}`, gzipSync(Buffer.from(f.result.xml, 'utf8'), { level: 9 }));
+    else await writeFile(`${OUT_DIR}/${f.file}`, f.result.xml, 'utf8');
+  }
   // "items" = Salidzini/Kurpirkt preču skaits (to izmanto drošības pārbaude); pārējie – atsevišķi.
   const all = { ...stats, ceno: ceno.stats, cenueksperts: cenu.stats };
   for (const f of foreign) if (f.result) all[f.key] = f.result.stats;

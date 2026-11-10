@@ -12,16 +12,16 @@ viens Lietuvai un trīs Google Merchant Center – Latvijai latviski, Igaunijai 
 | `cenueksperts.xml` | Cenueksperts.lv (skat. sadaļu "Cenueksperts.lv") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/cenueksperts.xml |
 | `hindee.xml` | Hind.ee, Igaunija (skat. sadaļu "Hind.ee") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/hindee.xml |
 | `kaina24.xml` | Kaina24.lt, Lietuva (skat. sadaļu "Kaina24.lt") | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/kaina24.xml |
-| `google-lv.xml` | Google Merchant Center, Latvija, latviešu valodā (skat. sadaļu "Google") – vēl nav pieslēgts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lv.xml |
-| `google-ee-en.xml` | Google Merchant Center, Igaunija, angliski (sharlottekangad.ee/en) – sava konta | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-ee-en.xml |
-| `google-lt-en.xml` | Google Merchant Center, Lietuva, angliski (sarlotesaudiniai.lt/en) – sava konta | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lt-en.xml |
+| `google-lv.xml.gz` | Google Merchant Center, Latvija, latviešu valodā (skat. sadaļu "Google") – vēl nav pieslēgts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lv.xml.gz |
+| `google-ee-en.xml.gz` | Google Merchant Center, Igaunija, angliski (sharlottekangad.ee/en) – savs konts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-ee-en.xml.gz |
+| `google-lt-en.xml.gz` | Google Merchant Center, Lietuva, angliski (sarlotesaudiniai.lt/en) – savs konts (5902483950) | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lt-en.xml.gz |
 
 Grafiks GitHub pusē mēdz kavēties; vajadzības gadījumā: **Actions → Salidzini XML → Run workflow**.
 
 Drošības noteikumi: ja Shopify īslaicīgi neatbild, skripts mēģina vēlreiz; ja preču ir aizdomīgi maz
 (zem 100 vai uz pusi mazāk nekā iepriekš – arī Ceno failā atsevišķi), netiek izvietots neviens fails un
 publiski paliek iepriekšējā versija. Ja neizdodas tikai Igaunijas vai Lietuvas fails, Latvijas faili tiek
-izvietoti, bet `hindee.xml` / `kaina24.xml` / `google-*.xml` paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
+izvietoti, bet `hindee.xml` / `kaina24.xml` / `google-*.xml.gz` paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
 (HTTP 200, derīgs XML, preču skaits sakrīt ar `stats.json`). Reizi nedēļā (pirmdienas rītā)
 tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu neaktivitātes dēļ.
 
@@ -132,13 +132,16 @@ Lietuvas veikala publiskā `/products.json` (Lietuvā PVN 21 %, tāpēc cenas sa
 | `delivery/home_delivery` | kurjers 15,90 €, 5 darba dienas |
 | `delivery/parcel_locker_delivery` | lētākais pakomāts (Omniva) 5,99 €, 5 darba dienas; nav "tikai kurjers" precēm un > 30 kg |
 
-## Google Merchant Center (`google-lv.xml`, Latvija, latviski)
+## Google Merchant Center (`google-lv.xml.gz`, Latvija, latviski)
+
+Google faili ir lieli (~20 MB), tāpēc tiek publicēti saspiesti (`.gz`) – Merchant Center tos pieņem
+(https://support.google.com/merchants/answer/12631822), un GitHub Pages izvietošana paliek ātra.
 
 Pašlaik (10.11.2026) Google Latvijai latviešu valodu **neatbalsta**: Merchant Center valodu sarakstā Latvijai
 latviešu nav, un Shopify Google & YouTube lietotne raksta "Latvian – This language isn't supported by Google in
 this country". Tāpēc Shopify lietotne sūta preces angliski (avots "Shopify App API"). Šis fails ir gatavs brīdim,
 kad Google latviešu valodu ieslēgs: tad Merchant Center pievieno **jaunu primāro avotu → Add products from a file →
-Enter a link to your file** ar šo adresi, valsts Latvija, valoda latviešu (pieslēdz tikai tad, ne agrāk).
+Enter a link to your file** ar šo adresi (`.gz`), valsts Latvija, valoda latviešu (pieslēdz tikai tad, ne agrāk).
 
 Formāts: RSS 2.0 ar `g:` laukiem (https://support.google.com/merchants/answer/7052112). Preces – tās pašas kā
 Salidzini (noliktavā; metrā tirgotās – vismaz 1 m; bez dāvanu kartēm, apdrukas precēm, defektiem/demo).
@@ -165,11 +168,11 @@ Salidzini (noliktavā; metrā tirgotās – vismaz 1 m; bez dāvanu kartēm, apd
 
 Pašizmaksa (`cost_of_goods_sold`) un atlikuma skaits failā netiek likti – fails ir publisks.
 
-### Igaunija un Lietuva angliski (`google-ee-en.xml`, `google-lt-en.xml`)
+### Igaunija un Lietuva angliski (`google-ee-en.xml.gz`, `google-lt-en.xml.gz`)
 
 Igauņu un lietuviešu valodu Google vēl neatbalsta, angļu – jā. Katram domēnam savs Merchant Center konts
 (Google: viens konts – viens apstiprināts domēns; vienus un tos pašus preču ID vairākos kontos lietot drīkst).
-Tas pats kods kā `google-lv.xml`, atšķirības:
+Tas pats kods kā `google-lv.xml.gz`, atšķirības:
 
 | Lauks | Igaunijā / Lietuvā |
 |---|---|

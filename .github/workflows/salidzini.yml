@@ -29,7 +29,7 @@ jobs:
           node-version: '24'
       - name: Noteikumu pārbaudes
         run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null && node test/test-cenueksperts.mjs > /dev/null && node test/test-hindee.mjs > /dev/null && node test/test-kaina24.mjs > /dev/null && node test/test-google.mjs > /dev/null
-      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts, hindee, kaina24, google-lv, google-ee-en, google-lt-en)
+      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts, hindee, kaina24, google-lv/ee-en/lt-en .gz)
         env:
           SHOPIFY_STORE: sarlotesaudumi.myshopify.com
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
@@ -59,6 +59,8 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          timeout: 1200000 # 20 min (noklusējums 10 min)
 
   # Pēc izvietošanas nolasa publiskos failus: HTTP 200, derīgs XML, preču skaits sakrīt ar stats.json.
   # Rezultāts redzams kā piezīmes (annotations) šī darba lapā.
@@ -73,14 +75,16 @@ jobs:
           RUN: ${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           python3 - <<'PY'
-          import json, os, re, time, urllib.request, xml.etree.ElementTree as ET
+          import gzip, json, os, re, time, urllib.request, xml.etree.ElementTree as ET
           base, run = os.environ['BASE'], os.environ['RUN']
           def get(name):
               last = None
               for attempt in range(12):  # Pages izplatīšanās var aizņemt dažas minūtes
                   try:
                       with urllib.request.urlopen(f'{base}/{name}?v={run}-{attempt}', timeout=60) as r:
-                          return r.status, r.headers.get('content-type', ''), r.read()
+                          body = r.read()
+                          if body[:2] == b'\x1f\x8b': body = gzip.decompress(body)  # google-*.xml.gz
+                          return r.status, r.headers.get('content-type', ''), body
                   except Exception as e:
                       last = e
                       time.sleep(20)
@@ -100,9 +104,9 @@ jobs:
           if stats.get('kaina24', {}).get('items'):
               expect['kaina24.xml'] = (stats['kaina24']['items'], 'products', 'product', 'price', 'product_url', 'https://sarlotesaudiniai.lt/products/')
           # Google Merchant Center (RSS 2.0, g: lauki, cena "0.39 EUR"): Latvija latviski, Igaunija un Lietuva angliski
-          for key, name, prefix in (('google', 'google-lv.xml', lv),
-                                    ('googleEe', 'google-ee-en.xml', 'https://sharlottekangad.ee/en/products/'),
-                                    ('googleLt', 'google-lt-en.xml', 'https://sarlotesaudiniai.lt/en/products/')):
+          for key, name, prefix in (('google', 'google-lv.xml.gz', lv),
+                                    ('googleEe', 'google-ee-en.xml.gz', 'https://sharlottekangad.ee/en/products/'),
+                                    ('googleLt', 'google-lt-en.xml.gz', 'https://sarlotesaudiniai.lt/en/products/')):
               if stats.get(key, {}).get('items'):
                   expect[name] = (stats[key]['items'], 'rss', 'channel/item', G + 'price', G + 'link', prefix, r'\d+\.\d{2} EUR')
           def page_check(links):

@@ -249,5 +249,12 @@ const lt = toGoogleXml(items, normalizeLvStore(enJson), CONFIG, CONFIG.googleMar
 assert.ok(lt.xml.includes('<g:link>https://sarlotesaudiniai.lt/en/products/cotton-fabric-beige-checks</g:link>'));
 assert.ok(lt.xml.includes('<g:country>LT</g:country>') && !lt.xml.includes('<g:country>EE</g:country>'));
 assert.ok(lt.xml.includes('<title>Šarlotės audiniai</title>'));
+// Atgriešanas izņēmums "cut-to-length" – visām un tikai metrā tirgotajām, tikai Lietuvas failā
+const ltRows = [...lt.xml.matchAll(/<item>\n([\s\S]*?)\n<\/item>/g)].map((mm) => mm[1]);
+const ltMetre = ltRows.filter((b) => b.includes('<g:custom_label_2>by the metre</g:custom_label_2>'));
+const ltCut = ltRows.filter((b) => b.includes('<g:return_policy_label>cut-to-length</g:return_policy_label>'));
+assert.ok(ltMetre.length >= 1, 'LT failā ir metrā tirgota prece');
+assert.deepEqual(ltCut, ltMetre, 'LT: return_policy_label tieši metrā tirgotajām');
+assert.ok(!ee.xml.includes('return_policy_label') && !xml.includes('return_policy_label'), 'EE un LV failos izņēmuma vēl nav');
 
 console.log('Google pārbaudes izietas:', JSON.stringify(stats), '| EE:', JSON.stringify(ee.stats));

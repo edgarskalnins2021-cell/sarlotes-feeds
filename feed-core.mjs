@@ -232,6 +232,9 @@ export const CONFIG = {
     lt: {
       file: 'google-lt-en.xml.gz', shopUrl: 'https://sarlotesaudiniai.lt', pathPrefix: '/en', country: 'LT',
       countryLabel: 'Lietuvas', storeName: 'Šarlotės audiniai',
+      // Metrā tirgotās preces nogriež pēc pircēja izvēles – noteikumos tās atpakaļ nepieņem (tikai bojātas / ne tās).
+      // Merchant Center LT kontā tam ir atgriešanas izņēmums ar šo etiķeti (tikai bojātas preces, maiņa nav).
+      returnPolicyLabelCut: 'cut-to-length',
     },
     // Kopīgie iestatījumi abām valstīm
     common: {
@@ -988,6 +991,7 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
       ...ships,
       grams > 0 ? tag('shipping_weight', `${grams1(grams)} g`) : null,
       tag('ships_from_country', g.shipsFrom),
+      m?.returnPolicyLabelCut && it._decimal ? tag('return_policy_label', m.returnPolicyLabelCut) : null,
       ...labels.map((val, i) => tag(`custom_label_${i}`, val)),
       '</item>',
     ].filter(Boolean);

@@ -181,6 +181,7 @@ Tas pats kods kā `google-lv.xml.gz`, atšķirības:
 | `g:price` | valsts cena par Shopify vienību (Igaunijā ar 24 % PVN), metrā tirgotajām + vienības cena 10cm / 1m |
 | `g:shipping` | katrai precei: Omniva pakomāts 5,99 € (ne "tikai kurjers", līdz 30 kg) un kurjers 15,90 €; 0–1 + 3–4 darba dienas |
 | `g:custom_label_*` | angliski: tips, "by the metre"/"by the piece", cenu grupa, "sale" |
+| `g:return_policy_label` | tikai Lietuvā: metrā tirgotajām `cut-to-length` → Merchant Center izņēmums "cut-to-length policy" (atpakaļ tikai bojātas, maiņa nav – kā noteikumos par nogrieztām precēm) |
 
 Drošība: ja `/en/` pāradresē prom vai vairāk nekā 25 % nosaukumu nav angliski – paliek iepriekšējā versija.
 Pārbaudes darbs pēc katras izvietošanas atver 3 nejaušas preču lapas kā Google robots (Storebot-Google).

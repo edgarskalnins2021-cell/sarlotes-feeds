@@ -1,30 +1,129 @@
 {
-  "generated": "2026-11-08T22:06:30.345Z",
+  "generated": "2026-11-15T23:27:33.236Z",
   "source": "admin",
-  "products": 6406,
-  "items": 8448,
+  "products": 6422,
+  "items": 8359,
   "skipped": {
-    "0 atlikums": 658,
+    "atlikumā mazāk par 1 m": 63,
     "digitāla prece": 57,
-    "atlikumā mazāk par 1 m": 52,
+    "0 atlikums": 732,
     "dāvanu karte": 2,
     "dublikāts": 2,
     "T-krekli/džemperi": 7,
     "tips Customizer": 136,
-    "nav publicēts veikalā": 2
+    "nav publicēts veikalā": 22
   },
   "ceno": {
-    "items": 8444,
-    "decimal": 3035,
+    "items": 8355,
+    "decimal": 3001,
     "skipped": {
       "ar defektu / demo / lietota": 4
     },
     "with": {
-      "ean": 532,
-      "manufacturer": 2091,
-      "category_link": 5576,
-      "price_sale": 264
+      "ean": 528,
+      "manufacturer": 2070,
+      "category_link": 5507,
+      "price_sale": 0
     },
-    "compareAtHigher": 264
+    "compareAtHigher": 188
+  },
+  "cenueksperts": {
+    "items": 8346,
+    "decimal": 3001,
+    "skipped": {
+      "nav apraksta": 9,
+      "ar defektu / demo / lietota": 4
+    }
+  },
+  "hindee": {
+    "items": 8327,
+    "decimal": 2991,
+    "skipped": {
+      "dublikāts (nosaukums)": 28,
+      "ar defektu / demo / lietota": 4
+    },
+    "sameNameAsLv": 2,
+    "withCategory": 7872,
+    "categoryFromLv": 640,
+    "defaultCategory": 455
+  },
+  "kaina24": {
+    "items": 8346,
+    "decimal": 2998,
+    "skipped": {
+      "dublikāts (nosaukums)": 9,
+      "ar defektu / demo / lietota": 4
+    },
+    "sameNameAsLv": 3,
+    "withCategory": 7891,
+    "categoryFromLv": 640,
+    "defaultCategory": 455
+  },
+  "google": {
+    "items": 8355,
+    "decimal": 3001,
+    "enriched": 8355,
+    "skipped": {
+      "ar defektu / demo / lietota": 4
+    },
+    "with": {
+      "gtin": 524,
+      "brand": 2070,
+      "color": 1631,
+      "size": 1032,
+      "pattern": 2,
+      "variant_option": 3179,
+      "item_group_id": 3179,
+      "additional_image_link": 6802,
+      "google_product_category": 6905,
+      "shipping": 10,
+      "sale_price": 0
+    }
+  },
+  "googleEe": {
+    "items": 8354,
+    "decimal": 3001,
+    "enriched": 8354,
+    "skipped": {
+      "nav iztulkots angliski": 1,
+      "ar defektu / demo / lietota": 4
+    },
+    "with": {
+      "gtin": 524,
+      "brand": 2069,
+      "color": 1621,
+      "size": 1032,
+      "pattern": 2,
+      "variant_option": 3179,
+      "item_group_id": 3179,
+      "additional_image_link": 6801,
+      "google_product_category": 6904,
+      "shipping": 8354,
+      "sale_price": 0
+    },
+    "descriptionIsTitle": 9
+  },
+  "googleLt": {
+    "items": 8354,
+    "decimal": 3001,
+    "enriched": 8354,
+    "skipped": {
+      "nav iztulkots angliski": 1,
+      "ar defektu / demo / lietota": 4
+    },
+    "with": {
+      "gtin": 524,
+      "brand": 2069,
+      "color": 1621,
+      "size": 1032,
+      "pattern": 2,
+      "variant_option": 3179,
+      "item_group_id": 3179,
+      "additional_image_link": 6801,
+      "google_product_category": 6904,
+      "shipping": 8354,
+      "sale_price": 0
+    },
+    "descriptionIsTitle": 9
   }
 }

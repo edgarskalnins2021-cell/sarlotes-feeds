@@ -63,7 +63,7 @@ assert.equal(by('gabals').price, '4.50', 'gabals paliek gabala cena');
 assert.ok(!by('gabals').name.includes('cena par 1 m'));
 
 // varianti, attēli, EAN, zīmols
-assert.equal(by('drops-air').name, 'Dzijas DROPS Air – 50 g / 150 m – 01 · natur');
+assert.equal(by('drops-air').name, 'Dzijas DROPS Air - 50 g / 150 m - 01 · natur');
 assert.ok(by('drops-air').link.endsWith('?variant=' + items.find((i) => i.name.includes('01 · natur'))._variantId));
 assert.equal(by('drops-air').ean, '5901234123457');
 assert.equal(by('drops-air').manufacturer, 'DROPS');

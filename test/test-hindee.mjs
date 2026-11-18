@@ -69,7 +69,7 @@ for (const r of rows) {
 // Metrā tirgotās: Igaunijas cena × 10 (nevis LV cena), atlikums metros, "(hind 1 m kohta)"
 const must = by('puuvillane-kangas-must');
 assert.equal(must.val('price'), '4.00', 'EE cena 0,40 € par 0,1 m → 4,00 € par 1 m');
-assert.equal(must.name, '100% puuvillane kangas – must (hind 1 m kohta)');
+assert.equal(must.name, '100% puuvillane kangas - must (hind 1 m kohta)');
 assert.equal(must.val('stock'), '23');
 assert.equal(must.link, 'https://sharlottekangad.ee/products/puuvillane-kangas-must');
 assert.equal(must.val('category_name'), 'Kangas');
@@ -80,9 +80,9 @@ assert.equal(by('kangas-09'), undefined);
 assert.equal(by('trikoo'), undefined); assert.equal(stats.skipped['ar defektu / demo / lietota'], 1);
 assert.equal(stats.skipped['nav Igaunijas veikalā'], 1);
 // "viimane tükk 75cm" → "tükk 75 cm"
-assert.equal(by('samet').name, 'Samet – purpurpunane toon – tükk 75 cm');
+assert.equal(by('samet').name, 'Samet - purpurpunane toon - tükk 75 cm');
 // Varianti: igauņu varianta nosaukums, ?variant=, EAN, zīmols
-const roosa = rows.find((r) => r.name === 'Lõng DROPS Air – Roosa');
+const roosa = rows.find((r) => r.name === 'Lõng DROPS Air - Roosa');
 assert.ok(roosa); assert.equal(roosa.link, `https://sharlottekangad.ee/products/long-drops-air?variant=${vid(drops, 0)}`);
 assert.equal(roosa.val('price'), '5.43'); assert.equal(roosa.val('ean_code'), '5901234123457'); assert.equal(roosa.val('manufacturer'), 'DROPS');
 // Piegāde uz Igauniju: kuller 15,90; pakiautomaat (lētākais, Omniva) 5,99 – ne "tikai kurjers" un ne > 30 kg; 5 darba dienas

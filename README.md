@@ -38,6 +38,7 @@ tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu
 | Vienāds nosaukums divreiz | rāda vienu reizi |
 | Nosaukumā "ar defektu", "bojāts", "lietots", "demo" | `<used>1</used>` (Salidzini prasība) |
 | Nosaukumā "pēdējais gabaliņš 50cm", "-neatjaunot" | "gabals 50 cm", piezīme tiek izņemta |
+| Domuzīme "–" (nosaukumos, variantos, aprakstos; visos failos, arī Hind.ee, Kaina24, Google) | "-" (veikala stils kopš 18.11.2026); produkta un varianta nosaukumu atdala " - " |
 | Kategorija | Google Shopping lauki, piem. "Audumi >> Kokvilnas audumi"; bez tiem – tips + konkrētākais tags (SEO tagi, kas ir vairāk nekā pusei tipa preču, netiek ņemti) |
 | Zīmols | tikai īsti zīmoli (SCHMETZ, Milward, Prym, DROPS, Alize u.c.) |
 | EAN | tikai derīgi kodi (automātiski ģenerētie netiek likti) |
@@ -158,7 +159,7 @@ Salidzini (noliktavā; metrā tirgotās – vismaz 1 m; bez dāvanu kartēm, apd
 | `g:sale_price` | netiek likts (`salePrice: false`, kā Ceno) |
 | `g:availability`, `g:condition` | `in_stock`, `new` |
 | `g:brand`, `g:gtin`, `g:identifier_exists` | tikai īsti zīmoli; GTIN – derīgs EAN, ne veikala iekšējie diapazoni (2…, 02…, 04…); bez GTIN – `identifier_exists=no` |
-| `g:item_group_id`, `g:item_group_title`, `g:variant_option` | variantu precēm: `shopify_ZZ_{produkta ID}`, produkta nosaukums, Shopify opcijas (piem. "Krāsa: Rozā – #12") |
+| `g:item_group_id`, `g:item_group_title`, `g:variant_option` | variantu precēm: `shopify_ZZ_{produkta ID}`, produkta nosaukums, Shopify opcijas (piem. "Krāsa: Rozā - #12") |
 | `g:color`, `g:size`, `g:pattern` | no opcijām "Krāsa" (bez kodiem: "Balta – #650" → "Balta"; tikai cipari – netiek likts), "Izmērs"/"Adatas izmērs"/"Garums", "Motīvs" |
 | `g:google_product_category` | pēc Shopify produkta tipa (oficiālās taksonomijas ID, piem. Audums → 47, Dzija → 2669); neskaidriem tipiem – Google nosaka pats |
 | `g:product_type` | LV kategorija, piem. "Audumi > Kokvilnas audumi" |

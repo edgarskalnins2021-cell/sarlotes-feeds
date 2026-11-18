@@ -26,12 +26,14 @@ export const CONFIG = {
   usedPattern: /(ar defektu|defekts|bojāt|lietot[aāsi]\b|\bdemo\b|ekspozīcij)/i,
 
   // Nosaukumu tīrīšana: Salidzini neļauj noliktavas/reklāmas frāzes un iekšējas piezīmes.
+  // Domuzīme "–" visur kļūst par "-" (veikala stils kopš 18.11.2026); atstarpes ap to tiek sakārtotas.
   nameFixes: [
-    [/\s*[-–]?\s*pēdējais gabaliņš\s*/gi, ' – gabals '],
+    [/\s*[-–]?\s*pēdējais gabaliņš\s*/gi, ' - gabals '],
     [/[-–\s]*neatjaunot\b/gi, ''],
     [/(\d)(cm|mm)\b/g, '$1 $2'],
-    [/(\S)–\s/g, '$1 – '],
-    [/\s–(\S)/g, ' – $1'],
+    [/(\S)–\s/g, '$1 - '],
+    [/\s–(\S)/g, ' - $1'],
+    [/–/g, '-'],
   ],
 
   // Kategorija bez Google laukiem: produkta tips + konkrētākais tags.
@@ -103,10 +105,11 @@ export const CONFIG = {
     decimalNameSuffix: ' (hind 1 m kohta)', // "(cena par 1 m)"
     // "viimane tükk 50cm" = "pēdējais gabaliņš 50cm" → "tükk 50 cm" (kā LV failos)
     nameFixes: [
-      [/\s*[-–]?\s*viimane tükk\s*/gi, ' – tükk '],
+      [/\s*[-–]?\s*viimane tükk\s*/gi, ' - tükk '],
       [/(\d)(cm|mm)\b/g, '$1 $2'],
-      [/(\S)–\s/g, '$1 – '],
-      [/\s–(\S)/g, ' – $1'],
+      [/(\S)–\s/g, '$1 - '],
+      [/\s–(\S)/g, ' - $1'],
+      [/–/g, '-'],
     ],
     // Tulkotais "tikai kurjers" tips (AINULT_KULLER, KULLER_AINULT u.c.) nav kategorija.
     technicalTypePattern: /KULLER|KURIER|COURIER/i,
@@ -132,10 +135,11 @@ export const CONFIG = {
     decimalNameSuffix: ' (kaina už 1 m)', // "(cena par 1 m)"
     // "paskutinis gabalėlis 50cm" = "pēdējais gabaliņš 50cm" → "gabalas 50 cm" (kā LV failos)
     nameFixes: [
-      [/\s*[-–]?\s*paskutinis gabalėlis\s*/gi, ' – gabalas '],
+      [/\s*[-–]?\s*paskutinis gabalėlis\s*/gi, ' - gabalas '],
       [/(\d)(cm|mm)\b/g, '$1 $2'],
-      [/(\S)–\s/g, '$1 – '],
-      [/\s–(\S)/g, ' – $1'],
+      [/(\S)–\s/g, '$1 - '],
+      [/\s–(\S)/g, ' - $1'],
+      [/–/g, '-'],
     ],
     technicalTypePattern: /KURJER|KULLER|COURIER/i,
     // category_name ir obligāts: ja nav ne tipa, ne LV kategorijas atbilsmes – vispārīgā kategorija.
@@ -240,10 +244,11 @@ export const CONFIG = {
     common: {
       // "last piece 50cm" (= "pēdējais gabaliņš") → "piece 50 cm" (kā LV failos; Google: bez steidzinoša teksta)
       nameFixes: [
-        [/\s*[-–]?\s*last piece,?\s*/gi, ' – piece '],
+        [/\s*[-–]?\s*last piece,?\s*/gi, ' - piece '],
         [/(\d)(cm|mm)\b/g, '$1 $2'],
-        [/(\S)–\s/g, '$1 – '],
-        [/\s–(\S)/g, ' – $1'],
+        [/(\S)–\s/g, '$1 - '],
+        [/\s–(\S)/g, ' - $1'],
+        [/–/g, '-'],
       ],
       technicalTypePattern: /COURIER|KURJER|KULLER/i,
       // Pakomāts (lētākais – Omniva 5,99 €; DPD 6,99 €) līdz 30 kg, ne "tikai kurjers"; kurjers 15,90 €.
@@ -376,7 +381,7 @@ export function buildItems(products, cfg = CONFIG) {
       }
       if (price < cfg.minPrice) { skip(`cena zem ${money(cfg.minPrice)} €`); continue; }
 
-      const variantTitle = v.title && v.title !== 'Default Title' ? ` – ${v.title}` : '';
+      const variantTitle = v.title && v.title !== 'Default Title' ? ` - ${v.title}` : '';
       const name = cut(cleanName(`${p.title}${variantTitle}`, cfg) + (decimal ? cfg.decimalNameSuffix : ''), 200);
       if (seenNames.has(name)) { skip('dublikāts'); continue; }
       seenNames.add(name);
@@ -671,7 +676,7 @@ function localizeItems(items, store, h, cfg) {
     // Vietējā cena par Shopify vienību; metrā tirgotajām – par 1 m (Shopify vienība = 0,1 m).
     const price = it._decimal ? e.price / cfg.decimalStep : e.price;
     if (price < cfg.minPrice) { skip(`cena zem ${money(cfg.minPrice)} €`); continue; }
-    const variantTitle = e.variantTitle && e.variantTitle !== 'Default Title' ? ` – ${e.variantTitle}` : '';
+    const variantTitle = e.variantTitle && e.variantTitle !== 'Default Title' ? ` - ${e.variantTitle}` : '';
     const base = cleanName(`${e.title}${variantTitle}`, h).replace(/\s+/g, ' ').trim();
     if (base === it._baseName) stats.sameNameAsLv++;
     const name = cutKeepSuffix(base, it._decimal ? h.decimalNameSuffix : '', h.nameMax);
@@ -691,7 +696,7 @@ function localizeItems(items, store, h, cfg) {
     if (it._decimal) stats.decimal++;
     stats.items++;
     rows.push({ it, name, link, price, category,
-      description: cut(String(e.description || '').replace(/\s+/g, ' ').trim(), h.descMax) });
+      description: cut(String(e.description || '').replace(/–/g, '-').replace(/\s+/g, ' ').trim(), h.descMax) });
   }
   return { rows, stats };
 }
@@ -759,6 +764,7 @@ export function plainText(text, max = 5000) {
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ') // XML neatļautās kontrolrakstzīmes
     .replace(/https?:\/\/\S+|\bwww\.\S+/gi, ' ')
     .replace(/\p{Extended_Pictographic}|\uFE0F|\u200D/gu, '')
+    .replace(/–/g, '-') // domuzīme → "-" (veikala stils)
     .replace(/\r\n?/g, '\n')
     .replace(/[^\S\n]+/g, ' ')
     .replace(/ *\n */g, '\n')
@@ -823,8 +829,8 @@ function googleCategory(it, g) {
 function googleVariant(e, g) {
   const out = { color: '', size: '', pattern: '', options: [] };
   for (const o of e?.options || []) {
-    const name = String(o.name ?? '').replace(/\s+/g, ' ').trim();
-    const value = String(o.value ?? '').replace(/\s+/g, ' ').trim();
+    const name = String(o.name ?? '').replace(/–/g, '-').replace(/\s+/g, ' ').trim();
+    const value = String(o.value ?? '').replace(/–/g, '-').replace(/\s+/g, ' ').trim();
     if (!name || !value || /^title$/i.test(name) || value === 'Default Title') continue;
     out.options.push({ name: cut(name, 250), value: cut(value, 250) });
     if (g.colorOption.test(name)) { if (!out.color) out.color = googleColor(value); }
@@ -873,10 +879,10 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
   const out = ['<?xml version="1.0" encoding="UTF-8"?>', `<rss version="2.0" xmlns:g="${GOOGLE_NS}">`, '<channel>'];
   if (m) {
     out.push(`<title>${escapeXml(m.storeName)}</title>`, `<link>${escapeXml(m.shopUrl + m.pathPrefix)}</link>`,
-      `<description>${escapeXml(m.storeName)} – fabrics, yarn and sewing supplies (${m.country}, English)</description>`);
+      `<description>${escapeXml(m.storeName)} - fabrics, yarn and sewing supplies (${m.country}, English)</description>`);
   } else {
     out.push('<title>Šarlotes audumi</title>', `<link>${escapeXml(cfg.shopUrl)}</link>`,
-      '<description>Šarlotes audumi – audumi, dzija un šūšanas piederumi (Latvija, latviešu valodā)</description>');
+      '<description>Šarlotes audumi - audumi, dzija un šūšanas piederumi (Latvija, latviešu valodā)</description>');
   }
   const tag = (name, val) => (val === '' || val == null ? null : `<g:${name}>${escapeXml(val)}</g:${name}>`);
   const shippingTag = (country, service, price, s) => `<g:shipping><g:country>${country}</g:country><g:service>${escapeXml(service)}</g:service>`
@@ -910,7 +916,7 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
     let unit;
     let productType;
     if (m) {
-      const variantTitle = multi && e.variantTitle && e.variantTitle !== 'Default Title' ? ` – ${e.variantTitle}` : '';
+      const variantTitle = multi && e.variantTitle && e.variantTitle !== 'Default Title' ? ` - ${e.variantTitle}` : '';
       title = cut(noEmoji(cleanName(`${e.title}${variantTitle}`, m)), g.titleMax);
       groupTitle = cut(noEmoji(cleanName(e.title, m)), g.titleMax);
       // Apraksts, kas nav iztulkots (sakrīt ar latvisko), netiek likts – tā vietā angliskais nosaukums.

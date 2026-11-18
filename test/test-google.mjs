@@ -93,7 +93,7 @@ assert.equal(a.val('id'), `shopify_ZZ_${pid(audums)}_${vid(audums)}`);
 assert.equal(a.val('price'), '0.39 EUR');
 assert.equal(a.val('unit_pricing_measure'), '10cm');
 assert.equal(a.val('unit_pricing_base_measure'), '1m');
-assert.equal(a.val('title'), '100 % kokvilnas audums – bēšas rūtis');
+assert.equal(a.val('title'), '100 % kokvilnas audums - bēšas rūtis');
 assert.equal(a.val('link'), 'https://sarlotesaudumi.lv/products/kokvilnas-audums-bess');
 assert.equal(a.val('description'), 'Kokvilna 100 % &amp; mīksta.\n- Platums: 150 cm\n- Svars: 120 g/m²\n\nSkat.');
 assert.deepEqual(a.all('additional_image_link'), ['https://cdn.example/a2.jpg'], 'galvenais attēls netiek atkārtots');
@@ -110,10 +110,10 @@ assert.equal(by('mazs'), undefined, 'zem 1 m – nerāda');
 
 // Varianti: item_group_id, item_group_title, variant_option, krāsa bez koda; tikai savi + kopīgie attēli
 const roza = rows.find((r) => r.val('id') === `shopify_ZZ_${pid(drops)}_${vid(drops, 0)}`);
-assert.equal(roza.val('title'), 'Dzija DROPS Air – 50 g / 150 m – Rozā – #12');
+assert.equal(roza.val('title'), 'Dzija DROPS Air - 50 g / 150 m - Rozā - #12');
 assert.equal(roza.val('item_group_id'), `shopify_ZZ_${pid(drops)}`);
-assert.equal(roza.val('item_group_title'), 'Dzija DROPS Air – 50 g / 150 m');
-assert.ok(roza.body.includes('<g:variant_option><g:name>Krāsa</g:name><g:value>Rozā – #12</g:value></g:variant_option>'));
+assert.equal(roza.val('item_group_title'), 'Dzija DROPS Air - 50 g / 150 m');
+assert.ok(roza.body.includes('<g:variant_option><g:name>Krāsa</g:name><g:value>Rozā - #12</g:value></g:variant_option>'));
 assert.equal(roza.val('color'), 'Rozā');
 assert.equal(roza.val('link'), `https://sarlotesaudumi.lv/products/drops-air?variant=${vid(drops, 0)}`);
 assert.equal(roza.val('image_link'), 'https://cdn.example/rozs.jpg');
@@ -182,7 +182,7 @@ assert.equal(googleColor('MIX 04 taupe'), 'taupe');
 assert.equal(googleColor('Rozā 500-03'), 'Rozā');
 assert.equal(googleColor('F33'), '');
 assert.equal(googleColor('Daudzkrāsaina'), '');
-assert.equal(htmlToPlain('<p>A&#8211;B &laquo;x&raquo;</p><p>www.piemers.lv</p>'), 'A–B «x»');
+assert.equal(htmlToPlain('<p>A&#8211;B &laquo;x&raquo;</p><p>www.piemers.lv</p>'), 'A-B «x»');
 assert.equal(htmlToPlain('x '.repeat(4000), 5000).length <= 5000, true);
 
 // ---------- Igaunija angliski (google-ee-en.xml; Lietuva – tas pats kods ar citu domēnu) ----------
@@ -220,7 +220,7 @@ for (const r of eeRows) {
 }
 const ea = ebi('cotton-fabric-beige-checks');
 assert.equal(ea.val('id'), `shopify_ZZ_${pid(audums)}_${vid(audums)}`, 'tas pats ID kā Latvijā');
-assert.equal(ea.val('title'), '100% cotton fabric – beige checks');
+assert.equal(ea.val('title'), '100% cotton fabric - beige checks');
 assert.equal(ea.val('description'), 'Cotton 100% &amp; soft.');
 assert.equal(ea.val('price'), '0.40 EUR', 'Igaunijas cena par 10 cm');
 assert.equal(ea.val('unit_pricing_measure'), '10cm'); assert.equal(ea.val('unit_pricing_base_measure'), '1m');
@@ -230,16 +230,16 @@ assert.equal(ea.val('custom_label_3'), 'under 5 €', '4,00 € par 1 m');
 assert.ok(ea.body.includes('<g:service>Omniva parcel locker</g:service><g:price>5.99 EUR</g:price><g:min_handling_time>0</g:min_handling_time>'
   + '<g:max_handling_time>1</g:max_handling_time><g:min_transit_time>3</g:min_transit_time><g:max_transit_time>4</g:max_transit_time>'));
 const pink = eeRows.find((r) => r.val('id') === `shopify_ZZ_${pid(drops)}_${vid(drops, 0)}`);
-assert.equal(pink.val('title'), 'DROPS Air yarn – 50 g / 150 m – Pink – #12');
+assert.equal(pink.val('title'), 'DROPS Air yarn - 50 g / 150 m - Pink - #12');
 assert.equal(pink.val('link'), `https://sharlottekangad.ee/en/products/drops-air-yarn?variant=${vid(drops, 0)}`);
-assert.equal(pink.val('item_group_title'), 'DROPS Air yarn – 50 g / 150 m');
-assert.ok(pink.body.includes('<g:variant_option><g:name>Color</g:name><g:value>Pink – #12</g:value></g:variant_option>'));
+assert.equal(pink.val('item_group_title'), 'DROPS Air yarn - 50 g / 150 m');
+assert.ok(pink.body.includes('<g:variant_option><g:name>Color</g:name><g:value>Pink - #12</g:value></g:variant_option>'));
 assert.equal(pink.val('color'), 'Pink');
 assert.equal(pink.val('description'), pink.val('title'), 'neiztulkots apraksts → angliskais nosaukums');
 const dm = ebi('dressmakers-dummy');
 assert.ok(!dm.body.includes('Omniva'), 'tikai kurjers'); assert.equal(dm.val('product_type'), undefined);
 assert.ok(!ebi('fabric-roll').body.includes('Omniva'), '> 30 kg – tikai kurjers');
-assert.equal(ebi('velvet-purple').val('title'), 'Velvet – purple – piece 75 cm');
+assert.equal(ebi('velvet-purple').val('title'), 'Velvet - purple - piece 75 cm');
 assert.equal(ebi('lineals'), undefined, 'neiztulkots nosaukums – nerāda');
 assert.equal(ee.stats.skipped['nav iztulkots angliski'], 1);
 assert.ok(ee.stats.skipped['nav Igaunijas veikalā'] >= 1);

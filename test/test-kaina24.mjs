@@ -52,7 +52,7 @@ for (const r of prods) {
   assert.ok(r.val('product_url').startsWith('https://sarlotesaudiniai.lt/products/'));
 }
 const juodas = by('medvilninis-audinys-juodas');
-assert.equal(juodas.val('title'), '100 % medvilninis audinys – juodas (kaina už 1 m)');
+assert.equal(juodas.val('title'), '100 % medvilninis audinys - juodas (kaina už 1 m)');
 assert.equal(juodas.val('price'), '3.90');
 assert.equal(juodas.val('stock'), '23');
 assert.equal(juodas.val('category_name'), 'Audinys');
@@ -60,8 +60,8 @@ assert.match(juodas.body, /<home_delivery><working_days>5<\/working_days><price>
 assert.match(juodas.body, /<parcel_locker_delivery><working_days>5<\/working_days><price>5\.99<\/price><\/parcel_locker_delivery>/);
 assert.ok(juodas.body.includes('<![CDATA[Medvilnė & minkšta ]]]]><![CDATA[> testas]]>'), 'CDATA ar "]]>" iekšā');
 assert.equal(by('audinys-09'), undefined, 'zem 1 m – nerāda');
-assert.equal(by('aksomas').val('title'), 'Aksomas – gabalas 75 cm');
-const rozine = prods.find((r) => r.val('title') === 'DROPS Air siūlai – Rožinė');
+assert.equal(by('aksomas').val('title'), 'Aksomas - gabalas 75 cm');
+const rozine = prods.find((r) => r.val('title') === 'DROPS Air siūlai - Rožinė');
 assert.ok(rozine.val('product_url').endsWith(`?variant=${vid(drops, 0)}`));
 assert.equal(rozine.val('ean_code'), '5901234123457'); assert.equal(rozine.val('manufacturer'), 'DROPS');
 const mk = by('manekenas');

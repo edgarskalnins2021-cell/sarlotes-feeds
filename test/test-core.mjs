@@ -56,7 +56,7 @@ assert.equal(CONFIG.minPrice, 0);
 assert.ok(buildItems(products, CONFIG).items.some((i) => i.name.startsWith('Pom Pom lenta')), 'bez minimālās cenas lētā lenta ir failā');
 const by = Object.fromEntries(items.map((i) => [i.name, i]));
 
-const fabric = by['100 % kokvilnas audums – lāči un sirsniņas (cena par 1 m)'];
+const fabric = by['100 % kokvilnas audums - lāči un sirsniņas (cena par 1 m)'];
 assert.equal(fabric.price, '3.90');
 assert.equal(fabric.in_stock, '44');
 assert.equal(fabric.ean, '', 'automātiski ģenerētais kods nav EAN');
@@ -64,7 +64,7 @@ assert.equal(fabric.category_full, 'Audumi >> Kokvilnas audumi');
 assert.equal(fabric.link, 'https://sarlotesaudumi.lv/products/kokvilnas-audums-laci');
 assert.equal(fabric.delivery_latvija, '3.30');
 
-const yarn = by['Dzijas Alize Lanagold 800 – 100 g / 730 m – Piena balta – #01'];
+const yarn = by['Dzijas Alize Lanagold 800 - 100 g / 730 m - Piena balta - #01'];
 assert.equal(yarn.brand, 'Alize');
 assert.equal(yarn.ean, '8693276000014');
 assert.equal(yarn.link, 'https://sarlotesaudumi.lv/products/alize?variant=2001');
@@ -76,16 +76,16 @@ assert.equal(by['Bernette 33 šujmašīna'].brand, 'Bernette');
 
 assert.ok(!items.some((i) => i.name.startsWith('T-krekls ')), 'T-krekli nav failā');
 assert.equal(stats.skipped['T-krekli/džemperi'], 1);
-assert.ok(by['T-kreklu spageti dzijas – 700 g / 120 m'], 'T-kreklu dzija paliek');
+assert.ok(by['T-kreklu spageti dzijas - 700 g / 120 m'], 'T-kreklu dzija paliek');
 
-const defect = by['Kokvilnas trikotāža ar defektu – balta (cena par 1 m)'];
+const defect = by['Kokvilnas trikotāža ar defektu - balta (cena par 1 m)'];
 assert.equal(defect.used, '1');
 assert.equal(fabric.used, '');
 assert.ok(toXml([defect]).includes('<used>1</used>'));
 assert.ok(!toXml([fabric]).includes('<used>'));
 
-assert.ok(by['Džinsu audums – melns – gabals 30 cm'], 'pēdējais gabaliņš → gabals');
-assert.ok(by['Dzijas YarnArt Imperial Merino – 50 g / 100 m – 3315'], 'bez -neatjaunot');
+assert.ok(by['Džinsu audums - melns - gabals 30 cm'], 'pēdējais gabaliņš → gabals');
+assert.ok(by['Dzijas YarnArt Imperial Merino - 50 g / 100 m - 3315'], 'bez -neatjaunot');
 
 assert.equal(by['Dzija Nr0'].category_full, 'Dzija >> DROPS-Air');
 assert.equal(by['Dzija Nr5'].category_full, 'Dzija', 'SEO tags un viena produkta tags nav kategorija');

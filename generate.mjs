@@ -273,12 +273,24 @@ async function fetchStore(shopUrl, lang) {
 // Google faili ir lieli (~20 MB katrs), tāpēc tiek publicēti saspiesti (.gz) – Merchant Center tos pieņem
 // (https://support.google.com/merchants/answer/12631822), un GitHub Pages izvietošana paliek ātra.
 
-// Iepriekšējā publicētā versija kā teksts (.gz tiek atspiests).
+// Iepriekšējā publicētā versija kā teksts (.gz tiek atspiests). null – faila nav (HTTP 404, piem. pirmā publicēšana).
+// Citas kļūdas (tīkls, 5xx) – izņēmums: tad nav zināms, kas šobrīd ir publicēts, un jaunu komplektu izvietot nedrīkst
+// (tas aizvietotu visu vietni, un fails varētu pazust). Izvietošana nenotiek, publiski paliek iepriekšējais komplekts.
 async function fetchPrevious(file) {
   const res = await fetchRetry(`${PAGES_URL}/${file}`, { cache: 'no-store' }, 2);
-  if (!res.ok) return null;
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Iepriekšējo ${file} nevarēja nolasīt (HTTP ${res.status}) – izvietošana netiek veikta.`);
   const buf = Buffer.from(await res.arrayBuffer());
   return buf[0] === 0x1f && buf[1] === 0x8b ? gunzipSync(buf).toString('utf8') : buf.toString('utf8');
+}
+
+// Pārņem iepriekšējo publicēto failu (arī tad, ja iepriekšējais stats.json nav nolasāms). Preču skaitu ņem no paša faila,
+// lai stats.json sakristu ar faila saturu. null – iepriekšējā faila nav.
+async function carryOver(key, file, prev, err, itemTag) {
+  const old = await fetchPrevious(file);
+  if (!old) return null;
+  const items = (old.match(new RegExp(`<${itemTag}[\\s>]`, 'g')) || []).length;
+  return { xml: old, stats: { decimal: null, skipped: {}, ...(prev?.[key] || {}), items, carriedOver: true, error: err.message } };
 }
 
 // Veikala /products.json → Map(varianta ID → teksti, cena, pilns apraksts, attēli, variantu opcijas) Google failiem.
@@ -314,10 +326,8 @@ async function buildGoogle(items, prev) {
     return r;
   } catch (err) {
     console.log(`::warning title=${file}::${err.message} – paliek iepriekšējā versija`);
-    try {
-      const old = prev?.google?.items ? await fetchPrevious(file) : null;
-      if (old) return { xml: old, stats: { ...prev.google, carriedOver: true, error: err.message } };
-    } catch { /* nav iepriekšējās versijas */ }
+    const old = await carryOver('google', file, prev, err, 'item');
+    if (old) return old;
     const r = toGoogleXml(items, new Map(), CONFIG);
     if (r.stats.items < 100) { console.log(`${file} šoreiz netiek izveidots.`); return null; }
     return { xml: r.xml, stats: { ...r.stats, error: err.message } };
@@ -341,11 +351,9 @@ async function buildGoogleMarket({ key, file, market }, items, prev) {
     return r;
   } catch (err) {
     console.log(`::warning title=${file}::${err.message} – paliek iepriekšējā versija`);
-    try {
-      const old = prev?.[key]?.items ? await fetchPrevious(file) : null;
-      if (old) return { xml: old, stats: { ...prev[key], carriedOver: true, error: err.message } };
-    } catch { /* nav iepriekšējās versijas */ }
-    console.log(`${file} šoreiz netiek izveidots.`);
+    const old = await carryOver(key, file, prev, err, 'item');
+    if (old) return old;
+    console.log(`${file} šoreiz netiek izveidots (iepriekšējās versijas nav).`);
     return null;
   }
 }
@@ -370,13 +378,9 @@ async function buildForeign({ key, file, shopUrl, lang, langName, render }, item
     return r;
   } catch (err) {
     console.log(`::warning title=${file}::${err.message} – paliek iepriekšējā versija`);
-    try {
-      const old = await fetchRetry(`${PAGES_URL}/${file}`, { cache: 'no-store' }, 2);
-      if (old.ok && prev?.[key]?.items) {
-        return { xml: await old.text(), stats: { ...prev[key], carriedOver: true, error: err.message } };
-      }
-    } catch { /* nav iepriekšējās versijas */ }
-    console.log(`${file} šoreiz netiek izveidots.`);
+    const old = await carryOver(key, file, prev, err, 'product');
+    if (old) return old;
+    console.log(`${file} šoreiz netiek izveidots (iepriekšējās versijas nav).`);
     return null;
   }
 }
@@ -402,21 +406,23 @@ async function main() {
 
   // Drošība: ja preču pēkšņi ir uz pusi mazāk nekā iepriekšējā reizē, kaut kas nav kārtībā
   // (piem. Shopify atdeva nepilnus datus) – tad atstājam vecos failus. Apiet var ar FORCE=1.
+  // Iepriekšējais stats.json: ja tā nav (404, pirmā publicēšana) – turpina bez krituma pārbaudes; ja to nevar nolasīt
+  // (tīkls, 5xx, bojāts JSON) – izvietošana netiek veikta, jo bez tā nedarbotos krituma pārbaude un failu pārņemšana.
   let prev = null;
-  try {
-    prev = await (await fetchRetry(`${PAGES_URL}/stats.json`, { cache: 'no-store' }, 2)).json();
-    if (prev?.items && items.length < prev.items * 0.5 && process.env.FORCE !== '1') {
-      throw new Error(`Preču skaits nokrities no ${prev.items} uz ${items.length} – fails netiek pārrakstīts.`);
-    }
-    if (prev?.ceno?.items && ceno.stats.items < prev.ceno.items * 0.5 && process.env.FORCE !== '1') {
-      throw new Error(`Preču skaits (Ceno) nokrities no ${prev.ceno.items} uz ${ceno.stats.items} – faili netiek pārrakstīti.`);
-    }
-    if (prev?.cenueksperts?.items && cenu.stats.items < prev.cenueksperts.items * 0.5 && process.env.FORCE !== '1') {
-      throw new Error(`Preču skaits (Cenueksperts) nokrities no ${prev.cenueksperts.items} uz ${cenu.stats.items} – faili netiek pārrakstīti.`);
-    }
-  } catch (err) {
-    if (err.message.startsWith('Preču skaits')) throw err;
-    console.log(`Iepriekšējo statistiku nevarēja nolasīt (${err.message}) – turpinu.`);
+  const prevText = await fetchPrevious('stats.json');
+  if (prevText == null) {
+    console.log('Iepriekšējā stats.json nav (pirmā publicēšana) – turpinu bez krituma pārbaudes.');
+  } else {
+    try { prev = JSON.parse(prevText); } catch { throw new Error('Iepriekšējais stats.json nav derīgs JSON – izvietošana netiek veikta.'); }
+  }
+  if (prev?.items && items.length < prev.items * 0.5 && process.env.FORCE !== '1') {
+    throw new Error(`Preču skaits nokrities no ${prev.items} uz ${items.length} – fails netiek pārrakstīts.`);
+  }
+  if (prev?.ceno?.items && ceno.stats.items < prev.ceno.items * 0.5 && process.env.FORCE !== '1') {
+    throw new Error(`Preču skaits (Ceno) nokrities no ${prev.ceno.items} uz ${ceno.stats.items} – faili netiek pārrakstīti.`);
+  }
+  if (prev?.cenueksperts?.items && cenu.stats.items < prev.cenueksperts.items * 0.5 && process.env.FORCE !== '1') {
+    throw new Error(`Preču skaits (Cenueksperts) nokrities no ${prev.cenueksperts.items} uz ${cenu.stats.items} – faili netiek pārrakstīti.`);
   }
 
   const foreign = [];

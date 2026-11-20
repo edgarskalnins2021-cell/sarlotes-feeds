@@ -41,6 +41,15 @@ export const CONFIG = {
   categoryTagMaxShare: 0.5,
   categoryTagMinCount: 2,
 
+  // Salidzini.lv un KurPirkt.lv kategoriju nosaukumi pēc atslēgvārdu audita (Edgara apstiprinājums 20.11.2026, J2 un J3).
+  // Maina tikai šo divu portālu failus (salidzini.xml, kurpirkt.xml) un tikai pēdējo līmeni; Shopify lauki, Ceno,
+  // Cenueksperts, Google, Hind.ee un Kaina24 paliek ar Shopify nosaukumu. `when` – jaunais nosaukums tikai precēm,
+  // kuru nosaukums atbilst (pārējās paliek esošajā kategorijā).
+  portalCategoryNames: {
+    'Dzija >> Vilnas un dzīvnieku šķiedru dzija': { to: 'Dzija >> Vilnas dzijas' }, // J2
+    'Šūšanas materiāli >> Citi šūšanas materiāli': { to: 'Šūšanas materiāli >> Polsteri', when: /polster/i }, // J3: grupā tikai polsteri
+  },
+
   // Piegāde (Latvija).
   courierOnlyType: 'COURIER_ONLY',
   delivery: {
@@ -435,11 +444,18 @@ export function buildItems(products, cfg = CONFIG) {
 const TAG_ORDER = ['name', 'link', 'price', 'image', 'category_full', 'brand', 'ean', 'in_stock',
   'delivery_latvija', 'delivery_days_latvija', 'delivery_days_shop', 'used'];
 
+// Salidzini/KurPirkt kategorija (CONFIG.portalCategoryNames); pārējiem portāliem – category_full bez izmaiņām.
+export function portalCategory(it, cfg = CONFIG) {
+  const r = cfg.portalCategoryNames?.[it.category_full];
+  if (!r || (r.when && !r.when.test(it._baseName ?? it.name))) return it.category_full;
+  return r.to;
+}
+
 // Kurpirkt.lv formāts (https://www.kurpirkt.lv/veikaliem.php): tās pašas preces, citi lauku nosaukumi.
-export function toKurpirktXml(items) {
+export function toKurpirktXml(items, cfg = CONFIG) {
   const out = ["<?xml version='1.0' encoding='utf-8' ?>", '<root>'];
   for (const it of items) {
-    const parts = String(it.category_full || '').split(/\s*>>\s*/).filter(Boolean);
+    const parts = String(portalCategory(it, cfg) || '').split(/\s*>>\s*/).filter(Boolean);
     const row = {
       name: it.name,
       link: it.link,
@@ -812,7 +828,11 @@ export function googleColor(value) {
     .replace(/\s+/g, ' ')
     .trim();
   if (!/\p{L}{3,}/u.test(c) || /\d/.test(c) || c.length > 40 || /daudzkrās|multicolou?r|dažād/i.test(c)) return '';
-  return c;
+  // Google (answer/6324487): tikai krāsa, nevis apraksts vai varianta numurs ("2. variants" → "variants");
+  // vairākas krāsas – līdz 3, atdalītas ar "/", nevis " - " vai komatu. Citādi – netiek likts (paliek variant_option).
+  if (/[.,;:!?]/.test(c) || /^(variants?|tonis|tone|dizains|design)$/i.test(c)) return '';
+  const parts = c.split(/\s+[–-]\s+/);
+  return parts.length > 3 ? '' : parts.join('/');
 }
 
 const noEmoji = (s) => String(s ?? '').replace(/\p{Extended_Pictographic}|\uFE0F|\u200D/gu, '')
@@ -872,7 +892,7 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
   const m = market ? { ...cfg.googleMarkets.common, ...market } : null;
   const stats = { items: 0, decimal: 0, enriched: 0, skipped: {}, with: { gtin: 0, brand: 0, color: 0, size: 0, pattern: 0,
     variant_option: 0, item_group_id: 0, additional_image_link: 0, google_product_category: 0, shipping: 0, sale_price: 0 } };
-  if (m) stats.descriptionIsTitle = 0;
+  if (m) { stats.descriptionIsTitle = 0; stats.typeNotTranslated = 0; }
   const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
   const seenIds = new Set();
   const seenLinks = new Set();
@@ -925,6 +945,8 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
       if (!translated) stats.descriptionIsTitle++;
       unit = e.price;
       productType = it._courierOnly || m.technicalTypePattern.test(e.productType || '') ? '' : (e.productType || '');
+      // Tips bez angļu tulkojuma (sakrīt ar latvisko) netiek likts (arī custom_label_0) – Google: vienā avotā viena valoda.
+      if (productType && normCmp(productType) === normCmp(it._productType)) { productType = ''; stats.typeNotTranslated++; }
     } else {
       title = cut(noEmoji(it._baseName ?? it.name), g.titleMax);
       groupTitle = cut(noEmoji(it._productTitle || title), g.titleMax);
@@ -1023,12 +1045,12 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
   return { xml: out.join('\n'), stats };
 }
 
-export function toXml(items) {
+export function toXml(items, cfg = CONFIG) {
   const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>'];
   for (const it of items) {
     out.push('<item>');
     for (const tag of TAG_ORDER) {
-      const val = it[tag];
+      const val = tag === 'category_full' ? portalCategory(it, cfg) : it[tag];
       if (val === '' || val == null) continue;
       out.push(`<${tag}>${escapeXml(val)}</${tag}>`);
     }

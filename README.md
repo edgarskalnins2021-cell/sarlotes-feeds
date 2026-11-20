@@ -21,7 +21,10 @@ Grafiks GitHub pusē mēdz kavēties; vajadzības gadījumā: **Actions → Sali
 Drošības noteikumi: ja Shopify īslaicīgi neatbild, skripts mēģina vēlreiz; ja preču ir aizdomīgi maz
 (zem 100 vai uz pusi mazāk nekā iepriekš – arī Ceno failā atsevišķi), netiek izvietots neviens fails un
 publiski paliek iepriekšējā versija. Ja neizdodas tikai Igaunijas vai Lietuvas fails, Latvijas faili tiek
-izvietoti, bet `hindee.xml` / `kaina24.xml` / `google-*.xml.gz` paliek iepriekšējā versija. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
+izvietoti, bet `hindee.xml` / `kaina24.xml` / `google-*.xml.gz` paliek iepriekšējā versija (arī tad, ja iepriekšējais
+`stats.json` nav nolasāms; preču skaitu ņem no paša faila). Ja iepriekšējo publikāciju (`stats.json` vai pārņemamo failu)
+nevar nolasīt tīkla vai servera kļūdas dēļ, izvietošana nenotiek vispār – citādi nedarbotos krituma pārbaude un fails
+varētu pazust; ja iepriekšējās `stats.json` nav (404, pirmā publicēšana), turpina bez krituma pārbaudes. Pēc izvietošanas darbs `verify` nolasa visus publiskos XML
 (HTTP 200, derīgs XML, preču skaits sakrīt ar `stats.json`). Reizi nedēļā (pirmdienas rītā)
 tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu neaktivitātes dēļ.
 
@@ -40,6 +43,7 @@ tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu
 | Nosaukumā "pēdējais gabaliņš 50cm", "-neatjaunot" | "gabals 50 cm", piezīme tiek izņemta |
 | Domuzīme "–" (nosaukumos, variantos, aprakstos; visos failos, arī Hind.ee, Kaina24, Google) | "-" (veikala stils kopš 18.11.2026); produkta un varianta nosaukumu atdala " - " |
 | Kategorija | Google Shopping lauki, piem. "Audumi >> Kokvilnas audumi"; bez tiem – tips + konkrētākais tags (SEO tagi, kas ir vairāk nekā pusei tipa preču, netiek ņemti) |
+| Kategoriju nosaukumi tikai Salidzini un Kurpirkt (`portalCategoryNames`, Edgara apstiprinājums 20.11.2026) | "Dzija >> Vilnas un dzīvnieku šķiedru dzija" → "Dzija >> Vilnas dzijas"; "Šūšanas materiāli >> Citi šūšanas materiāli" → "Šūšanas materiāli >> Polsteri" (tikai precēm ar "polster" nosaukumā). Shopify lauki, Ceno, Cenueksperts, Google, Hind.ee, Kaina24 – bez izmaiņām |
 | Zīmols | tikai īsti zīmoli (SCHMETZ, Milward, Prym, DROPS, Alize u.c.) |
 | EAN | tikai derīgi kodi (automātiski ģenerētie netiek likti) |
 | Piegāde | 3,30 € (Omniva), 0 € no 70 €; tikai kurjers – 11,90 € / 15,90 € virs 3 kg; 3 dienas; veikalā Cēsīs – šodien (Salidzini rāda "0d" un zaļo "Ātra piegāde") |
@@ -182,6 +186,8 @@ Tas pats kods kā `google-lv.xml.gz`, atšķirības:
 | `g:price` | valsts cena par Shopify vienību (Igaunijā ar 24 % PVN), metrā tirgotajām + vienības cena 10cm / 1m |
 | `g:shipping` | katrai precei: Omniva pakomāts 5,99 € (ne "tikai kurjers", līdz 30 kg) un kurjers 15,90 €; 0–1 + 3–4 darba dienas |
 | `g:custom_label_*` | angliski: tips, "by the metre"/"by the piece", cenu grupa, "sale" |
+| `g:product_type`, `g:custom_label_0` | ja tips nav iztulkots angliski (sakrīt ar latvisko) – netiek likts (Google: vienā avotā viena valoda) |
+| `g:color` (visi 3 faili) | tikai krāsa: varianta numurs ("2. variants", "tone"), apraksts ar pieturzīmēm – netiek likts; vairākas krāsas – ar "/" (līdz 3) |
 | `g:return_policy_label` | tikai Lietuvā: metrā tirgotajām `cut-to-length` → Merchant Center izņēmums "cut-to-length policy" (atpakaļ tikai bojātas, maiņa nav – kā noteikumos par nogrieztām precēm) |
 
 Drošība: ja `/en/` pāradresē prom vai vairāk nekā 25 % nosaukumu nav angliski – paliek iepriekšējā versija.

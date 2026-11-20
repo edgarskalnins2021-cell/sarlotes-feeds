@@ -117,6 +117,25 @@ assert.ok(kp.includes('<manufacturer></manufacturer>'), 'tukšs zīmols paliek k
 assert.ok(kp.includes('<delivery_cost_riga>3.30</delivery_cost_riga>'));
 assert.ok(kp.includes('<used>1</used>') && kp.includes('<used>0</used>'));
 assert.ok(kp.includes('<in_stock>44</in_stock>'));
+
+// Salidzini/KurPirkt kategoriju nosaukumi (Edgara apstiprinājums J2, J3): tikai šajos divos failos un tikai pēdējais līmenis.
+const ren = buildItems([
+  p({ title: 'Dzijas DROPS Alaska – 50 g / 70 m', handle: 'alaska', productType: 'Dzija',
+    variants: [v({ id: 'gid://shopify/ProductVariant/4001', price: 3.95, qty: 5, categoryPath: ['Dzija', 'Vilnas un dzīvnieku šķiedru dzija'] })] }),
+  p({ title: 'Plecu polsteri 20 mm', handle: 'polsteri', productType: 'Polsteri',
+    variants: [v({ id: 'gid://shopify/ProductVariant/4002', price: 1.2, qty: 5, categoryPath: ['Šūšanas materiāli', 'Citi šūšanas materiāli'] })] }),
+  p({ title: 'Magnēta aizdare', handle: 'magnets', productType: 'Furnitūra metāla',
+    variants: [v({ id: 'gid://shopify/ProductVariant/4003', price: 1.5, qty: 5, categoryPath: ['Šūšanas materiāli', 'Citi šūšanas materiāli'] })] }),
+], CONFIG).items;
+const rx = toXml(ren);
+const rk = toKurpirktXml(ren);
+assert.ok(rx.includes('<category_full>Dzija &gt;&gt; Vilnas dzijas</category_full>'));
+assert.ok(rk.includes('<category>Vilnas dzijas</category>') && rk.includes('<category_full>Dzija &gt; Vilnas dzijas</category_full>'));
+assert.ok(rx.includes('<category_full>Šūšanas materiāli &gt;&gt; Polsteri</category_full>'));
+assert.ok(rk.includes('<category>Polsteri</category>'));
+assert.ok(rx.includes('<category_full>Šūšanas materiāli &gt;&gt; Citi šūšanas materiāli</category_full>'), 'ne-polsteri paliek esošajā kategorijā');
+assert.equal(ren[0].category_full, 'Dzija >> Vilnas un dzīvnieku šķiedru dzija', 'items (Ceno, Cenueksperts, Google, EE, LT) – Shopify nosaukums');
+assert.ok(toXml([fabric]).includes('<category_full>Audumi &gt;&gt; Kokvilnas audumi</category_full>'), 'nepiesaistītās kategorijas nemainās');
 console.log(kp.split('\n').slice(0, 14).join('\n'));
 console.log(xml.split('\n').slice(0, 16).join('\n'));
 console.log('...\nVisas pārbaudes izietas:', stats);

@@ -257,4 +257,23 @@ assert.ok(ltMetre.length >= 1, 'LT failā ir metrā tirgota prece');
 assert.deepEqual(ltCut, ltMetre, 'LT: return_policy_label tieši metrā tirgotajām');
 assert.ok(!ee.xml.includes('return_policy_label') && !xml.includes('return_policy_label'), 'EE un LV failos izņēmuma vēl nav');
 
+// Krāsa (Google answer/6324487): tikai krāsa, vairākas – ar "/", ne apraksts vai varianta numurs
+assert.equal(googleColor('forget-me-not blue - light pink'), 'forget-me-not blue/light pink');
+assert.equal(googleColor('Gaiši zila – balta'), 'Gaiši zila/balta');
+assert.equal(googleColor('Hufflepuff - loyalty and hard work.'), '', 'apraksts nav krāsa');
+assert.equal(googleColor('Black, pack of 10'), '', 'komats – nav tikai krāsa');
+assert.equal(googleColor('2. variants'), '', 'varianta numurs nav krāsa');
+assert.equal(googleColor('3. tone'), '');
+assert.equal(googleColor('Pink – #12'), 'Pink', 'kods noņemts kā līdz šim');
+
+// Tips bez angļu tulkojuma (sakrīt ar latvisko) – EN failā netiek likts ne product_type, ne custom_label_0
+assert.ok(samts.productType, 'LV tips ir');
+const enJson2 = enJson.map((x) => (x.handle === 'velvet-purple' ? { ...x, product_type: samts.productType } : x));
+const ee2 = toGoogleXml(items, normalizeLvStore(enJson2), CONFIG, CONFIG.googleMarkets.ee);
+const vel = [...ee2.xml.matchAll(/<item>\n([\s\S]*?)\n<\/item>/g)].map((mm) => mm[1]).find((b) => b.includes('/en/products/velvet-purple'));
+assert.ok(vel && !vel.includes('<g:product_type>') && !vel.includes('<g:custom_label_0>'), 'latvisks tips EN failā netiek likts');
+assert.match(vel, /<g:custom_label_2>by the (metre|piece)<\/g:custom_label_2>/, 'pārējās etiķetes paliek');
+assert.equal(ee2.stats.typeNotTranslated, 1);
+assert.equal(ee.stats.typeNotTranslated, 0);
+
 console.log('Google pārbaudes izietas:', JSON.stringify(stats), '| EE:', JSON.stringify(ee.stats));

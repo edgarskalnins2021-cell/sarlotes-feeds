@@ -143,7 +143,7 @@ assert.equal(pb.variants[0].image, 'https://cdn/v1.jpg');
     variants: [tv(9701, 'XXS'), tv(9702, 'XS')] })], CONFIG);
   const cx = toCenoXml(ai, CONFIG);
   assert.equal(cx.stats.items, 1);
-  assert.ok(cx.xml.includes('<name>T-krekls “Auseklis” - T-krekls / Balta</name>'));
+  assert.ok(cx.xml.includes('<name>T-krekls “Auseklis” - Balta</name>'));
   assert.ok(cx.xml.includes('variant=9701') && !cx.xml.includes('variant=9702'));
   assert.ok(cx.xml.includes('<delivery_days_riga>5</delivery_days_riga>') && cx.xml.includes('<delivery_days_latvija>5</delivery_days_latvija>'));
   assert.ok(!cx.xml.includes('<in_stock>'));

@@ -83,7 +83,7 @@ assert.equal(stats.items, prods.length); assert.equal(stats.decimal, 1);
     { id: 9602, title: 'Vaikiški marškinėliai / Balta / 4 metai', option1: 'Vaikiški marškinėliai', option2: 'Balta', option3: '4 metai', price: '24.90' }] }]);
   const kx = toKaina24Xml(ki, lt, CONFIG);
   assert.equal(kx.stats.items, 1, 'viens ieraksts krāsai');
-  assert.ok(kx.xml.includes('<title><![CDATA[Vaikiški marškinėliai „Auseklis šviesus“ - Vaikiški marškinėliai / Balta]]></title>'));
+  assert.ok(kx.xml.includes('<title><![CDATA[Vaikiški marškinėliai „Auseklis šviesus“ - Balta]]></title>'), 'bez TeeInBlue opcijas');
   assert.ok(kx.xml.includes('<category_name><![CDATA[Vaikiški marškinėliai]]></category_name>'));
   assert.ok(kx.xml.includes('<working_days>7</working_days>') && !kx.xml.includes('<stock>'));
   assert.equal(kx.stats.defaultCategory, 0);

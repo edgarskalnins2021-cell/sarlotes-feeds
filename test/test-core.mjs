@@ -181,7 +181,7 @@ assert.ok(appBy['5103']._portalSkip && appBy['5104']._portalSkip && !appBy['5201
 assert.equal(appBy['5201'].name, 'Džemperis SOL’S COLUMBIA Unisex - Melna');
 assert.equal(appBy['5103']._baseName, 'Džemperis SOL’S COLUMBIA Unisex - Balta / L', 'Google nosaukums ar izmēru');
 const ausek = appBy['6101'];
-assert.equal(ausek.name, 'T-krekls “Auseklis” - T-krekls / Balta');
+assert.equal(ausek.name, 'T-krekls “Auseklis” - Balta', 'TeeInBlue opcija "Available Product" nosaukumā netiek likta');
 assert.equal(ausek.category_full, 'Gatavie izstrādājumi un apdruka >> T-krekli');
 assert.equal(ausek.in_stock, '');
 assert.equal(appBy['6201'].category_full, 'Gatavie izstrādājumi un apdruka >> Priekšauti');
@@ -261,6 +261,57 @@ assert.equal(mcBy['8602'].name, 'T-krekla apdruka ar jūsu dizainu kreisajā pus
 assert.ok(!mcBy['8701']._portalSkip && mcBy['8701'].color === '', 'nav baltas – pirmā krāsa, bez <color>');
 assert.equal(mc.stats.mergedWithoutMockupColour, 1);
 assert.ok(!toXml(mc.items).includes('<color></color>') && toXml(mc.items).includes('<color>Balta</color>'));
+
+// Robežgadījumi (neatkarīgā pārbaude 21.11.): izmēri pēc skalas, ne Shopify secības; dažādi preču veidi vienā produktā;
+// metrā tirgota prece ar tagu; nosaukumu sadursme netiek skaitīta kā apvienošana.
+const ov = (id, other, colour, size, price = 29.9, o = {}) => v({ id: `gid://shopify/ProductVariant/${id}`, title: `${other} / ${colour} / ${size}`,
+  position: id % 100, price, tracked: false, qty: null, inventoryPolicy: 'CONTINUE', image: 'https://cdn.example/makets.jpg',
+  selectedOptions: [{ name: 'Available Product', value: other }, { name: 'Krāsa', value: colour }, { name: 'Izmērs', value: size }], ...o });
+const rb = buildItems([
+  // sajaukta secība (kā 15861469512014) un pirmajai krāsai nav ne mazākā, ne lielākā izmēra
+  p({ id: 'gid://shopify/Product/91', title: 'T-krekls “Kreisā puse”', handle: 'kp', productType: 'Customizer', variants: [
+    ov(9101, 'T-krekls', 'Balta', 'XS'), ov(9102, 'T-krekls', 'Balta', 'XXL'), ov(9103, 'T-krekls', 'Balta', 'M'), ov(9104, 'T-krekls', 'Melna', '4XL'),
+    ov(9105, 'T-krekls', 'Melna', 'XXS')] }),
+  // divi preču veidi vienā produktā ar vienu bildi – katram savs ieraksts
+  p({ id: 'gid://shopify/Product/92', title: 'Apdruka “Auseklis”', handle: 'ap', productType: 'Customizer', variants: [
+    ov(9201, 'Hūdijs', 'Balta', 'M', 49.9), ov(9202, 'T-krekls', 'Balta', 'S'), ov(9203, 'T-krekls', 'Melna', 'S'), ov(9204, 'Hūdijs', 'Melna', 'L', 49.9)] }),
+], CONFIG);
+const rbBy = Object.fromEntries(rb.items.map((i) => [i._variantId, i]));
+assert.equal(rbBy['9101'].name, 'T-krekls “Kreisā puse” (2 krāsas, XXS-4XL)', 'diapazons pēc izmēru skalas');
+assert.equal(rb.stats.items, 3);
+assert.equal(rbBy['9202'].name, 'T-krekls ar apdruku “Apdruka Auseklis” - T-krekls (2 krāsas, S)');
+assert.equal(rbBy['9201'].name, 'Džemperis ar apdruku “Apdruka Auseklis” - Hūdijs (2 krāsas, M-L)', 'hūdijs – džemperu kategorija');
+assert.equal(rbBy['9201'].price, '49.90', 'katram veidam sava cena');
+const dc = buildItems([p({ id: 'gid://shopify/Product/93', title: 'T-krekls metrā', handle: 'dm', productType: 'Apģērbi', tags: ['decimal', 'viens-ieraksts'],
+  variants: [sv(9301, 'Balta', 'S', { price: 1.5, qty: 30 }), sv(9302, 'Melna', 'S', { price: 1.5, qty: 30 })] })], CONFIG);
+assert.equal(dc.items.find((i) => !i._portalSkip).name, 'T-krekls metrā (2 krāsas, S) (cena par 1 m)');
+const col = buildItems([
+  p({ id: 'gid://shopify/Product/94', title: 'T-krekls “Mamma”', handle: 'm1', productType: 'Customizer', variants: [ov(9401, 'T-krekls', 'Balta', 'S'), ov(9402, 'T-krekls', 'Melna', 'S')] }),
+  p({ id: 'gid://shopify/Product/95', title: 'T-krekls “Mamma” (2 krāsas, S)', handle: 'm2', productType: 'Audums', variants: [v({ id: 'gid://shopify/ProductVariant/9501', price: 5, qty: 1 })] }),
+], CONFIG);
+assert.equal(col.stats.mergedProducts, 0);
+assert.equal(col.stats.mergedNameCollision, 1, 'sadursme netiek skaitīta kā apvienošana');
+
+// TeeInBlue "Available Product" portālu nosaukumos netiek likts; krāsa netiek atkārtota, ja tā jau ir nosaukumā (Edgars 21.11.).
+const ap1 = (id, title, apv, colour) => p({ id: `gid://shopify/Product/${id}`, title, handle: `h${id}`, productType: 'Customizer', variants: [
+  v({ id: `gid://shopify/ProductVariant/${id}1`, title: `${apv} / ${colour} / viens izmērs`, price: 24.9, tracked: false, qty: null, inventoryPolicy: 'CONTINUE',
+    selectedOptions: [{ name: 'Available Product', value: apv }, { name: 'Color', value: colour }, { name: 'Size', value: 'viens izmērs' }] })] });
+const tb = buildItems([
+  ap1(961, 'Priekšauts “Super mamma”', 'Priekšauts ar Tavu apdruku-tumši zaļš', 'Tumši zaļa'),
+  ap1(962, 'Priekšauts tumši zaļš “Slepenā recepte”', 'Priekšauts ar Tavu apdruku-tumši zaļš', 'Tumši zaļa'),
+  ap1(963, 'Džemperis balts "Te ir manas mājas"', 'Džemperis-balts', 'Balta'),
+  ap1(964, 'Kokvilnas auduma maisiņš “Normāla zoss”', 'Kokvilnas auduma maisiņš ar apdruku', 'Dabīga'),
+  ap1(965, 'Priekšauts ar jūsu apdruku - rozā', 'Priekšauts ar Tavu apdruku-rozā', 'Rozā'),
+], CONFIG).items;
+assert.deepEqual(tb.map((i) => i.name), [
+  'Priekšauts “Super mamma” - Tumši zaļa',
+  'Priekšauts tumši zaļš “Slepenā recepte”',
+  'Džemperis balts "Te ir manas mājas"',
+  'Kokvilnas auduma maisiņš “Normāla zoss” - Dabīga',
+  'Priekšauts ar jūsu apdruku - rozā',
+]);
+assert.ok(tb.every((i) => !/Tavu apdruku|Džemperis-balts|maisiņš ar apdruku \//.test(i.name)));
+assert.equal(tb[0]._baseName, 'Priekšauts “Super mamma” - Priekšauts ar Tavu apdruku-tumši zaļš / Tumši zaļa / viens izmērs', 'Google – kā līdz šim');
 console.log(kp.split('\n').slice(0, 14).join('\n'));
 console.log(xml.split('\n').slice(0, 16).join('\n'));
 console.log('...\nVisas pārbaudes izietas:', stats);

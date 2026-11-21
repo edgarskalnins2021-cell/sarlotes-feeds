@@ -125,7 +125,7 @@ assert.equal(stats.items, rows.length); assert.equal(stats.decimal, 3);
   ]);
   const ax = toHindeeXml(ai, eeA, CONFIG);
   assert.equal(ax.stats.items, 3, 'Valge + Must (apdruka) + tukšais krekls');
-  assert.ok(ax.xml.includes('<title><![CDATA[T-särk “Auseklis” - T-särk / Valge]]></title>'), 'nosaukumā bez izmēra');
+  assert.ok(ax.xml.includes('<title><![CDATA[T-särk “Auseklis” - Valge]]></title>'), 'nosaukumā bez izmēra un bez TeeInBlue opcijas');
   assert.ok(ax.xml.includes('<title><![CDATA[T-särk SOL’S Legend Unisex - Valge]]></title>'));
   assert.ok(!ax.xml.includes('<product id="9902">'), 'cits tās pašas krāsas izmērs netiek likts');
   assert.ok(ax.xml.includes('<category_name><![CDATA[T-särgid]]></category_name>'));
@@ -156,7 +156,7 @@ assert.equal(stats.items, rows.length); assert.equal(stats.decimal, 3);
   assert.ok(kx.xml.split('<product id="9921">')[1].split('</product>')[0].includes('<category_name><![CDATA[Laste T-särgid]]></category_name>'));
   const hBlock = kx.xml.split('<product id="9931">')[1].split('</product>')[0];
   assert.ok(hBlock.includes('<category_name><![CDATA[Pusad]]></category_name>'), 'nezināma Shopify kategorija → pēc nosaukuma');
-  assert.ok(hBlock.includes('<title><![CDATA[Pusa “Juured” - Pusa / Hall / melanž]]></title>'), 'izmērs izņemts pēc opcijas, " / " vērtībā saglabāts');
+  assert.ok(hBlock.includes('<title><![CDATA[Pusa “Juured” - Hall / melanž]]></title>'), 'izmērs un TeeInBlue opcija izņemti pēc opcijas, " / " vērtībā saglabāts');
   assert.equal(kx.stats.defaultCategory, 0);
 
   // Viens ieraksts apdrukas produktam (viena maketa bilde visām krāsām): igauniski "(2 värvi, XXS-XS)", bērniem "a.".

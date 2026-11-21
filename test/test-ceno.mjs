@@ -133,5 +133,22 @@ assert.equal(pb.variants[0].compareAtPrice, 0.49);
 assert.equal(pb.variants[0].grams, 20);
 assert.equal(pb.variants[0].image, 'https://cdn/v1.jpg');
 
+// Apģērbi (Edgars 21.11.2026): viens ieraksts katrai krāsai, nosaukums bez izmēra; apdrukas precēm bez atlikuma,
+// piegādes termiņš 3 + 2 = 5 d.d.
+{
+  const tv = (id, size) => v({ id: `gid://shopify/ProductVariant/${id}`, title: `T-krekls / Balta / ${size}`, price: 29.9, tracked: false, qty: null,
+    inventoryPolicy: 'CONTINUE', position: id % 10,
+    selectedOptions: [{ name: 'Available Product', value: 'T-krekls' }, { name: 'Krāsa', value: 'Balta' }, { name: 'Izmērs', value: size }] });
+  const { items: ai } = buildItems([p({ title: 'T-krekls “Auseklis”', handle: 'auseklis', productType: 'Customizer',
+    variants: [tv(9701, 'XXS'), tv(9702, 'XS')] })], CONFIG);
+  const cx = toCenoXml(ai, CONFIG);
+  assert.equal(cx.stats.items, 1);
+  assert.ok(cx.xml.includes('<name>T-krekls “Auseklis” - T-krekls / Balta</name>'));
+  assert.ok(cx.xml.includes('variant=9701') && !cx.xml.includes('variant=9702'));
+  assert.ok(cx.xml.includes('<delivery_days_riga>5</delivery_days_riga>') && cx.xml.includes('<delivery_days_latvija>5</delivery_days_latvija>'));
+  assert.ok(!cx.xml.includes('<in_stock>'));
+  assert.ok(cx.xml.includes('<category_full>Gatavie izstrādājumi un apdruka &gt; T-krekli</category_full>'));
+}
+
 console.log(xml.split('\n').slice(0, 26).join('\n'));
 console.log('...\nCeno pārbaudes izietas:', JSON.stringify(stats));

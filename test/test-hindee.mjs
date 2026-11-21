@@ -104,4 +104,34 @@ assert.ok(rows.every((r) => r.link.startsWith('https://sharlottekangad.ee/produc
 assert.equal(new Set(rows.map((r) => r.link)).size, rows.length);
 assert.ok(rows.every((r) => /^\d+\.\d{2}$/.test(r.val('price'))));
 assert.equal(stats.items, rows.length); assert.equal(stats.decimal, 3);
+// Apģērbi (Edgars 21.11.2026): viens ieraksts katrai krāsai, nosaukumā bez izmēra, kategorija igauniski,
+// apdrukas precēm bez atlikuma un piegāde + izgatavošana (5 + 2 = 7 d.d.).
+{
+  const tv = (id, title) => v({ id: `gid://shopify/ProductVariant/${id}`, title, price: 29.9, tracked: false, qty: null, inventoryPolicy: 'CONTINUE',
+    position: id % 10, selectedOptions: title.split(' / ').map((value, i) => ({ name: ['Available Product', 'Krāsa', 'Izmērs'][i], value })) });
+  const tee = p({ title: 'T-krekls “Auseklis”', handle: 'auseklis', productType: 'Customizer', image: 'https://cdn.example/t.jpg',
+    variants: [tv(9901, 'T-krekls / Balta / XXS'), tv(9902, 'T-krekls / Balta / XS'), tv(9903, 'T-krekls / Melna / XXS')] });
+  const blank = p({ title: 'T-krekls SOL’S Legend Unisex', handle: 'sol', productType: 'Apģērbi',
+    variants: [v({ id: 'gid://shopify/ProductVariant/9911', title: 'Balta / S', price: 12.9, qty: 5, position: 1,
+      selectedOptions: [{ name: 'Krāsa', value: 'Balta' }, { name: 'Izmērs', value: 'S' }] })] });
+  const { items: ai } = buildItems([tee, blank], CONFIG);
+  const eeA = normalizeEe([
+    { title: 'T-särk “Auseklis”', handle: 't-sark-auseklis', product_type: 'Kohandaja', variants: [
+      { id: 9901, title: 'T-särk / Valge / XXS', price: '30.50' }, { id: 9902, title: 'T-särk / Valge / XS', price: '30.50' },
+      { id: 9903, title: 'T-särk / Must / XXS', price: '30.50' }] },
+    { title: 'T-särk SOL’S Legend Unisex', handle: 't-sark-sol', product_type: 'Apģērbi', variants: [{ id: 9911, title: 'Valge / S', price: '13.16' }] },
+  ]);
+  const ax = toHindeeXml(ai, eeA, CONFIG);
+  assert.equal(ax.stats.items, 3, 'Valge + Must (apdruka) + tukšais krekls');
+  assert.ok(ax.xml.includes('<title><![CDATA[T-särk “Auseklis” - T-särk / Valge]]></title>'), 'nosaukumā bez izmēra');
+  assert.ok(ax.xml.includes('<title><![CDATA[T-särk SOL’S Legend Unisex - Valge]]></title>'));
+  assert.ok(!ax.xml.includes('<product id="9902">'), 'cits tās pašas krāsas izmērs netiek likts');
+  assert.ok(ax.xml.includes('<category_name><![CDATA[T-särgid]]></category_name>'));
+  assert.ok(!ax.xml.includes('Kohandaja') && !ax.xml.includes('Apģērbi'), 'tehniskais vai latviskais tips nav kategorija');
+  const tBlock = ax.xml.split('<product id="9901">')[1].split('</product>')[0];
+  assert.ok(tBlock.includes('<working_days>7</working_days>') && !tBlock.includes('<stock>'));
+  const sBlock = ax.xml.split('<product id="9911">')[1].split('</product>')[0];
+  assert.ok(sBlock.includes('<working_days>5</working_days>') && sBlock.includes('<stock>5</stock>'));
+}
+
 console.log('Hind.ee pārbaudes izietas:', JSON.stringify(stats));

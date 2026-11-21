@@ -276,4 +276,32 @@ assert.match(vel, /<g:custom_label_2>by the (metre|piece)<\/g:custom_label_2>/, 
 assert.equal(ee2.stats.typeNotTranslated, 1);
 assert.equal(ee.stats.typeNotTranslated, 0);
 
+// Apģērbi (Edgars 21.11.2026): Google – katrs izmērs atsevišķi (cenu portāliem – viens ieraksts krāsai);
+// apdrukas precēm apstrādes laiks + izgatavošana (0–1 + 1–2 = 1–3 d.d.).
+{
+  const ov = (id, color, size) => v({ id: `gid://shopify/ProductVariant/${id}`, title: `T-krekls / ${color} / ${size}`, price: 29.9, tracked: false,
+    qty: null, inventoryPolicy: 'CONTINUE', position: id % 10, image: 'https://cdn.example/t.jpg',
+    selectedOptions: [{ name: 'Available Product', value: 'T-krekls' }, { name: 'Krāsa', value: color }, { name: 'Izmērs', value: size }] });
+  const tee = p({ id: 'gid://shopify/Product/990', title: 'T-krekls “Auseklis”', handle: 'auseklis', productType: 'Customizer',
+    variants: [ov(9801, 'Balta', 'XXS'), ov(9802, 'Balta', 'XS')] });
+  const { items: gi, stats: gs } = buildItems([tee], CONFIG);
+  assert.equal(gs.items, 1, 'cenu portāliem viens ieraksts');
+  const gx = toGoogleXml(gi, new Map(), CONFIG);
+  assert.equal(gx.stats.items, 2, 'Google: abi izmēri');
+  assert.ok(gx.xml.includes('<g:title>T-krekls “Auseklis” - T-krekls / Balta / XS</g:title>'));
+  assert.ok(gx.xml.includes('<g:min_handling_time>1</g:min_handling_time>') && gx.xml.includes('<g:max_handling_time>3</g:max_handling_time>'));
+  assert.ok(gx.xml.includes('<g:availability>in_stock</g:availability>'));
+  assert.ok(!gx.xml.includes('<g:shipping>'), 'LV: konta piegāde, atsevišķs apstrādes laiks');
+  const enT = [{ id: 990, title: 'T-shirt “Auseklis”', handle: 't-shirt-auseklis', product_type: 'Customizer', body_html: 'T-shirt.',
+    options: [{ name: 'Available Product' }, { name: 'Color' }, { name: 'Size' }],
+    variants: [{ id: 9801, title: 'T-shirt / White / XXS', price: '29.90', option1: 'T-shirt', option2: 'White', option3: 'XXS' },
+      { id: 9802, title: 'T-shirt / White / XS', price: '29.90', option1: 'T-shirt', option2: 'White', option3: 'XS' }] }];
+  const gee = toGoogleXml(gi, normalizeLvStore(enT), CONFIG, CONFIG.googleMarkets.ee);
+  assert.equal(gee.stats.items, 2);
+  assert.ok(gee.xml.includes('<g:min_handling_time>1</g:min_handling_time><g:max_handling_time>3</g:max_handling_time>'), 'EE/LT: piegādē apstrāde 1–3');
+  assert.ok(gee.xml.includes('<g:size>XS</g:size>'));
+  // parasta prece – apstrādes laiks nemainās
+  assert.ok(ee.xml.includes('<g:min_handling_time>0</g:min_handling_time><g:max_handling_time>1</g:max_handling_time>'));
+}
+
 console.log('Google pārbaudes izietas:', JSON.stringify(stats), '| EE:', JSON.stringify(ee.stats));

@@ -90,6 +90,7 @@ export const CONFIG = {
     'SCHMETZ', 'Milward', 'Prym', 'DROPS', 'Amanda', 'YarnArt', 'Alize', 'Bernette', 'Bernina',
     'Pony', 'Opry', 'Madeira', 'Burda', 'Ottobre', 'DMC', 'Addi', 'Hemline', 'KnitPro', 'Mettler',
     'Gütermann', 'Schachenmayr', 'Nako', 'Midara', 'Sew Mate', 'Janome', 'Brother', 'Singer', 'Juki',
+    'SOL’S', "SOL'S", 'RTP Apparel', // apģērbu sagatavju ražotāji (T-krekli, džemperi, priekšauti)
   ],
   vendorBrands: ['SCHMETZ', 'DROPS', 'Amanda', 'Ariadna', 'Burda', 'Ottobre', 'Mettler', 'Rekol', 'MIDARA', 'Pāces vilnas fabrika'],
 
@@ -150,7 +151,7 @@ export const CONFIG = {
     // Apģērbi (CONFIG.apparel): LV kategorija → igauniski (Igaunijas veikala tips ir "Kohandaja" vai latvisks "Apģērbi").
     apparelCategories: { 'Gatavie izstrādājumi un apdruka >> T-krekli': 'T-särgid', 'Gatavie izstrādājumi un apdruka >> Džemperi': 'Pusad',
       'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Põlled', 'Gatavie izstrādājumi un apdruka >> Auduma maisiņi': 'Riidest kotid',
-      'Gatavie izstrādājumi un apdruka': 'Rõivad' },
+      'Gatavie izstrādājumi un apdruka >> Bērnu T-krekli': 'Laste T-särgid', 'Gatavie izstrādājumi un apdruka': 'Rõivad' },
     descMax: 1000,
     // Piegāde uz Igauniju (Shopify General profile → Estonia; bez bezmaksas piegādes sliekšņa):
     // pakiautomaat – lētākais (Omniva 5,99 €; DPD 6,99 €), līdz 30 kg, ne "tikai kurjers"; kuller 15,90 €.
@@ -183,7 +184,7 @@ export const CONFIG = {
     // Apģērbi (CONFIG.apparel): LV kategorija → lietuviski (Lietuvas veikala tips ir "Konfigūratorius" u.c. vai latvisks "Apģērbi").
     apparelCategories: { 'Gatavie izstrādājumi un apdruka >> T-krekli': 'Marškinėliai', 'Gatavie izstrādājumi un apdruka >> Džemperi': 'Džemperiai',
       'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Prijuostės', 'Gatavie izstrādājumi un apdruka >> Auduma maisiņi': 'Medžiaginiai maišeliai',
-      'Gatavie izstrādājumi un apdruka': 'Drabužiai' },
+      'Gatavie izstrādājumi un apdruka >> Bērnu T-krekli': 'Vaikiški marškinėliai', 'Gatavie izstrādājumi un apdruka': 'Drabužiai' },
     descMax: 1000,
     // Piegāde uz Lietuvu (Shopify General profile → Lithuania; bez bezmaksas piegādes sliekšņa):
     // pakomāts – lētākais (Omniva 5,99 €; DPD 6,99 €), līdz 30 kg, ne "tikai kurjers"; kurjers 15,90 €.
@@ -304,7 +305,8 @@ export const CONFIG = {
   },
 };
 
-const BRAND_CANON = { prym: 'Prym', schmetz: 'SCHMETZ', drops: 'DROPS', opry: 'Opry', midara: 'MIDARA' };
+const BRAND_CANON = { prym: 'Prym', schmetz: 'SCHMETZ', drops: 'DROPS', opry: 'Opry', midara: 'MIDARA', 'sol’s': "SOL'S", "sol's": "SOL'S",
+  'rtp apparel': 'RTP Apparel' };
 
 function escapeXml(s) {
   return String(s ?? '')
@@ -361,14 +363,18 @@ function tagStats(products) {
   return byType;
 }
 
+// Apģērba kategorija pēc nosaukuma (CONFIG.apparel.categories). Ja Shopify ir Google Shopping lauki (custom_label_0/1),
+// LV failos noteicošie ir tie (piem. "… >> Bērnu T-krekli"); šī kategorija tad noder EE/LT kategorijai kā rezerve.
+function apparelCategory(product, variant, cfg) {
+  const s = `${product.title} ${variant.title || ''}`;
+  for (const [re, cat] of cfg.apparel.categories) if (re.test(s)) return cat;
+  return cfg.apparel.fallback;
+}
+
 function categoryFor(product, variant, cfg, stats) {
   const parts = (variant.categoryPath || []).filter(Boolean);
   if (parts.length) return parts.join(' >> ');
-  if (cfg.apparel?.types?.includes(product.productType)) {
-    const s = `${product.title} ${variant.title || ''}`;
-    for (const [re, cat] of cfg.apparel.categories) if (re.test(s)) return cat;
-    return cfg.apparel.fallback;
-  }
+  if (cfg.apparel?.types?.includes(product.productType)) return apparelCategory(product, variant, cfg);
   const type = product.productType === cfg.courierOnlyType ? '' : (product.productType || ''); // tehnisks tips, nav kategorija
   const generic = new Set(cfg.genericTags.map((t) => t.toLowerCase()));
   const s = stats?.get(product.productType || '');
@@ -415,7 +421,8 @@ export function buildItems(products, cfg = CONFIG) {
     if (cfg.excludeTitlePattern?.test(p.title)) { skip('T-krekli/džemperi'); continue; }
     const decimal = (p.tags || []).includes(cfg.decimalTag);
     const multi = p.variants.length > 1;
-    const mto = !!cfg.madeToOrder?.productTypes?.includes(p.productType);
+    // Metrā tirgotajām precēm vienmēr der atlikuma noteikums (vismaz 1 m), arī ja tips ir "Customizer".
+    const mto = !decimal && !!cfg.madeToOrder?.productTypes?.includes(p.productType);
     const apparel = !!cfg.apparel?.types?.includes(p.productType);
     // Apģērbiem – Shopify secībā (XXS, XS, S…), lai saite vestu uz pirmo izmēru.
     const variants = apparel ? [...p.variants].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)) : p.variants;
@@ -426,6 +433,8 @@ export function buildItems(products, cfg = CONFIG) {
       if (mto) {
         // Pēc pasūtījuma: atlikums nav gatavu preču daudzums. Izlaižam tikai, ja Shopify šo variantu pasūtīt neļauj.
         if (v.tracked !== false && v.qty != null && v.qty <= 0 && v.inventoryPolicy !== 'CONTINUE') { skip('0 atlikums'); continue; }
+        // Publiskais /products.json (rezerves avots): uzskaites nav, der tikai "available".
+        if (v.tracked == null && v.qty == null && v.available === false) { skip('0 atlikums'); continue; }
       } else {
         if (v.tracked === false) { skip('atlikums netiek uzskaitīts'); continue; }
         if (v.qty != null ? v.qty <= 0 : !v.available) { skip('0 atlikums'); continue; }
@@ -468,6 +477,7 @@ export function buildItems(products, cfg = CONFIG) {
         _decimal: decimal,
         _madeToOrder: mto,
         _apparel: apparel,
+        _apparelCategory: apparel ? apparelCategory(p, v, cfg) : '',
         // Iekšējie lauki citām plūsmām (Ceno). toXml / toKurpirktXml tos neizvada.
         _baseName: cleanName(`${p.title}${variantTitle}`, cfg).replace(/\s+/g, ' ').trim(),
         _variantId: numericId,
@@ -787,7 +797,8 @@ function localizeItems(items, store, h, cfg) {
     // Apģērbi (viens ieraksts katrai krāsai): varianta nosaukumā bez izmēra (Shopify: opciju vērtības ar " / ").
     let vt = e.variantTitle;
     if (it._sizes && it._sizeIndex != null && vt) {
-      const segs = String(vt).split(' / ');
+      // Opciju vērtības (ja ir) – droši arī tad, ja kādā vērtībā ir " / "; citādi – nosaukuma daļas.
+      const segs = e.optionValues?.length > it._sizeIndex ? [...e.optionValues] : String(vt).split(' / ');
       if (segs.length > it._sizeIndex) { segs.splice(it._sizeIndex, 1); vt = segs.join(' / '); }
     }
     const variantTitle = vt && vt !== 'Default Title' ? ` - ${vt}` : '';
@@ -801,7 +812,11 @@ function localizeItems(items, store, h, cfg) {
     seenNames.add(name);
     seenLinks.add(link);
 
-    let category = it._apparel ? (h.apparelCategories?.[it.category_full] || '') : localType(it, e);
+    // Apģērbi: LV kategorija (Shopify lauki) → vietējā; ja tādas kartē nav – pēc nosaukuma noteiktā (nevis vispārīgā).
+    let category = it._apparel
+      ? (h.apparelCategories?.[it.category_full] || h.apparelCategories?.[it._apparelCategory] || '')
+      : localType(it, e);
+    if (it._apparel && !h.apparelCategories?.[it.category_full]) stats.apparelCategoryByName = (stats.apparelCategoryByName || 0) + 1;
     if (!category && typeByLvCategory.has(it.category_full)) {
       category = typeByLvCategory.get(it.category_full);
       stats.categoryFromLv++;
@@ -1046,6 +1061,7 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
       unit = e.price;
       productType = it._courierOnly || m.technicalTypePattern.test(e.productType || '') ? '' : (e.productType || '');
       // Tips bez angļu tulkojuma (sakrīt ar latvisko) netiek likts (arī custom_label_0) – Google: vienā avotā viena valoda.
+      if (productType && !/\p{L}{2,}/u.test(productType)) productType = ''; // bojāts tulkojums, piem. ")"
       if (productType && normCmp(productType) === normCmp(it._productType)) { productType = ''; stats.typeNotTranslated++; }
     } else {
       title = cut(noEmoji(it._baseName ?? it.name), g.titleMax);

@@ -244,8 +244,10 @@ export function normalizeEe(list) {
   for (const p of list) {
     const description = htmlToText(p.body_html);
     for (const v of p.variants || []) {
+      // optionValues – varianta opciju vērtības Shopify secībā (apģērbiem izmēru izņem pēc pozīcijas, nevis dalot nosaukumu).
+      const optionValues = [v.option1, v.option2, v.option3].filter((x) => x != null && x !== '');
       map.set(String(v.id), { title: p.title, variantTitle: v.title, handle: p.handle, productType: p.product_type || '',
-        price: parseFloat(v.price), description });
+        price: parseFloat(v.price), description, optionValues });
     }
   }
   return map;

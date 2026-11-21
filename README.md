@@ -37,7 +37,7 @@ tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu
 | 0 atlikums / atlikums netiek uzskaitīts | nerāda (izņemot apdrukas preces, skat. zemāk) |
 | Dāvanu kartes, digitālās preces, 0 € | nerāda |
 | Apdrukas preces (tips `Customizer`, `CONFIG.madeToOrder`; Edgars 21.11.2026) | rāda; izgatavo pēc pasūtījuma – atlikums netiek likts (tukšs), piegādes termiņam pieskaita izgatavošanu 1–2 d.d. (Salidzini/Ceno 3 + 2 = 5 d., Cēsīs 0 + 2 = 2 d., Hind.ee/Kaina24 5 + 2 = 7 d., Google apstrāde 1–3 d.); nerāda tikai, ja Shopify variantu pasūtīt neļauj (uzskaitīts, 0, DENY) |
-| Apģērbi (tipi `Customizer`, `Apģērbi`; `CONFIG.apparel`; Edgars 21.11.2026) | cenu portālos viens ieraksts katrai krāsai (visi izmēri kopā; saite uz lētāko, tad pirmo izmēru; nosaukumā bez izmēra; atlikums – tā izmēra); Google failos katrs izmērs atsevišķi. Kategorija pēc nosaukuma: "Gatavie izstrādājumi un apdruka >> T-krekli / Džemperi / Priekšauti / Auduma maisiņi" (Hind.ee un Kaina24 – igauniski / lietuviski) |
+| Apģērbi (tipi `Customizer`, `Apģērbi`; `CONFIG.apparel`; Edgars 21.11.2026) | cenu portālos viens ieraksts katrai krāsai (visi izmēri kopā; saite uz lētāko, tad pirmo izmēru; nosaukumā bez izmēra; atlikums – tā izmēra); Google failos katrs izmērs atsevišķi. Kategorija: Shopify Google Shopping lauki (custom_label_0/1, piem. "Gatavie izstrādājumi un apdruka >> Bērnu T-krekli"); ja to nav – pēc nosaukuma "Gatavie izstrādājumi un apdruka >> T-krekli / Džemperi / Priekšauti / Auduma maisiņi". Hind.ee un Kaina24 – igauniski / lietuviski (`apparelCategories`; ja LV kategorijas kartē nav – pēc nosaukuma, nekad vispārīgā šūšanas kategorija). Zīmols SOL'S / RTP Apparel – no nosaukuma |
 | Minimālā cena | nav (`minPrice: 0`); ja vajag, var iestatīt, piem. 3 € – metrā tirgotajām precēm tiek salīdzināta 1 m cena |
 | Vienāds nosaukums divreiz | rāda vienu reizi |
 | Nosaukumā "ar defektu", "bojāts", "lietots", "demo" | `<used>1</used>` (Salidzini prasība) |
@@ -150,7 +150,8 @@ kad Google latviešu valodu ieslēgs: tad Merchant Center pievieno **jaunu prim�
 Enter a link to your file** ar šo adresi (`.gz`), valsts Latvija, valoda latviešu (pieslēdz tikai tad, ne agrāk).
 
 Formāts: RSS 2.0 ar `g:` laukiem (https://support.google.com/merchants/answer/7052112). Preces – tās pašas kā
-Salidzini (noliktavā; metrā tirgotās – vismaz 1 m; bez dāvanu kartēm, apdrukas precēm, defektiem/demo).
+Salidzini (noliktavā vai apdruka pēc pasūtījuma; metrā tirgotās – vismaz 1 m; bez dāvanu kartēm, defektiem/demo), bet apģērbiem –
+katrs izmērs atsevišķi (cenu portālos – viens ieraksts krāsai).
 
 | Lauks | No kurienes |
 |---|---|
@@ -169,6 +170,7 @@ Salidzini (noliktavā; metrā tirgotās – vismaz 1 m; bez dāvanu kartēm, apd
 | `g:google_product_category` | pēc Shopify produkta tipa (oficiālās taksonomijas ID, piem. Audums → 47, Dzija → 2669); neskaidriem tipiem – Google nosaka pats |
 | `g:product_type` | LV kategorija, piem. "Audumi > Kokvilnas audumi" |
 | `g:shipping` | tikai precēm "tikai kurjers" un > 30 kg: kurjers 11,90 € / 15,90 € (virs 3 kg), 0–1 + 1–2 darba dienas. Pārējām – Merchant Center konta piegādes politika (Latvija: 3,30 €, no 70 € bez maksas, 1–3 darba dienas, pasūtījumi līdz 11:00) |
+| `g:min_handling_time`, `g:max_handling_time` | tikai apdrukas precēm (`CONFIG.madeToOrder`): 1 un 3 darba dienas (0–1 + izgatavošana 1–2); ar faila piegādi (`g:shipping`) – tās iekšā |
 | `g:shipping_weight`, `g:ships_from_country` | Shopify svars par vienību (g); `LV` |
 | `g:custom_label_0…4` | LV kategorija, apakškategorija, "metrā"/"gabalos", cenu grupa, "akcija" (Google Ads kampaņu dalīšanai; pircēji neredz) |
 
@@ -185,7 +187,8 @@ Tas pats kods kā `google-lv.xml.gz`, atšķirības:
 | `g:link` | valsts domēna angļu lapa `https://sharlottekangad.ee/en/products/...` / `https://sarlotesaudiniai.lt/en/products/...` |
 | `g:title`, `g:description`, `g:product_type`, `g:variant_option` | no valsts veikala `/en/products.json`; "last piece 50cm" → "piece 50 cm". Ja nosaukums nav iztulkots (sakrīt ar latvisko) – prece netiek iekļauta; ja nav iztulkots apraksts – tā vietā angliskais nosaukums |
 | `g:price` | valsts cena par Shopify vienību (Igaunijā ar 24 % PVN), metrā tirgotajām + vienības cena 10cm / 1m |
-| `g:shipping` | katrai precei: Omniva pakomāts 5,99 € (ne "tikai kurjers", līdz 30 kg) un kurjers 15,90 €; 0–1 + 3–4 darba dienas |
+| `g:shipping` | katrai precei: Omniva pakomāts 5,99 € (ne "tikai kurjers", līdz 30 kg) un kurjers 15,90 €; 0–1 + 3–4 darba dienas (apdrukas precēm apstrāde 1–3) |
+| `g:product_type` | valsts veikala tips angliski; netiek likts, ja nav iztulkots (sakrīt ar latvisko) vai tajā nav burtu (piem. ")") |
 | `g:custom_label_*` | angliski: tips, "by the metre"/"by the piece", cenu grupa, "sale" |
 | `g:product_type`, `g:custom_label_0` | ja tips nav iztulkots angliski (sakrīt ar latvisko) – netiek likts (Google: vienā avotā viena valoda) |
 | `g:color` (visi 3 faili) | tikai krāsa: varianta numurs ("2. variants", "tone"), apraksts ar pieturzīmēm – netiek likts; vairākas krāsas – ar "/" (līdz 3) |

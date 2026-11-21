@@ -44,6 +44,9 @@ export const CONFIG = {
     ],
     fallback: 'Gatavie izstrādājumi un apdruka',
     colorOption: /^(krāsa|color|colour)$/i,
+    // Tehniskas opcijas, ko portālu nosaukumos neliekam (TeeInBlue "Available Product": "Priekšauts ar Tavu apdruku-…").
+    // Edgars 21.11.2026. Shopify produktā un Google failos opcija paliek.
+    hiddenOptions: /^available product$/i,
     // Apdrukas preces ar vienu maketa bildi visām krāsām (Edgars 21.11.2026, 1. variants): cenu portālos viens ieraksts
     // produktam – "Nosaukums (12 krāsas, XXS-4XL)"; saite un <color> – maketa krāsai (mockupColour), cena – lētākā
     // tās krāsas izmēra cena. Krāsu skaits un izmēri – no variantiem katrā palaidienā. Kad Shopify krāsām būs savas
@@ -400,17 +403,34 @@ function countWord(n, w) {
   return few;
 }
 
-// "(12 krāsas, XXS-4XL)" / bērniem "(6 krāsas, 2-12 g.)" – no variantu krāsām un izmēriem (Shopify secībā).
-// Viena izmēra nosaukumu ("viens izmērs") ārzemju failos neliekam (tas ir latviski).
+// Vai krāsa jau ir nosaukumā ("Priekšauts tumši zaļš …" + "Tumši zaļa"): katram krāsas vārdam vārda sākums nosaukumā.
+export function colourInTitle(title, colour) {
+  const words = String(title ?? '').toLowerCase().split(/[^\p{L}]+/u).filter(Boolean);
+  const cw = String(colour ?? '').toLowerCase().split(/[^\p{L}]+/u).filter((w) => w.length >= 3);
+  return cw.length > 0 && cw.every((w) => { const s = w.slice(0, Math.min(4, w.length - 1)); return words.some((t) => t.startsWith(s)); });
+}
+
+// Izmēru skala (diapazonam "mazākais-lielākais" neatkarīgi no Shopify variantu secības).
+const SIZE_RANK = { XXS: 1, XS: 2, S: 3, M: 4, L: 5, XL: 6, XXL: 7, '2XL': 7, XXXL: 8, '3XL': 8, '4XL': 9, '5XL': 10, '6XL': 11 };
+const yearsOf = (s) => Number(String(s).match(/^(\d+)\s*gad/i)?.[1] || 0);
+function orderSizes(sizes) {
+  if (sizes.length && sizes.every((s) => yearsOf(s) > 0)) return { sizes: [...sizes].sort((a, b) => yearsOf(a) - yearsOf(b)), kind: 'years' };
+  const rank = (s) => SIZE_RANK[String(s).trim().toUpperCase()];
+  if (sizes.length && sizes.every(rank)) return { sizes: [...sizes].sort((a, b) => rank(a) - rank(b)), kind: 'scale' };
+  return { sizes, kind: 'other' }; // nezināmi izmēri – Shopify secībā
+}
+
+// "(12 krāsas, XXS-4XL)" / bērniem "(6 krāsas, 2-12 g.)" – no variantu krāsām un izmēriem (izmēru skalas secībā).
+// Ārzemju failos neparastus (latviskus) izmēru nosaukumus ("viens izmērs", "86/94 cm ~ 2 gadi") neliekam.
 export function mergedSuffix(m, w) {
   const parts = [`${m.colours} ${countWord(m.colours, w)}`];
-  const years = m.sizes.map((s) => String(s).match(/^(\d+)\s*gad/i)?.[1]);
-  if (m.sizes.length && years.every(Boolean)) {
-    parts.push(years.length > 1 ? `${years[0]}-${years[years.length - 1]} ${w.years}` : `${years[0]} ${w.years}`);
-  } else if (m.sizes.length > 1) {
-    parts.push(`${m.sizes[0]}-${m.sizes[m.sizes.length - 1]}`);
-  } else if (m.sizes.length === 1 && w.lang === 'lv') {
-    parts.push(m.sizes[0]);
+  const { sizes, kind } = orderSizes(m.sizes);
+  if (kind === 'years') {
+    const y = sizes.map(yearsOf);
+    parts.push(y.length > 1 ? `${y[0]}-${y[y.length - 1]} ${w.years}` : `${y[0]} ${w.years}`);
+  } else if (kind === 'scale' || w.lang === 'lv') {
+    if (sizes.length > 1) parts.push(`${sizes[0]}-${sizes[sizes.length - 1]}`);
+    else if (sizes.length === 1) parts.push(sizes[0]);
   }
   return `(${parts.join(', ')})`;
 }
@@ -472,6 +492,12 @@ export function buildItems(products, cfg = CONFIG) {
     const variants = apparel ? [...p.variants].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)) : p.variants;
     // Viens ieraksts produktam (CONFIG.apparel.mergeOneImage / mergeTag): apdrukas prece, vairākas krāsas, visām viena bilde.
     const colourOf = (v) => (v.selectedOptions || []).find((o) => cfg.apparel?.colorOption?.test(String(o.name ?? '').trim()))?.value;
+    // Citas opcijas (ne krāsa, ne izmērs, piem. TeeInBlue "Available Product") – dažādi preču veidi netiek apvienoti kopā.
+    const othersOf = (v) => (v.selectedOptions || []).filter((o) => {
+      const n = String(o.name ?? '').trim();
+      return !cfg.apparel?.colorOption?.test(n) && !cfg.apparel?.sizeOption?.test(n);
+    }).map((o) => String(o.value ?? '').trim()).filter((x) => x && x !== 'Default Title').join(' / ');
+    const multiOther = apparel && new Set(p.variants.map(othersOf)).size > 1;
     let merge = false;
     if (apparel) {
       const colours = new Set(p.variants.map(colourOf).filter((x) => x != null && x !== ''));
@@ -559,8 +585,18 @@ export function buildItems(products, cfg = CONFIG) {
         const si = opts.findIndex((o) => cfg.apparel.sizeOption.test(String(o.name ?? '').trim()));
         if (merge || si >= 0) {
           const rest = opts.filter((_, i) => i !== si).map((o) => String(o.value ?? '').trim()).filter((x) => x && x !== 'Default Title');
-          const key = merge ? `${p.id ?? p.handle}|*` : `${p.id ?? p.handle}|${rest.join(' / ')}`;
-          if (!groups.has(key)) groups.set(key, { title: p.title, rest, sizeIndex: si, merge, colours: [], sizes: [], items: [] });
+          const other = othersOf(v);
+          const otherIdx = opts.map((_, i) => i).filter((i) => i !== si && !cfg.apparel.colorOption?.test(String(opts[i].name ?? '').trim()));
+          const key = merge ? `${p.id ?? p.handle}|*|${other}` : `${p.id ?? p.handle}|${rest.join(' / ')}`;
+          if (!groups.has(key)) {
+            // Nosaukumam: opcijas bez izmēra un bez tehniskajām (hiddenOptions); krāsu neatkārto, ja tā jau ir nosaukumā.
+            const ci = opts.findIndex((o) => cfg.apparel.colorOption?.test(String(o.name ?? '').trim()));
+            let keepIdx = opts.map((_, i) => i).filter((i) => i !== si && !cfg.apparel.hiddenOptions?.test(String(opts[i].name ?? '').trim())
+              && String(opts[i].value ?? '').trim() && opts[i].value !== 'Default Title');
+            if (ci >= 0 && colourInTitle(p.title, opts[ci].value)) keepIdx = keepIdx.filter((i) => i !== ci);
+            groups.set(key, { title: p.title, rest, sizeIndex: si, merge, other: multiOther ? other : '', otherIdx: multiOther ? otherIdx : [],
+              keepIdx, colourIdx: ci, shown: keepIdx.map((i) => String(opts[i].value).trim()), colours: [], sizes: [], items: [] });
+          }
           const g = groups.get(key);
           const col = colourOf(v);
           item._colour = col ?? '';
@@ -587,25 +623,29 @@ export function buildItems(products, cfg = CONFIG) {
     stats.sizesInOneItem += g.items.length - 1;
     if (g.merge) {
       const typeWord = cfg.apparel.typeWords?.[String(rep.category_full).split(/\s*>>\s*/).pop()];
-      const titled = cfg.apparel.typePattern.test(g.title) || !typeWord ? g.title : `${typeWord} ar apdruku “${g.title.replace(/[“”"]/g, '')}”`;
-      const merged = { colours: g.colours.length, sizes: g.sizes, title: titled };
-      const base = cleanName(`${titled} ${mergedSuffix(merged, cfg.apparel.mergedWords)}`, cfg).replace(/\s+/g, ' ').trim();
-      const name = cut(base, 200);
-      stats.mergedProducts++;
-      if (!mockCol) stats.mergedWithoutMockupColour = (stats.mergedWithoutMockupColour || 0) + 1;
+      const titled = cfg.apparel.typePattern.test(g.title) || !typeWord ? g.title : `${typeWord} ar apdruku “${g.title.replace(/[“”"„«»]/g, '')}”`;
+      // Ja produktā ir vairāki preču veidi (cita opcija), katram – savs ieraksts ar veidu nosaukumā.
+      const withOther = g.other ? `${titled} - ${g.other}` : titled;
+      const merged = { colours: g.colours.length, sizes: g.sizes, title: withOther, otherIdx: g.otherIdx };
+      const base = cleanName(`${withOther} ${mergedSuffix(merged, cfg.apparel.mergedWords)}`, cfg).replace(/\s+/g, ' ').trim();
+      const name = cut(base + (rep._decimal ? cfg.decimalNameSuffix : ''), 200);
       if (!portalNames.has(name)) {
         portalNames.delete(rep.name);
         portalNames.add(name);
         Object.assign(rep, { name, _portalBaseName: base, _merged: merged, color: mockCol ? rep._colour : '' });
+        stats.mergedProducts++;
+        if (!mockCol) stats.mergedWithoutMockupColour = (stats.mergedWithoutMockupColour || 0) + 1;
+      } else {
+        stats.mergedNameCollision = (stats.mergedNameCollision || 0) + 1; // paliek varianta nosaukums (ar izmēru)
       }
       continue;
     }
-    const base = cleanName(`${g.title}${g.rest.length ? ` - ${g.rest.join(' / ')}` : ''}`, cfg).replace(/\s+/g, ' ').trim();
+    const base = cleanName(`${g.title}${g.shown.length ? ` - ${g.shown.join(' / ')}` : ''}`, cfg).replace(/\s+/g, ' ').trim();
     const name = cut(base + (rep._decimal ? cfg.decimalNameSuffix : ''), 200);
     if (name === rep.name || !portalNames.has(name)) {
       portalNames.delete(rep.name);
       portalNames.add(name);
-      Object.assign(rep, { name, _portalBaseName: base, _sizeIndex: g.sizeIndex, _sizes: g.items.length });
+      Object.assign(rep, { name, _portalBaseName: base, _sizeIndex: g.sizeIndex, _sizes: g.items.length, _keepIdx: g.keepIdx, _colourIdx: g.colourIdx });
     } // citādi (sakrīt ar citas preces nosaukumu) – paliek varianta nosaukums ar izmēru
   }
   const portal = items.filter((it) => !it._portalSkip);
@@ -880,12 +920,20 @@ function localizeItems(items, store, h, cfg) {
     if (it._sizes && it._sizeIndex != null && vt) {
       // Opciju vērtības (ja ir) – droši arī tad, ja kādā vērtībā ir " / "; citādi – nosaukuma daļas.
       const segs = e.optionValues?.length > it._sizeIndex ? [...e.optionValues] : String(vt).split(' / ');
-      if (segs.length > it._sizeIndex) { segs.splice(it._sizeIndex, 1); vt = segs.join(' / '); }
+      if (it._keepIdx && segs.length > Math.max(-1, ...it._keepIdx, it._sizeIndex)) {
+        // Tās pašas opcijas kā LV nosaukumā (bez izmēra un tehniskajām); vietējo krāsu neatkārto, ja tā ir vietējā nosaukumā.
+        let keep = [...it._keepIdx];
+        if (keep.includes(it._colourIdx) && colourInTitle(e.title, segs[it._colourIdx])) keep = keep.filter((i) => i !== it._colourIdx);
+        vt = keep.map((i) => segs[i]).filter(Boolean).join(' / ');
+      } else if (segs.length > it._sizeIndex) { segs.splice(it._sizeIndex, 1); vt = segs.join(' / '); }
     }
     const variantTitle = vt && vt !== 'Default Title' ? ` - ${vt}` : '';
     // Viena ieraksta apdrukas prece: vietējais produkta nosaukums + "(12 värvi, XXS-4XL)" / "(12 spalvų, XXS-4XL)".
+    // Vairāki preču veidi vienā produktā – vietējā veida vērtība no tās pašas opcijas pozīcijas.
+    const otherLocal = it._merged?.otherIdx?.length && e.optionValues?.length
+      ? it._merged.otherIdx.map((i) => e.optionValues[i]).filter(Boolean).join(' / ') : '';
     const base = it._merged && h.mergedWords
-      ? cleanName(`${e.title} ${mergedSuffix(it._merged, h.mergedWords)}`, h).replace(/\s+/g, ' ').trim()
+      ? cleanName(`${e.title}${otherLocal ? ` - ${otherLocal}` : ''} ${mergedSuffix(it._merged, h.mergedWords)}`, h).replace(/\s+/g, ' ').trim()
       : cleanName(`${e.title}${variantTitle}`, h).replace(/\s+/g, ' ').trim();
     if (base === (it._portalBaseName ?? it._baseName)) stats.sameNameAsLv++;
     const name = cutKeepSuffix(base, it._decimal ? h.decimalNameSuffix : '', h.nameMax);

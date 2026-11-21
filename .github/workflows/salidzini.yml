@@ -93,7 +93,7 @@ jobs:
           lv = 'https://sarlotesaudumi.lv/products/'
           G = '{http://base.google.com/ns/1.0}'
           expect = {'salidzini.xml': (stats['items'], 'root', 'item', 'price', 'link', lv),
-                    'kurpirkt.xml': (stats['items'], 'root', 'item', 'price', 'link', lv),
+                    'kurpirkt.xml': (stats.get('kurpirkt', {}).get('items', stats['items']), 'root', 'item', 'price', 'link', lv),
                     'ceno.xml': (stats['ceno']['items'], 'root', 'item', 'price', 'link', lv),
                     'cenueksperts.xml': (stats['cenueksperts']['items'], 'DataFeeds', 'item_data', 'item_price', 'item_page_url', lv)}
           # Igaunija un Lietuva; ja valsts veikals neatbildēja – iepriekšējā versija (vai fails šoreiz nav)

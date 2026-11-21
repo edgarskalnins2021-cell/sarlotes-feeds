@@ -456,8 +456,9 @@ async function main() {
   }
   // "items" = Salidzini preču skaits (to izmanto drošības pārbaude); pārējie – atsevišķi.
   // KurPirkt = tās pašas preces + kopīgie ieraksti faila sākumā (CONFIG.kurpirktCombined).
-  const kpCombined = kurpirktCombinedItems(items, CONFIG);
-  const kurpirkt = { items: stats.items + kpCombined.length, combined: kpCombined.map((c) => c.name) };
+  const kpSkipped = {};
+  const kpCombined = kurpirktCombinedItems(items, CONFIG, kpSkipped);
+  const kurpirkt = { items: stats.items + kpCombined.length, combined: kpCombined.length, combinedSkipped: kpSkipped };
   const all = { ...stats, kurpirkt, ceno: ceno.stats, cenueksperts: cenu.stats };
   for (const f of foreign) if (f.result) all[f.key] = f.result.stats;
   await writeFile(`${OUT_DIR}/stats.json`, JSON.stringify({ generated: now, source: useAdmin ? 'admin' : 'storefront', ...all }, null, 2));

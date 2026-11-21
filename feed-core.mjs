@@ -2,6 +2,17 @@
 // Šis fails nezina, no kurienes nāk dati: tas saņem jau sakārtotus produktus
 // un atgriež XML. Visi noteikumi ir šeit, CONFIG blokā, lai tos būtu viegli mainīt.
 
+// Apdrukas preču kategorijas (Edgara apstiprinājums 21.11.2026; visas_preces/kategorijas_apdruka/GALA_IETEIKUMS.md):
+// apdrukātais apģērbs (izgatavo pēc pasūtījuma) → virsgrupa "Apģērbu apdruka" (Mega2 r7: 260) ar apdrukas apakšgrupu
+// (r4 "t kreklu apdruka" 720, r48 "t kreklu apdruka bērniem" 20, r11 "džemperu apdruka" 110); paneļi – r17 "auduma apdruka" 70.
+// SOL'S/RTP sagataves (ar atlikumu, ne pēc pasūtījuma) paliek esošajā kategorijā. Salidzini, KurPirkt un Ceno.
+const PRINT_CATEGORIES = {
+  'Gatavie izstrādājumi un apdruka >> T-krekli': { to: 'Apģērbu apdruka >> T-kreklu apdruka', madeToOrder: true },
+  'Gatavie izstrādājumi un apdruka >> Bērnu T-krekli': { to: 'Apģērbu apdruka >> T-kreklu apdruka bērniem', madeToOrder: true },
+  'Gatavie izstrādājumi un apdruka >> Džemperi': { to: 'Apģērbu apdruka >> Džemperu apdruka', madeToOrder: true },
+  'Gatavie izstrādājumi un apdruka >> Apdrukas paneļi': { to: 'Gatavie izstrādājumi un apdruka >> Auduma apdruka' },
+};
+
 export const CONFIG = {
   shopUrl: 'https://sarlotesaudumi.lv',
 
@@ -83,20 +94,26 @@ export const CONFIG = {
   categoryTagMaxShare: 0.5,
   categoryTagMinCount: 2,
 
-  // Salidzini.lv un KurPirkt.lv kategoriju nosaukumi pēc atslēgvārdu audita (Edgara apstiprinājums 20.11.2026, J2 un J3).
-  // Maina tikai šo divu portālu failus (salidzini.xml, kurpirkt.xml) un tikai pēdējo līmeni; Shopify lauki, Ceno,
-  // Cenueksperts, Google, Hind.ee un Kaina24 paliek ar Shopify nosaukumu. `when` – jaunais nosaukums tikai precēm,
-  // kuru nosaukums atbilst (pārējās paliek esošajā kategorijā).
+  // Salidzini.lv un KurPirkt.lv kategoriju nosaukumi pēc atslēgvārdu audita (Edgara apstiprinājums 20.11.2026, J2 un J3)
+  // un apdrukas precēm (21.11.2026, PRINT_CATEGORIES – arī virsgrupa). Maina tikai šo divu portālu failus (salidzini.xml,
+  // kurpirkt.xml); Shopify lauki, Cenueksperts, Google, Hind.ee un Kaina24 paliek ar Shopify nosaukumu (Ceno – savs
+  // saraksts ceno.categoryNames). `to` – pilns jaunais ceļš. `when` – tikai precēm, kuru nosaukums atbilst;
+  // `madeToOrder` – tikai precēm, ko izgatavo pēc pasūtījuma (pārējās paliek esošajā kategorijā).
   portalCategoryNames: {
     'Dzija >> Vilnas un dzīvnieku šķiedru dzija': { to: 'Dzija >> Vilnas dzijas' }, // J2
     'Šūšanas materiāli >> Citi šūšanas materiāli': { to: 'Šūšanas materiāli >> Polsteri', when: /polster/i }, // J3: grupā tikai polsteri
+    ...PRINT_CATEGORIES,
   },
 
-  // KurPirkt tests (Edgara lēmums 21.11.2026): papildus kopīgs ieraksts produktam – visas krāsas vienā kartītē
-  // ("Dzijas DROPS Air - 50 g / 150 m (19 krāsas)"), faila sākumā; krāsu ieraksti paliek kā līdz šim.
-  // Tikai kurpirkt.xml: Salidzini (r.22, r.49) un Ceno noteikumi aizliedz vienu preci norādīt vairākas reizes.
+  // KurPirkt (Edgara lēmumi 21.11.2026 – tests ar DROPS Air, tad "visām dzijām"): papildus kopīgs ieraksts dzijas
+  // produktam – visas krāsas vienā kartītē ("Dzijas DROPS Air - 50 g / 150 m (19 krāsas)"), faila sākumā; krāsu
+  // ieraksti paliek kā līdz šim. Tikai kurpirkt.xml: Salidzini (r.22, r.49) un Ceno noteikumi aizliedz vienu preci
+  // norādīt vairākas reizes.
   kurpirktCombined: {
-    productIds: ['10758945571150'], // Dzijas DROPS Air - 50 g / 150 m
+    productTypes: ['Dzija'], // visi šī Shopify tipa produkti
+    productIds: [], // un/vai konkrēti produkti
+    // Tikai produkti, kuru vienīgā opcija ir krāsa – lai "(N krāsas)" būtu patiesība (ne "Krāsa un svars", "Tonis" ar svaru).
+    colourOption: /^(krāsa|color|colour)$/i,
     words: { lang: 'lv', colour: ['krāsa', 'krāsas', 'krāsu'] },
   },
 
@@ -129,6 +146,9 @@ export const CONFIG = {
   ceno: {
     nameMax: 200,
     categorySeparator: ' > ',
+    // Ceno rāda un meklē tikai pēdējo kategorijas līmeni (<category>) – apdrukas precēm tajā jābūt "… apdruka"
+    // (tā pati karte kā Salidzini/KurPirkt; dzijas u.c. Ceno paliek ar Shopify nosaukumu).
+    categoryNames: PRINT_CATEGORIES,
     usedNew: '0', // jaunām precēm
     skipUsed: true, // ar defektu / demo / lietotas preces 1. versijā neiekļaujam
     // Ceno instrukcija (ceno.lv/pages/xml-file): "Ja kāda piegāde netiek atbalstīta, tad attiecīgais
@@ -179,6 +199,10 @@ export const CONFIG = {
     apparelCategories: { 'Gatavie izstrādājumi un apdruka >> T-krekli': 'T-särgid', 'Gatavie izstrādājumi un apdruka >> Džemperi': 'Pusad',
       'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Põlled', 'Gatavie izstrādājumi un apdruka >> Auduma maisiņi': 'Riidest kotid',
       'Gatavie izstrādājumi un apdruka >> Bērnu T-krekli': 'Laste T-särgid', 'Gatavie izstrādājumi un apdruka': 'Rõivad' },
+    // Citām precēm (ne apģērbiem): LV kategorija → igauniski, pirms Igaunijas veikala tipa (tips tām ir maldinošs vai
+    // latvisks: GALA priekšauti – "Auduma maisiņi", krūzes – "Tarvikud ja tööriistad", paneļi – "Audums"). 21.11.2026.
+    lvCategories: { 'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Põlled', 'Gatavie izstrādājumi un apdruka >> Krūzes': 'Kruusid',
+      'Gatavie izstrādājumi un apdruka >> Apdrukas paneļi': 'Kangatrükk' },
     // Viens ieraksts apdrukas produktam (CONFIG.apparel): "(12 värvi, XXS-4XL)", bērniem "2-12 a." (aastat)
     mergedWords: { lang: 'et', colour: ['värv', 'värvi', 'värvi'], years: 'a.' },
     descMax: 1000,
@@ -214,6 +238,9 @@ export const CONFIG = {
     apparelCategories: { 'Gatavie izstrādājumi un apdruka >> T-krekli': 'Marškinėliai', 'Gatavie izstrādājumi un apdruka >> Džemperi': 'Džemperiai',
       'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Prijuostės', 'Gatavie izstrādājumi un apdruka >> Auduma maisiņi': 'Medžiaginiai maišeliai',
       'Gatavie izstrādājumi un apdruka >> Bērnu T-krekli': 'Vaikiški marškinėliai', 'Gatavie izstrādājumi un apdruka': 'Drabužiai' },
+    // Citām precēm (ne apģērbiem): LV kategorija → lietuviski, pirms Lietuvas veikala tipa (kā Hind.ee). 21.11.2026.
+    lvCategories: { 'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Prijuostės', 'Gatavie izstrādājumi un apdruka >> Krūzes': 'Puodeliai',
+      'Gatavie izstrādājumi un apdruka >> Apdrukas paneļi': 'Spauda ant audinio' },
     // Viens ieraksts apdrukas produktam (CONFIG.apparel): "(12 spalvų, XXS-4XL)", bērniem "2-12 m." (metai)
     mergedWords: { lang: 'lt', colour: ['spalva', 'spalvos', 'spalvų'], years: 'm.' },
     descMax: 1000,
@@ -577,6 +604,7 @@ export function buildItems(products, cfg = CONFIG) {
         // Google failam: Shopify dati par vienu Shopify vienību (metrā tirgotajām – par 0,1 m), kā preces lapā.
         _productId: p.id != null ? String(p.id).split('/').pop() : '',
         _productImage: p.image || '', // produkta galvenā bilde (KurPirkt kopīgajam ierakstam)
+        _options: (v.selectedOptions || []).map((o) => String(o.name ?? '').trim()).filter(Boolean), // opciju nosaukumi
         _productTitle: cleanName(p.title, cfg).replace(/\s+/g, ' ').trim(),
         _lvTitle: p.title,
         _productType: p.productType || '',
@@ -670,24 +698,46 @@ export const portalItems = (items) => items.filter((it) => !it._portalSkip);
 const TAG_ORDER = ['name', 'link', 'price', 'image', 'category_full', 'brand', 'color', 'ean', 'in_stock',
   'delivery_latvija', 'delivery_days_latvija', 'delivery_days_shop', 'used'];
 
+// Kategorija pēc kartes { category_full: { to, when?, madeToOrder? } }; ja nosacījums neizpildās – category_full.
+function mappedCategory(it, map) {
+  const r = map?.[it.category_full];
+  if (!r || (r.when && !r.when.test(it._baseName ?? it.name)) || (r.madeToOrder && !it._madeToOrder)) return it.category_full;
+  return r.to;
+}
 // Salidzini/KurPirkt kategorija (CONFIG.portalCategoryNames); pārējiem portāliem – category_full bez izmaiņām.
 export function portalCategory(it, cfg = CONFIG) {
-  const r = cfg.portalCategoryNames?.[it.category_full];
-  if (!r || (r.when && !r.when.test(it._baseName ?? it.name))) return it.category_full;
-  return r.to;
+  return mappedCategory(it, cfg.portalCategoryNames);
+}
+// Ceno kategorija (CONFIG.ceno.categoryNames).
+export function cenoCategory(it, cfg = CONFIG) {
+  return mappedCategory(it, cfg.ceno?.categoryNames);
 }
 
 // KurPirkt kopīgie ieraksti (CONFIG.kurpirktCombined): viens ieraksts produktam ar visām tā krāsām – saite uz produkta
-// lapu (bez ?variant), produkta galvenā bilde, atlikums – visu krāsu kopā. Tikai tad, ja failā ir vismaz 2 produkta
-// ieraksti ar vienādu cenu un kategoriju (citādi kartītes cena neatbilstu preces lapai) – citādi netiek likts.
-export function kurpirktCombinedItems(items, cfg = CONFIG) {
+// lapu (bez ?variant), produkta galvenā bilde, atlikums – visu krāsu kopā. Produkti: productTypes un/vai productIds.
+// Tikai tad, ja failā ir vismaz 2 produkta ieraksti, produkta vienīgā opcija ir krāsa (colourOption) un visiem ir
+// vienāda cena un kategorija (citādi kartītes cena neatbilstu preces lapai) – citādi netiek likts (skip – iemesli).
+export function kurpirktCombinedItems(items, cfg = CONFIG, skip = {}) {
+  const k = cfg.kurpirktCombined;
+  if (!k) return [];
+  const ids = new Set((k.productIds || []).map(String));
+  const types = new Set(k.productTypes || []);
+  const groups = new Map(); // produkta ID → tā ieraksti (faila secībā)
+  for (const it of items) {
+    if (it._portalSkip || it.used === '1' || !it._productId || !(ids.has(it._productId) || types.has(it._productType))) continue;
+    if (!groups.has(it._productId)) groups.set(it._productId, []);
+    groups.get(it._productId).push(it);
+  }
+  const no = (why) => { skip[why] = (skip[why] || 0) + 1; };
   const out = [];
-  for (const pid of cfg.kurpirktCombined?.productIds || []) {
-    const its = items.filter((it) => !it._portalSkip && it._productId === String(pid));
-    if (its.length < 2 || new Set(its.map((it) => it.price)).size > 1
-      || new Set(its.map((it) => portalCategory(it, cfg))).size > 1) continue;
+  for (const its of groups.values()) {
+    if (its.length < 2) { no('mazāk par 2 krāsām'); continue; }
+    if (k.colourOption && !its.every((it) => it._options?.length === 1 && k.colourOption.test(it._options[0]))) { no('opcija nav krāsa'); continue; }
+    if (new Set(its.map((it) => it.price)).size > 1) { no('dažādas cenas'); continue; }
+    if (new Set(its.map((it) => portalCategory(it, cfg))).size > 1) { no('dažādas kategorijas'); continue; }
     const f = its[0];
-    const name = cut(`${f._productTitle} (${its.length} ${countWord(its.length, cfg.kurpirktCombined.words)})`
+    // Garam nosaukumam saīsina produkta nosaukumu, ne "(N krāsas)".
+    const name = cutKeepSuffix(f._productTitle, ` (${its.length} ${countWord(its.length, k.words)})`
       + (f._decimal ? cfg.decimalNameSuffix : ''), 200);
     const stock = its.every((it) => /^\d+$/.test(it.in_stock)) ? String(its.reduce((s, it) => s + Number(it.in_stock), 0)) : '';
     out.push({ ...f, name, _baseName: f._productTitle, link: f.link.split('?')[0], image: cut(f._productImage || f.image, 500),
@@ -804,7 +854,7 @@ export function toCenoXml(items, cfg = CONFIG, ctx = {}) {
     if (seenLinks.has(it.link)) { skip('dublikāts (saite)'); continue; }
     seenLinks.add(it.link);
 
-    const parts = String(it.category_full || '').split(/\s*>>\s*/).filter(Boolean);
+    const parts = String(cenoCategory(it, cfg) || '').split(/\s*>>\s*/).filter(Boolean);
     const sale = it._compareAt != null && it._compareAt > it._priceNum + 0.004;
     if (sale) stats.compareAtHigher++;
     const row = {
@@ -975,8 +1025,8 @@ function localizeItems(items, store, h, cfg) {
 
     // Apģērbi: LV kategorija (Shopify lauki) → vietējā; ja tādas kartē nav – pēc nosaukuma noteiktā (nevis vispārīgā).
     let category = it._apparel
-      ? (h.apparelCategories?.[it.category_full] || h.apparelCategories?.[it._apparelCategory] || '')
-      : localType(it, e);
+      ? (h.apparelCategories?.[it.category_full] || h.lvCategories?.[it.category_full] || h.apparelCategories?.[it._apparelCategory] || '')
+      : (h.lvCategories?.[it.category_full] || localType(it, e));
     if (it._apparel && !h.apparelCategories?.[it.category_full]) stats.apparelCategoryByName = (stats.apparelCategoryByName || 0) + 1;
     if (!category && typeByLvCategory.has(it.category_full)) {
       category = typeByLvCategory.get(it.category_full);

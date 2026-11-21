@@ -147,7 +147,14 @@ assert.equal(pb.variants[0].image, 'https://cdn/v1.jpg');
   assert.ok(cx.xml.includes('variant=9701') && !cx.xml.includes('variant=9702'));
   assert.ok(cx.xml.includes('<delivery_days_riga>5</delivery_days_riga>') && cx.xml.includes('<delivery_days_latvija>5</delivery_days_latvija>'));
   assert.ok(!cx.xml.includes('<in_stock>'));
-  assert.ok(cx.xml.includes('<category_full>Gatavie izstrādājumi un apdruka &gt; T-krekli</category_full>'));
+  // Apdrukas kategorija (Edgara apstiprinājums 21.11.2026): Ceno rāda un meklē tikai <category>.
+  assert.ok(cx.xml.includes('<category>T-kreklu apdruka</category>'));
+  assert.ok(cx.xml.includes('<category_full>Apģērbu apdruka &gt; T-kreklu apdruka</category_full>'));
+  // Sagatave (ar atlikumu, ne pēc pasūtījuma) paliek "T-krekli".
+  const { items: bi } = buildItems([p({ title: 'T-krekls SOL’S Legend Unisex 175 g/m²', handle: 'sol', productType: 'Apģērbi',
+    variants: [v({ id: 'gid://shopify/ProductVariant/9801', price: 9.9, qty: 5, categoryPath: ['Gatavie izstrādājumi un apdruka', 'T-krekli'] })] })], CONFIG);
+  const bx = toCenoXml(bi, CONFIG);
+  assert.ok(bx.xml.includes('<category>T-krekli</category>') && bx.xml.includes('<category_full>Gatavie izstrādājumi un apdruka &gt; T-krekli</category_full>'));
 }
 
 console.log(xml.split('\n').slice(0, 26).join('\n'));

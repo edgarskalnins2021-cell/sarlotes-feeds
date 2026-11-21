@@ -177,6 +177,23 @@ assert.equal(stats.items, rows.length); assert.equal(stats.decimal, 3);
   assert.ok(mxx.xml.includes('<title><![CDATA[T-särk “Auseklis” (2 värvi, XXS-XS)]]></title>'));
   assert.ok(mxx.xml.includes('<title><![CDATA[Laste T-särk “Hani” (2 värvi, 2-12 a.)]]></title>'));
   assert.ok(mxx.xml.includes('<product id="9941">') && mxx.xml.includes('<product id="9951">') && !mxx.xml.includes('<product id="9943">'));
+
+  // Ne-apģērbiem LV kategorija (CONFIG.hindee.lvCategories) pirms Igaunijas veikala tipa (21.11.2026): GALA priekšauts
+  // (tips "Auduma maisiņi"), krūze ("Tarvikud ja tööriistad"), apdrukas panelis (latvisks "Audums").
+  const ov = (id, cat) => v({ id: `gid://shopify/ProductVariant/${id}`, price: 9.9, qty: 3, categoryPath: ['Gatavie izstrādājumi un apdruka', cat] });
+  const { items: oi } = buildItems([
+    p({ title: 'Priekšauts ar kabatām SOL’S GALA', handle: 'gala', productType: 'Auduma maisiņi', variants: [ov(9961, 'Priekšauti')] }),
+    p({ title: 'Keramikas krūze “Sew Tasty”', handle: 'kruze', productType: 'Piederumi', variants: [ov(9962, 'Krūzes')] }),
+    p({ title: 'Paneļa apdruka', handle: 'panelis', productType: 'Audums', variants: [ov(9963, 'Apdrukas paneļi')] }),
+  ], CONFIG);
+  const eeO = normalizeEe([
+    { title: 'Põll taskutega SOL’S GALA', handle: 'p-gala', product_type: 'Riidest kotid', variants: [{ id: 9961, title: 'Default Title', price: '10.00' }] },
+    { title: 'Keraamiline kruus “Sew Tasty”', handle: 'k-kruus', product_type: 'Tarvikud ja tööriistad', variants: [{ id: 9962, title: 'Default Title', price: '10.00' }] },
+    { title: 'Paneeli trükk', handle: 'p-paneel', product_type: 'Audums', variants: [{ id: 9963, title: 'Default Title', price: '10.00' }] },
+  ]);
+  const ox = toHindeeXml(oi, eeO, CONFIG).xml;
+  const cat = (id) => ox.split(`<product id="${id}">`)[1].split('</product>')[0].match(/<category_name><!\[CDATA\[(.*?)\]\]>/)[1];
+  assert.deepEqual([cat(9961), cat(9962), cat(9963)], ['Põlled', 'Kruusid', 'Kangatrükk']);
 }
 
 console.log('Hind.ee pārbaudes izietas:', JSON.stringify(stats));

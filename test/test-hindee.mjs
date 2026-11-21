@@ -107,8 +107,10 @@ assert.equal(stats.items, rows.length); assert.equal(stats.decimal, 3);
 // Apģērbi (Edgars 21.11.2026): viens ieraksts katrai krāsai, nosaukumā bez izmēra, kategorija igauniski,
 // apdrukas precēm bez atlikuma un piegāde + izgatavošana (5 + 2 = 7 d.d.).
 {
+  // katrai krāsai sava bilde → ieraksts katrai krāsai (viena maketa bilde – skat. bloku zemāk)
   const tv = (id, title) => v({ id: `gid://shopify/ProductVariant/${id}`, title, price: 29.9, tracked: false, qty: null, inventoryPolicy: 'CONTINUE',
-    position: id % 10, selectedOptions: title.split(' / ').map((value, i) => ({ name: ['Available Product', 'Krāsa', 'Izmērs'][i], value })) });
+    position: id % 10, image: `https://cdn.example/${title.split(' / ')[1]}.jpg`,
+    selectedOptions: title.split(' / ').map((value, i) => ({ name: ['Available Product', 'Krāsa', 'Izmērs'][i], value })) });
   const tee = p({ title: 'T-krekls “Auseklis”', handle: 'auseklis', productType: 'Customizer', image: 'https://cdn.example/t.jpg',
     variants: [tv(9901, 'T-krekls / Balta / XXS'), tv(9902, 'T-krekls / Balta / XS'), tv(9903, 'T-krekls / Melna / XXS')] });
   const blank = p({ title: 'T-krekls SOL’S Legend Unisex', handle: 'sol', productType: 'Apģērbi',
@@ -156,6 +158,25 @@ assert.equal(stats.items, rows.length); assert.equal(stats.decimal, 3);
   assert.ok(hBlock.includes('<category_name><![CDATA[Pusad]]></category_name>'), 'nezināma Shopify kategorija → pēc nosaukuma');
   assert.ok(hBlock.includes('<title><![CDATA[Pusa “Juured” - Pusa / Hall / melanž]]></title>'), 'izmērs izņemts pēc opcijas, " / " vērtībā saglabāts');
   assert.equal(kx.stats.defaultCategory, 0);
+
+  // Viens ieraksts apdrukas produktam (viena maketa bilde visām krāsām): igauniski "(2 värvi, XXS-XS)", bērniem "a.".
+  const mv = (id, colour, size) => v({ id: `gid://shopify/ProductVariant/${id}`, title: `T-krekls / ${colour} / ${size}`, price: 29.9, tracked: false,
+    qty: null, inventoryPolicy: 'CONTINUE', position: id % 10, image: 'https://cdn.example/makets.jpg',
+    selectedOptions: [{ name: 'Available Product', value: 'T-krekls' }, { name: 'Krāsa', value: colour }, { name: 'Izmērs', value: size }] });
+  const mt = p({ title: 'T-krekls “Auseklis”', handle: 'm-auseklis', productType: 'Customizer',
+    variants: [mv(9941, 'Balta', 'XXS'), mv(9942, 'Balta', 'XS'), mv(9943, 'Melna', 'XXS')] });
+  const mk = p({ title: 'Bērnu T-krekls “Zoss”', handle: 'm-zoss', productType: 'Customizer',
+    variants: [mv(9951, 'Balta', '2 gadi'), mv(9952, 'Rozā', '12 gadi')] });
+  const { items: mi } = buildItems([mt, mk], CONFIG);
+  const eeM = normalizeEe([
+    { title: 'T-särk “Auseklis”', handle: 't-auseklis', product_type: 'Kohandaja', variants: [9941, 9942, 9943].map((id) => ({ id, title: 'x', price: '30.50' })) },
+    { title: 'Laste T-särk “Hani”', handle: 'l-hani', product_type: 'Kohandaja', variants: [9951, 9952].map((id) => ({ id, title: 'x', price: '25.40' })) },
+  ]);
+  const mxx = toHindeeXml(mi, eeM, CONFIG);
+  assert.equal(mxx.stats.items, 2);
+  assert.ok(mxx.xml.includes('<title><![CDATA[T-särk “Auseklis” (2 värvi, XXS-XS)]]></title>'));
+  assert.ok(mxx.xml.includes('<title><![CDATA[Laste T-särk “Hani” (2 värvi, 2-12 a.)]]></title>'));
+  assert.ok(mxx.xml.includes('<product id="9941">') && mxx.xml.includes('<product id="9951">') && !mxx.xml.includes('<product id="9943">'));
 }
 
 console.log('Hind.ee pārbaudes izietas:', JSON.stringify(stats));

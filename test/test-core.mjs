@@ -154,15 +154,16 @@ const app = buildItems([
     sv(5103, 'Balta', 'L', { price: 24.9, qty: 4 }), sv(5101, 'Balta', 'S', { price: 24.9, qty: 2 }), sv(5104, 'Balta', '3XL', { price: 29.9, qty: 1 }),
     sv(5102, 'Balta', 'M', { price: 24.9, qty: 0 }), sv(5201, 'Melna', '3XL', { price: 29.9, qty: 3 })] }),
   p({ id: 'gid://shopify/Product/78', title: 'T-krekls “Auseklis”', handle: 'auseklis', productType: 'Customizer', variants: [
+    // katrai krāsai sava bilde → ieraksts katrai krāsai (ne viena ieraksta režīms)
     v({ id: 'gid://shopify/ProductVariant/6101', title: 'T-krekls / Balta / XXS', position: 1, price: 29.9, tracked: false, qty: null, inventoryPolicy: 'CONTINUE',
-      selectedOptions: [{ name: 'Available Product', value: 'T-krekls' }, { name: 'Krāsa', value: 'Balta' }, { name: 'Izmērs', value: 'XXS' }] }),
+      image: 'https://cdn.example/balta.jpg', selectedOptions: [{ name: 'Available Product', value: 'T-krekls' }, { name: 'Krāsa', value: 'Balta' }, { name: 'Izmērs', value: 'XXS' }] }),
     v({ id: 'gid://shopify/ProductVariant/6102', title: 'T-krekls / Balta / XS', position: 2, price: 29.9, tracked: false, qty: null, inventoryPolicy: 'CONTINUE',
-      selectedOptions: [{ name: 'Available Product', value: 'T-krekls' }, { name: 'Krāsa', value: 'Balta' }, { name: 'Izmērs', value: 'XS' }] }),
+      image: 'https://cdn.example/balta.jpg', selectedOptions: [{ name: 'Available Product', value: 'T-krekls' }, { name: 'Krāsa', value: 'Balta' }, { name: 'Izmērs', value: 'XS' }] }),
     // uzskaitīts, 0, bet pasūtīt drīkst (CONTINUE) → ir; uzskaitīts, 0, DENY → nav
     v({ id: 'gid://shopify/ProductVariant/6201', title: 'Priekšauts / Rozā / viens izmērs', position: 3, price: 24.9, tracked: true, qty: 0, inventoryPolicy: 'CONTINUE',
-      selectedOptions: [{ name: 'Available Product', value: 'Priekšauts' }, { name: 'Krāsa', value: 'Rozā' }, { name: 'Izmērs', value: 'viens izmērs' }] }),
+      image: 'https://cdn.example/roza.jpg', selectedOptions: [{ name: 'Available Product', value: 'Priekšauts' }, { name: 'Krāsa', value: 'Rozā' }, { name: 'Izmērs', value: 'viens izmērs' }] }),
     v({ id: 'gid://shopify/ProductVariant/6301', title: 'Maisiņš / Melna / viens izmērs', position: 4, price: 14.9, tracked: true, qty: 0, inventoryPolicy: 'DENY',
-      selectedOptions: [{ name: 'Available Product', value: 'Maisiņš' }, { name: 'Krāsa', value: 'Melna' }, { name: 'Izmērs', value: 'viens izmērs' }] })] }),
+      image: 'https://cdn.example/melna.jpg', selectedOptions: [{ name: 'Available Product', value: 'Maisiņš' }, { name: 'Krāsa', value: 'Melna' }, { name: 'Izmērs', value: 'viens izmērs' }] })] }),
 ], CONFIG);
 const appBy = Object.fromEntries(app.items.map((i) => [i._variantId, i]));
 assert.equal(app.items.length, 4 + 3, 'Google: visi izmēri (bez 0 atlikuma DENY)');
@@ -202,6 +203,64 @@ assert.equal(edge.stats.skipped['atlikumā mazāk par 1 m'], 1, 'decimal + Custo
 assert.equal(edge.items.length, 1, 'publiskais avots: available=false netiek rādīts');
 assert.equal(edge.items[0]._variantId, '7202');
 assert.equal(edge.items[0].brand, 'RTP Apparel');
+
+// Viens ieraksts apdrukas produktam (Edgars 21.11.2026, 1. variants): vairākas krāsas, visām viena maketa bilde.
+const mv = (id, colour, size, price = 29.9) => v({ id: `gid://shopify/ProductVariant/${id}`, title: `T-krekls / ${colour} / ${size}`, position: id % 100,
+  price, tracked: false, qty: null, inventoryPolicy: 'CONTINUE', image: 'https://cdn.example/makets.jpg',
+  selectedOptions: [{ name: 'Available Product', value: 'T-krekls' }, { name: 'Krāsa', value: colour }, { name: 'Izmērs', value: size }] });
+const mg = buildItems([
+  p({ id: 'gid://shopify/Product/81', title: 'T-krekls “Auseklis”', handle: 'auseklis', productType: 'Customizer', variants: [
+    mv(8101, 'Balta', 'XXS'), mv(8102, 'Balta', 'XS'), mv(8103, 'Balta', '4XL'), mv(8104, 'Melna', 'XXS'), mv(8105, 'Melna', 'XS'), mv(8106, 'Haki', '4XL')] }),
+  // nosaukumā nav preces veida → priekšā "T-krekls ar apdruku"
+  p({ id: 'gid://shopify/Product/82', title: 'Ko es daru brīvos brīžos?', handle: 'ko-es', productType: 'Customizer', variants: [
+    mv(8201, 'Balta', 'S'), mv(8202, 'Melna', 'M')] }),
+  // bērnu izmēri gados
+  p({ id: 'gid://shopify/Product/83', title: 'Bērnu kokvilnas T-krekls “Cukurgailītis”', handle: 'bernu', productType: 'Customizer', variants: [
+    mv(8301, 'Balta', '2 gadi'), mv(8302, 'Balta', '4 gadi'), mv(8303, 'Zila', '12 gadi')] }),
+  // tukšie krekli (tips Apģērbi) – katrai krāsai sava bilde → ieraksts katrai krāsai
+  p({ id: 'gid://shopify/Product/84', title: 'T-krekls SOL’S Legend Unisex', handle: 'sol', productType: 'Apģērbi', variants: [
+    sv(8401, 'Balta', 'S', { price: 12.9, qty: 3 }), sv(8402, 'Melna', 'S', { price: 12.9, qty: 2 })] }),
+  // tags "viens-ieraksts" – viens ieraksts arī ar dažādām bildēm
+  p({ id: 'gid://shopify/Product/85', title: 'T-krekls SOL’S Imperial Kids', handle: 'kids', productType: 'Apģērbi', tags: ['viens-ieraksts'], variants: [
+    sv(8501, 'Balta', '2 gadi', { price: 9.9, qty: 3 }), sv(8502, 'Melna', '4 gadi', { price: 9.9, qty: 1 })] }),
+], CONFIG);
+const mgBy = Object.fromEntries(mg.items.map((i) => [i._variantId, i]));
+assert.equal(mg.stats.mergedProducts, 4);
+assert.equal(mg.items.length, 6 + 2 + 3 + 2 + 2, 'Google: visi varianti');
+assert.equal(mg.stats.items, 1 + 1 + 1 + 2 + 1, 'portāliem: pa vienam ierakstam produktam, tukšajiem – katrai krāsai');
+const aus = mgBy['8101'];
+assert.equal(aus.name, 'T-krekls “Auseklis” (3 krāsas, XXS-4XL)');
+assert.equal(aus.link, 'https://sarlotesaudumi.lv/products/auseklis?variant=8101', 'saite – pirmā krāsa (bildē), pirmais izmērs');
+assert.equal(aus.color, 'Balta');
+assert.equal(aus.in_stock, '');
+assert.ok(['8102', '8103', '8104', '8105', '8106'].every((id) => mgBy[id]._portalSkip));
+assert.equal(mgBy['8101']._baseName, 'T-krekls “Auseklis” - T-krekls / Balta / XXS', 'Google nosaukums – varianta');
+assert.equal(mgBy['8201'].name, 'T-krekls ar apdruku “Ko es daru brīvos brīžos?” (2 krāsas, S-M)');
+assert.equal(mgBy['8301'].name, 'Bērnu kokvilnas T-krekls “Cukurgailītis” (2 krāsas, 2-12 g.)');
+assert.equal(mgBy['8401'].name, 'T-krekls SOL’S Legend Unisex - Balta', 'tukšie krekli – katrai krāsai');
+assert.equal(mgBy['8402'].name, 'T-krekls SOL’S Legend Unisex - Melna');
+assert.equal(mgBy['8401'].color, undefined);
+assert.equal(mgBy['8501'].name, 'T-krekls SOL’S Imperial Kids (2 krāsas, 2-4 g.)', 'tags viens-ieraksts');
+const mx = toXml(mg.items);
+assert.equal((mx.match(/<item>/g) || []).length, 6);
+assert.ok(mx.includes('<name>T-krekls “Auseklis” (3 krāsas, XXS-4XL)</name>') && mx.includes('<color>Balta</color>'));
+assert.equal((mx.match(/<color>/g) || []).length, 4, '<color> tikai viena ieraksta precēm');
+assert.equal((toKurpirktXml(mg.items).match(/<item>/g) || []).length, 6);
+assert.ok(!toKurpirktXml(mg.items).includes('<color>'), 'KurPirkt formātā krāsas lauka nav');
+// Makets ir balts: saite uz balto krāsu, arī ja Shopify pirmā krāsa ir cita; ja baltas nav – pirmā krāsa bez <color>.
+const mc = buildItems([
+  p({ id: 'gid://shopify/Product/86', title: 'T-krekla apdruka ar jūsu dizainu kreisajā pusē', handle: 'kreisa', productType: 'Customizer', variants: [
+    mv(8601, 'Tumši sarkans', 'XXS'), mv(8602, 'Balta', 'XS'), mv(8603, 'Balta', 'XXS')] }),
+  p({ id: 'gid://shopify/Product/87', title: 'Organiskās kokvilnas T-krekls “Piens”', handle: 'piens', productType: 'Customizer', variants: [
+    mv(8701, 'Melna', 'S'), mv(8702, 'Haki', 'S')] }),
+], CONFIG);
+const mcBy = Object.fromEntries(mc.items.map((i) => [i._variantId, i]));
+assert.ok(!mcBy['8602']._portalSkip && mcBy['8602'].color === 'Balta', 'saite uz balto (pirmais baltais pēc pozīcijas)');
+assert.ok(mcBy['8601']._portalSkip && mcBy['8603']._portalSkip);
+assert.equal(mcBy['8602'].name, 'T-krekla apdruka ar jūsu dizainu kreisajā pusē (2 krāsas, XXS-XS)');
+assert.ok(!mcBy['8701']._portalSkip && mcBy['8701'].color === '', 'nav baltas – pirmā krāsa, bez <color>');
+assert.equal(mc.stats.mergedWithoutMockupColour, 1);
+assert.ok(!toXml(mc.items).includes('<color></color>') && toXml(mc.items).includes('<color>Balta</color>'));
 console.log(kp.split('\n').slice(0, 14).join('\n'));
 console.log(xml.split('\n').slice(0, 16).join('\n'));
 console.log('...\nVisas pārbaudes izietas:', stats);

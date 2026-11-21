@@ -87,6 +87,24 @@ assert.equal(stats.items, prods.length); assert.equal(stats.decimal, 1);
   assert.ok(kx.xml.includes('<category_name><![CDATA[Vaikiški marškinėliai]]></category_name>'));
   assert.ok(kx.xml.includes('<working_days>7</working_days>') && !kx.xml.includes('<stock>'));
   assert.equal(kx.stats.defaultCategory, 0);
+
+  // Viens ieraksts apdrukas produktam (viena maketa bilde visām krāsām): lietuviski "(12 spalvų, …)", "(2 spalvos, …)".
+  const mv = (id, colour, size) => v({ id: `gid://shopify/ProductVariant/${id}`, title: `T-krekls / ${colour} / ${size}`, price: 29.9, tracked: false,
+    qty: null, inventoryPolicy: 'CONTINUE', position: id % 100, image: 'https://cdn.example/makets.jpg',
+    selectedOptions: [{ name: 'Available Product', value: 'T-krekls' }, { name: 'Krāsa', value: colour }, { name: 'Izmērs', value: size }] });
+  const cols = ['Balta', 'Melna', 'Haki', 'Rozā', 'Piena balta', 'Rudzupuķu zila', 'Tumši zila', 'Pelēks melažs', 'Dzeltens', 'Tumši sarkans', 'Tumši zaļš', 'Sarkans'];
+  const big = p({ title: 'T-krekls “Auseklis”', handle: 'm-a', productType: 'Customizer',
+    variants: [...cols.map((c, i) => mv(9700 + i, c, 'XXS')), mv(9750, 'Balta', '4XL')] });
+  const two = p({ title: 'Bērnu T-krekls “Zoss”', handle: 'm-z', productType: 'Customizer', variants: [mv(9760, 'Balta', '2 gadi'), mv(9761, 'Zila', '8 gadi')] });
+  const { items: mi } = buildItems([big, two], CONFIG);
+  const lt2 = normalizeStore([
+    { title: 'Marškinėliai „Auseklis“', handle: 'a', product_type: 'Konfigūratorius', variants: [...cols.map((c, i) => 9700 + i), 9750].map((id) => ({ id, title: 'x', price: '29.90' })) },
+    { title: 'Vaikiški marškinėliai „Žąsis“', handle: 'z', product_type: 'Konfigūratorius', variants: [9760, 9761].map((id) => ({ id, title: 'x', price: '24.90' })) },
+  ]);
+  const mx = toKaina24Xml(mi, lt2, CONFIG);
+  assert.equal(mx.stats.items, 2);
+  assert.ok(mx.xml.includes('<title><![CDATA[Marškinėliai „Auseklis“ (12 spalvų, XXS-4XL)]]></title>'));
+  assert.ok(mx.xml.includes('<title><![CDATA[Vaikiški marškinėliai „Žąsis“ (2 spalvos, 2-8 m.)]]></title>'));
 }
 
 console.log('Kaina24 pārbaudes izietas:', JSON.stringify(stats));

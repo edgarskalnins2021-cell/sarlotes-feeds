@@ -132,6 +132,30 @@ assert.equal(stats.items, rows.length); assert.equal(stats.decimal, 3);
   assert.ok(tBlock.includes('<working_days>7</working_days>') && !tBlock.includes('<stock>'));
   const sBlock = ax.xml.split('<product id="9911">')[1].split('</product>')[0];
   assert.ok(sBlock.includes('<working_days>5</working_days>') && sBlock.includes('<stock>5</stock>'));
+  assert.ok(ax.xml.includes("<manufacturer><![CDATA[SOL'S]]></manufacturer>"), 'zīmols no nosaukuma');
+
+  // Shopify Google lauki (custom_label) dod LV kategoriju: "Bērnu T-krekli" → igauniski; nezināma vērtība → pēc nosaukuma, nevis vispārīgā.
+  const kid = p({ title: 'T-krekls bērnu SOL’S Imperial Kids', handle: 'kids', productType: 'Apģērbi',
+    variants: [v({ id: 'gid://shopify/ProductVariant/9921', title: 'Balta / 2 gadi', price: 9.9, qty: 3, position: 1,
+      categoryPath: ['Gatavie izstrādājumi un apdruka', 'Bērnu T-krekli'],
+      selectedOptions: [{ name: 'Krāsa', value: 'Balta' }, { name: 'Izmērs', value: '2 gadi' }] })] });
+  const hood = p({ title: 'Džemperis “Saknes”', handle: 'hood', productType: 'Customizer',
+    variants: [v({ id: 'gid://shopify/ProductVariant/9931', title: 'Džemperis / Hall / melanž / M', price: 36.9, tracked: false, qty: null,
+      inventoryPolicy: 'CONTINUE', position: 1, categoryPath: ['Gatavie izstrādājumi un apdruka', 'Hūdiji'],
+      selectedOptions: [{ name: 'Available Product', value: 'Džemperis' }, { name: 'Krāsa', value: 'Pelēks / melanžs' }, { name: 'Izmērs', value: 'M' }] })] });
+  const { items: ki } = buildItems([kid, hood], CONFIG);
+  const eeK = normalizeEe([
+    { title: 'Laste T-särk SOL’S Imperial Kids', handle: 'laste', product_type: 'Apģērbi',
+      variants: [{ id: 9921, title: 'Valge / 2 aastat', option1: 'Valge', option2: '2 aastat', price: '10.14' }] },
+    { title: 'Pusa “Juured”', handle: 'pusa', product_type: 'Kohandaja',
+      variants: [{ id: 9931, title: 'Pusa / Hall / melanž / M', option1: 'Pusa', option2: 'Hall / melanž', option3: 'M', price: '37.80' }] },
+  ]);
+  const kx = toHindeeXml(ki, eeK, CONFIG);
+  assert.ok(kx.xml.split('<product id="9921">')[1].split('</product>')[0].includes('<category_name><![CDATA[Laste T-särgid]]></category_name>'));
+  const hBlock = kx.xml.split('<product id="9931">')[1].split('</product>')[0];
+  assert.ok(hBlock.includes('<category_name><![CDATA[Pusad]]></category_name>'), 'nezināma Shopify kategorija → pēc nosaukuma');
+  assert.ok(hBlock.includes('<title><![CDATA[Pusa “Juured” - Pusa / Hall / melanž]]></title>'), 'izmērs izņemts pēc opcijas, " / " vērtībā saglabāts');
+  assert.equal(kx.stats.defaultCategory, 0);
 }
 
 console.log('Hind.ee pārbaudes izietas:', JSON.stringify(stats));

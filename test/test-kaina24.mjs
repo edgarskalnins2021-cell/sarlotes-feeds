@@ -71,4 +71,22 @@ assert.equal(by('be-tipo').val('category_name'), CONFIG.kaina24.defaultCategory)
 assert.equal(by('zirkles').val('title'), 'Žirklės "A&B" <20 cm>');
 assert.equal(stats.defaultCategory, 2);
 assert.equal(stats.items, prods.length); assert.equal(stats.decimal, 1);
+// Apģērbi (Edgars 21.11.2026): viens ieraksts krāsai; "Bērnu T-krekli" (Shopify lauki) → lietuviski; apdrukai 5 + 2 = 7 d.
+{
+  const kv = (id, size) => v({ id: `gid://shopify/ProductVariant/${id}`, title: `Bērnu T-krekls / Balta / ${size}`, price: 24.9, tracked: false, qty: null,
+    inventoryPolicy: 'CONTINUE', position: id % 10, categoryPath: ['Gatavie izstrādājumi un apdruka', 'Bērnu T-krekli'],
+    selectedOptions: [{ name: 'Available Product', value: 'Bērnu T-krekls' }, { name: 'Krāsa', value: 'Balta' }, { name: 'Izmērs', value: size }] });
+  const { items: ki } = buildItems([p({ title: 'Bērnu T-krekls “Auseklis gaišs”', handle: 'bernu', productType: 'Customizer',
+    variants: [kv(9601, '2 gadi'), kv(9602, '4 gadi')] })], CONFIG);
+  const lt = normalizeStore([{ title: 'Vaikiški marškinėliai „Auseklis šviesus“', handle: 'vaik', product_type: 'Konfigūratorius', variants: [
+    { id: 9601, title: 'Vaikiški marškinėliai / Balta / 2 metai', option1: 'Vaikiški marškinėliai', option2: 'Balta', option3: '2 metai', price: '24.90' },
+    { id: 9602, title: 'Vaikiški marškinėliai / Balta / 4 metai', option1: 'Vaikiški marškinėliai', option2: 'Balta', option3: '4 metai', price: '24.90' }] }]);
+  const kx = toKaina24Xml(ki, lt, CONFIG);
+  assert.equal(kx.stats.items, 1, 'viens ieraksts krāsai');
+  assert.ok(kx.xml.includes('<title><![CDATA[Vaikiški marškinėliai „Auseklis šviesus“ - Vaikiški marškinėliai / Balta]]></title>'));
+  assert.ok(kx.xml.includes('<category_name><![CDATA[Vaikiški marškinėliai]]></category_name>'));
+  assert.ok(kx.xml.includes('<working_days>7</working_days>') && !kx.xml.includes('<stock>'));
+  assert.equal(kx.stats.defaultCategory, 0);
+}
+
 console.log('Kaina24 pārbaudes izietas:', JSON.stringify(stats));

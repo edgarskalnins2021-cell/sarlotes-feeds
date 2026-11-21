@@ -38,4 +38,18 @@ assert.equal(by('def'), undefined); assert.equal(stats.skipped['ar defektu / dem
 assert.ok(by('gars').item_short_desc.length <= 500);
 assert.equal(new Set(rows.map((r) => r.item_unique_id)).size, rows.length);
 assert.equal(stats.items, rows.length); assert.equal(stats.decimal, 1);
+// Apģērbi (Edgars 21.11.2026): viens ieraksts krāsai (citi izmēri – tikai Google), nosaukums bez izmēra, AVAILABLE.
+{
+  const tv = (id, size) => v({ id: `gid://shopify/ProductVariant/${id}`, title: `Balta / ${size}`, price: 12.9, qty: 4, position: id % 10,
+    selectedOptions: [{ name: 'Krāsa', value: 'Balta' }, { name: 'Izmērs', value: size }] });
+  const { items: ai, stats: as } = buildItems([p({ title: 'T-krekls SOL’S Legend Unisex', handle: 'sol', productType: 'Apģērbi',
+    variants: [tv(9501, 'S'), tv(9502, 'M')] })], CONFIG);
+  assert.equal(ai.length, 2); assert.equal(as.items, 1);
+  const cx = toCenuekspertsXml(ai, CONFIG);
+  assert.equal(cx.stats.items, 1);
+  assert.ok(cx.xml.includes('<item_unique_id>9501</item_unique_id>') && !cx.xml.includes('9502'));
+  assert.ok(cx.xml.includes('<item_name>T-krekls SOL’S Legend Unisex - Balta</item_name>'));
+  assert.ok(cx.xml.includes('<item_manufacturer>SOL&apos;S</item_manufacturer>'));
+}
+
 console.log('Cenueksperts pārbaudes izietas:', JSON.stringify(stats));

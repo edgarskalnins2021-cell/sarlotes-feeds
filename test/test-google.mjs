@@ -302,6 +302,10 @@ assert.equal(ee.stats.typeNotTranslated, 0);
   assert.ok(gee.xml.includes('<g:size>XS</g:size>'));
   // parasta prece – apstrādes laiks nemainās
   assert.ok(ee.xml.includes('<g:min_handling_time>0</g:min_handling_time><g:max_handling_time>1</g:max_handling_time>'));
+  // bojāts tipa tulkojums (")") netiek likts ne product_type, ne custom_label_0
+  const enBad = [{ ...enT[0], product_type: ')' }];
+  const bad = toGoogleXml(gi, normalizeLvStore(enBad), CONFIG, CONFIG.googleMarkets.lt);
+  assert.ok(!bad.xml.includes('<g:product_type>)</g:product_type>') && !bad.xml.includes('<g:custom_label_0>)</g:custom_label_0>'));
 }
 
 console.log('Google pārbaudes izietas:', JSON.stringify(stats), '| EE:', JSON.stringify(ee.stats));

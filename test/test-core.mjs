@@ -189,6 +189,19 @@ const ax = toXml(app.items);
 assert.equal((ax.match(/<item>/g) || []).length, 4, 'Salidzini: viens ieraksts katrai krāsai');
 assert.ok(!ax.includes('variant=5103') && !ax.includes('variant=6102'));
 assert.equal((toKurpirktXml(app.items).match(/<item>/g) || []).length, 4, 'KurPirkt: viens ieraksts katrai krāsai');
+assert.equal(white.brand, "SOL'S", 'zīmols no nosaukuma (SOL’S)');
+// Metrā tirgota apdrukas prece – atlikuma noteikums (vismaz 1 m) paliek; publiskais avots – nepieejams variants netiek likts.
+const edge = buildItems([
+  p({ title: 'Apdrukāts audums', handle: 'apdr-audums', productType: 'Customizer', tags: ['decimal'],
+    variants: [v({ id: 'gid://shopify/ProductVariant/7101', price: 2.5, qty: 5, tracked: true, inventoryPolicy: 'CONTINUE' })] }),
+  p({ title: 'T-krekls RTP Apparel Cosmic Men', handle: 'rtp', productType: 'Customizer',
+    variants: [v({ id: 'gid://shopify/ProductVariant/7201', title: 'Melna / M', price: 29.9, qty: null, tracked: null, available: false }),
+      v({ id: 'gid://shopify/ProductVariant/7202', title: 'Melna / L', price: 29.9, qty: null, tracked: null, available: true })] }),
+], CONFIG);
+assert.equal(edge.stats.skipped['atlikumā mazāk par 1 m'], 1, 'decimal + Customizer: 0,5 m netiek rādīts');
+assert.equal(edge.items.length, 1, 'publiskais avots: available=false netiek rādīts');
+assert.equal(edge.items[0]._variantId, '7202');
+assert.equal(edge.items[0].brand, 'RTP Apparel');
 console.log(kp.split('\n').slice(0, 14).join('\n'));
 console.log(xml.split('\n').slice(0, 16).join('\n'));
 console.log('...\nVisas pārbaudes izietas:', stats);

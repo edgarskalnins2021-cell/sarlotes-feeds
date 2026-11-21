@@ -92,6 +92,14 @@ export const CONFIG = {
     'Šūšanas materiāli >> Citi šūšanas materiāli': { to: 'Šūšanas materiāli >> Polsteri', when: /polster/i }, // J3: grupā tikai polsteri
   },
 
+  // KurPirkt tests (Edgara lēmums 21.11.2026): papildus kopīgs ieraksts produktam – visas krāsas vienā kartītē
+  // ("Dzijas DROPS Air - 50 g / 150 m (19 krāsas)"), faila sākumā; krāsu ieraksti paliek kā līdz šim.
+  // Tikai kurpirkt.xml: Salidzini (r.22, r.49) un Ceno noteikumi aizliedz vienu preci norādīt vairākas reizes.
+  kurpirktCombined: {
+    productIds: ['10758945571150'], // Dzijas DROPS Air - 50 g / 150 m
+    words: { lang: 'lv', colour: ['krāsa', 'krāsas', 'krāsu'] },
+  },
+
   // Piegāde (Latvija).
   courierOnlyType: 'COURIER_ONLY',
   delivery: {
@@ -568,6 +576,7 @@ export function buildItems(products, cfg = CONFIG) {
         _desc: p.description || '',
         // Google failam: Shopify dati par vienu Shopify vienību (metrā tirgotajām – par 0,1 m), kā preces lapā.
         _productId: p.id != null ? String(p.id).split('/').pop() : '',
+        _productImage: p.image || '', // produkta galvenā bilde (KurPirkt kopīgajam ierakstam)
         _productTitle: cleanName(p.title, cfg).replace(/\s+/g, ' ').trim(),
         _lvTitle: p.title,
         _productType: p.productType || '',
@@ -668,10 +677,30 @@ export function portalCategory(it, cfg = CONFIG) {
   return r.to;
 }
 
+// KurPirkt kopīgie ieraksti (CONFIG.kurpirktCombined): viens ieraksts produktam ar visām tā krāsām – saite uz produkta
+// lapu (bez ?variant), produkta galvenā bilde, atlikums – visu krāsu kopā. Tikai tad, ja failā ir vismaz 2 produkta
+// ieraksti ar vienādu cenu un kategoriju (citādi kartītes cena neatbilstu preces lapai) – citādi netiek likts.
+export function kurpirktCombinedItems(items, cfg = CONFIG) {
+  const out = [];
+  for (const pid of cfg.kurpirktCombined?.productIds || []) {
+    const its = items.filter((it) => !it._portalSkip && it._productId === String(pid));
+    if (its.length < 2 || new Set(its.map((it) => it.price)).size > 1
+      || new Set(its.map((it) => portalCategory(it, cfg))).size > 1) continue;
+    const f = its[0];
+    const name = cut(`${f._productTitle} (${its.length} ${countWord(its.length, cfg.kurpirktCombined.words)})`
+      + (f._decimal ? cfg.decimalNameSuffix : ''), 200);
+    const stock = its.every((it) => /^\d+$/.test(it.in_stock)) ? String(its.reduce((s, it) => s + Number(it.in_stock), 0)) : '';
+    out.push({ ...f, name, _baseName: f._productTitle, link: f.link.split('?')[0], image: cut(f._productImage || f.image, 500),
+      in_stock: stock, ean: '', _combined: its.length });
+  }
+  return out;
+}
+
 // Kurpirkt.lv formāts (https://www.kurpirkt.lv/veikaliem.php): tās pašas preces, citi lauku nosaukumi.
+// Faila sākumā – kopīgie ieraksti (kurpirktCombinedItems), tad visas preces kā Salidzini failā.
 export function toKurpirktXml(items, cfg = CONFIG) {
   const out = ["<?xml version='1.0' encoding='utf-8' ?>", '<root>'];
-  for (const it of items) {
+  for (const it of [...kurpirktCombinedItems(items, cfg), ...items]) {
     if (it._portalSkip) continue; // cits tās pašas krāsas izmērs
     const parts = String(portalCategory(it, cfg) || '').split(/\s*>>\s*/).filter(Boolean);
     const row = {

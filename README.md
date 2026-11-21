@@ -50,6 +50,7 @@ tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu
 | Zīmols | tikai īsti zīmoli (SCHMETZ, Milward, Prym, DROPS, Alize u.c.) |
 | EAN | tikai derīgi kodi (automātiski ģenerētie netiek likti) |
 | Piegāde | 3,30 € (Omniva), 0 € no 70 €; tikai kurjers – 11,90 € / 15,90 € virs 3 kg; 3 dienas; veikalā Cēsīs – šodien (Salidzini rāda "0d" un zaļo "Ātra piegāde") |
+| Kopīgs ieraksts tikai Kurpirkt (`kurpirktCombined`, tests – Edgara lēmums 21.11.2026) | `kurpirkt.xml` sākumā papildus viens ieraksts produktam ar visām krāsām, piem. "Dzijas DROPS Air - 50 g / 150 m (19 krāsas)": saite uz produkta lapu bez `?variant`, produkta galvenā bilde, atlikums – visu krāsu kopā. Krāsu ieraksti paliek. Tikai, ja failā ir ≥ 2 krāsas ar vienādu cenu un kategoriju. Pārējie faili bez izmaiņām (Salidzini un Ceno noteikumi aizliedz vienu preci norādīt vairākas reizes). Kurpirkt preču skaits – `stats.json` laukā `kurpirkt` |
 
 Visi skaitļi ir `feed-core.mjs` augšā, blokā `CONFIG` (piem. `minPrice: 0`).
 

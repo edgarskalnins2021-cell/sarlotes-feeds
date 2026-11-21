@@ -15,7 +15,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { pathToFileURL } from 'node:url';
-import { CONFIG, buildItems, toXml, toKurpirktXml, toCenoXml, toCenuekspertsXml, toHindeeXml, toKaina24Xml,
+import { CONFIG, buildItems, toXml, toKurpirktXml, kurpirktCombinedItems, toCenoXml, toCenuekspertsXml, toHindeeXml, toKaina24Xml,
   toGoogleXml, htmlToPlain, BALTIC_LETTERS } from './feed-core.mjs';
 
 const STORE = process.env.SHOPIFY_STORE || 'sarlotesaudumi.myshopify.com';
@@ -454,8 +454,11 @@ async function main() {
     if (f.gzip) await writeFile(`${OUT_DIR}/${f.file}`, gzipSync(Buffer.from(f.result.xml, 'utf8'), { level: 9 }));
     else await writeFile(`${OUT_DIR}/${f.file}`, f.result.xml, 'utf8');
   }
-  // "items" = Salidzini/Kurpirkt preču skaits (to izmanto drošības pārbaude); pārējie – atsevišķi.
-  const all = { ...stats, ceno: ceno.stats, cenueksperts: cenu.stats };
+  // "items" = Salidzini preču skaits (to izmanto drošības pārbaude); pārējie – atsevišķi.
+  // KurPirkt = tās pašas preces + kopīgie ieraksti faila sākumā (CONFIG.kurpirktCombined).
+  const kpCombined = kurpirktCombinedItems(items, CONFIG);
+  const kurpirkt = { items: stats.items + kpCombined.length, combined: kpCombined.map((c) => c.name) };
+  const all = { ...stats, kurpirkt, ceno: ceno.stats, cenueksperts: cenu.stats };
   for (const f of foreign) if (f.result) all[f.key] = f.result.stats;
   await writeFile(`${OUT_DIR}/stats.json`, JSON.stringify({ generated: now, source: useAdmin ? 'admin' : 'storefront', ...all }, null, 2));
   const made = foreign.filter((f) => f.result);

@@ -1,6 +1,6 @@
 // Pārbauda noteikumus ar dažiem piemēriem: node test/test-core.mjs
 import assert from 'node:assert/strict';
-import { buildItems, toXml, toKurpirktXml, validGtin, CONFIG } from '../feed-core.mjs';
+import { buildItems, toXml, toKurpirktXml, kurpirktCombinedItems, validGtin, CONFIG } from '../feed-core.mjs';
 
 const v = (o) => ({ id: 'gid://shopify/ProductVariant/1001', title: 'Default Title', price: 1, available: true, qty: 10,
   tracked: true, requiresShipping: true, grams: 100, image: '', barcode: '', categoryPath: [], ...o });
@@ -145,6 +145,31 @@ assert.ok(rk.includes('<category>Polsteri</category>'));
 assert.ok(rx.includes('<category_full>Šūšanas materiāli &gt;&gt; Citi šūšanas materiāli</category_full>'), 'ne-polsteri paliek esošajā kategorijā');
 assert.equal(ren[0].category_full, 'Dzija >> Vilnas un dzīvnieku šķiedru dzija', 'items (Ceno, Cenueksperts, Google, EE, LT) – Shopify nosaukums');
 assert.ok(toXml([fabric]).includes('<category_full>Audumi &gt;&gt; Kokvilnas audumi</category_full>'), 'nepiesaistītās kategorijas nemainās');
+
+// KurPirkt kopīgais ieraksts (CONFIG.kurpirktCombined, Edgara lēmums 21.11.2026): tikai kurpirkt.xml, faila sākumā,
+// krāsu ieraksti paliek; cita prece un citi faili nemainās.
+assert.deepEqual(CONFIG.kurpirktCombined.productIds, ['10758945571150'], 'tests – tikai DROPS Air');
+const airV = (n, o = {}) => v({ id: `gid://shopify/ProductVariant/77${n}`, title: `0${n} · krāsa`, price: 5.3, qty: n * 10,
+  image: `https://cdn.example/air-${n}.jpg`, categoryPath: ['Dzija', 'Vilnas un dzīvnieku šķiedru dzija'], ...o });
+const air = (variants) => p({ id: 'gid://shopify/Product/777', title: 'Dzijas DROPS Air – 50 g / 150 m', handle: 'dzijas-drops-air',
+  productType: 'Dzija', vendor: 'DROPS', image: 'https://cdn.example/air.jpg', variants });
+const kcfg = { ...CONFIG, kurpirktCombined: { ...CONFIG.kurpirktCombined, productIds: ['777'] } };
+const airItems = buildItems([air([airV(1), airV(2), airV(3)]), p({ title: 'Cits', handle: 'cits', variants: [v({ price: 2, qty: 1 })] })], kcfg).items;
+const kc = toKurpirktXml(airItems, kcfg);
+const kItems = kc.match(/<item>[\s\S]*?<\/item>/g);
+assert.equal(kItems.length, 5, '4 preces + 1 kopīgais');
+assert.ok(kItems[0].includes('<name>Dzijas DROPS Air - 50 g / 150 m (3 krāsas)</name>'), kItems[0]);
+assert.ok(kItems[0].includes('<link>https://sarlotesaudumi.lv/products/dzijas-drops-air</link>'), 'saite uz produkta lapu bez ?variant');
+assert.ok(kItems[0].includes('<image>https://cdn.example/air.jpg</image>'), 'produkta galvenā bilde');
+assert.ok(kItems[0].includes('<price>5.30</price>') && kItems[0].includes('<in_stock>60</in_stock>'), 'cena; atlikums – visu krāsu kopā');
+assert.ok(kItems[0].includes('<category>Vilnas dzijas</category>') && kItems[0].includes('<manufacturer>DROPS</manufacturer>'));
+assert.ok(kItems[1].includes('?variant=771') && kItems[3].includes('?variant=773'), 'krāsu ieraksti paliek aiz kopīgā');
+assert.equal(kc.replace(`${kItems[0]}\n`, ''), toKurpirktXml(airItems, CONFIG), 'bez kopīgā ieraksta fails ir tāds pats kā līdz šim');
+assert.equal(toXml(airItems, kcfg), toXml(airItems, CONFIG), 'Salidzini fails nemainās');
+assert.equal(kurpirktCombinedItems(buildItems([air([airV(1), airV(2, { price: 5.9 })])], kcfg).items, kcfg).length, 0,
+  'dažādas cenas – kopīgā ieraksta nav');
+assert.equal(kurpirktCombinedItems(buildItems([air([airV(1), airV(2, { qty: 0 })])], kcfg).items, kcfg).length, 0,
+  'atlikumā tikai viena krāsa – kopīgā ieraksta nav');
 
 // Apģērbi: cenu portāliem viens ieraksts katrai krāsai (izmēri kopā), Google – katrs izmērs (Edgars 21.11.2026).
 const sv = (id, color, size, o = {}) => v({ id: `gid://shopify/ProductVariant/${id}`, title: `${color} / ${size}`, position: id % 100,

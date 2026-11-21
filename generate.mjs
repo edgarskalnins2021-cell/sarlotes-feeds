@@ -75,7 +75,8 @@ async function gql(token, query, variables = {}) {
 const BULK_QUERY = `{
   productVariants(query: "product_status:active") {
     edges { node {
-      id title price compareAtPrice inventoryQuantity
+      id title price compareAtPrice inventoryQuantity inventoryPolicy position
+      selectedOptions { name value }
       inventoryItem { tracked requiresShipping measurement { weight { value unit } } }
       lab0: metafield(namespace: "mm-google-shopping", key: "custom_label_0") { value }
       lab1: metafield(namespace: "mm-google-shopping", key: "custom_label_1") { value }
@@ -163,6 +164,9 @@ export function parseBulk(text) {
       available: v.inventoryQuantity > 0,
       qty: v.inventoryItem?.tracked ? v.inventoryQuantity : null,
       tracked: v.inventoryItem ? !!v.inventoryItem.tracked : null,
+      inventoryPolicy: v.inventoryPolicy || null,
+      position: v.position ?? null,
+      selectedOptions: (v.selectedOptions || []).map((o) => ({ name: o.name, value: o.value })),
       requiresShipping: v.inventoryItem ? v.inventoryItem.requiresShipping !== false : true,
       grams: grams(v.inventoryItem?.measurement?.weight),
       image: v._image || '',
@@ -209,6 +213,8 @@ export function normalizeStorefront(list) {
     variants: p.variants.map((v) => ({
       id: v.id, title: v.title, price: parseFloat(v.price), available: !!v.available,
       compareAtPrice: v.compare_at_price != null ? parseFloat(v.compare_at_price) : null,
+      inventoryPolicy: null, position: v.position ?? null,
+      selectedOptions: (p.options || []).map((o, i) => ({ name: o.name, value: v[`option${i + 1}`] })).filter((o) => o.value != null),
       qty: null, tracked: null, requiresShipping: v.requires_shipping !== false, grams: v.grams || 0,
       image: v.featured_image?.src || '', barcode: '', categoryPath: [],
     })),
@@ -396,8 +402,9 @@ async function main() {
   const useAdmin = !!(CLIENT_ID && CLIENT_SECRET);
   console.log(`Datu avots: ${useAdmin ? 'Shopify Admin API' : 'publiskais /products.json'}`);
   const products = useAdmin ? await fromAdminApi() : await fromStorefront();
+  // items – visi varianti (Google); stats.items – Salidzini/KurPirkt ieraksti (apģērbiem viens katrai krāsai).
   const { items, stats } = buildItems(products, CONFIG);
-  if (items.length < 100) throw new Error(`Aizdomīgi maz preču (${items.length}) – fails netiek pārrakstīts.`);
+  if (stats.items < 100) throw new Error(`Aizdomīgi maz preču (${stats.items}) – fails netiek pārrakstīts.`);
 
   const ceno = toCenoXml(items, CONFIG, { publishedCollections: await fetchPublishedCollections() });
   if (ceno.stats.items < 100) throw new Error(`Aizdomīgi maz Ceno preču (${ceno.stats.items}) – faili netiek pārrakstīti.`);
@@ -415,8 +422,8 @@ async function main() {
   } else {
     try { prev = JSON.parse(prevText); } catch { throw new Error('Iepriekšējais stats.json nav derīgs JSON – izvietošana netiek veikta.'); }
   }
-  if (prev?.items && items.length < prev.items * 0.5 && process.env.FORCE !== '1') {
-    throw new Error(`Preču skaits nokrities no ${prev.items} uz ${items.length} – fails netiek pārrakstīts.`);
+  if (prev?.items && stats.items < prev.items * 0.5 && process.env.FORCE !== '1') {
+    throw new Error(`Preču skaits nokrities no ${prev.items} uz ${stats.items} – fails netiek pārrakstīts.`);
   }
   if (prev?.ceno?.items && ceno.stats.items < prev.ceno.items * 0.5 && process.env.FORCE !== '1') {
     throw new Error(`Preču skaits (Ceno) nokrities no ${prev.ceno.items} uz ${ceno.stats.items} – faili netiek pārrakstīti.`);
@@ -452,7 +459,7 @@ async function main() {
   const made = foreign.filter((f) => f.result);
   const links = made.map((f) => ` · <a href="${f.file}">${f.file}</a>`).join('');
   const counts = made.map((f) => `, ${f.title}: ${f.result.stats.items}`).join('');
-  await writeFile(`${OUT_DIR}/index.html`, `<!doctype html><meta charset="utf-8"><title>Šarlotes audumi – XML</title><p><a href="salidzini.xml">salidzini.xml</a> · <a href="kurpirkt.xml">kurpirkt.xml</a> · <a href="ceno.xml">ceno.xml</a> · <a href="cenueksperts.xml">cenueksperts.xml</a>${links} · ${items.length} preces (Ceno: ${ceno.stats.items}, Cenueksperts: ${cenu.stats.items}${counts}) · ${now}</p>`);
+  await writeFile(`${OUT_DIR}/index.html`, `<!doctype html><meta charset="utf-8"><title>Šarlotes audumi – XML</title><p><a href="salidzini.xml">salidzini.xml</a> · <a href="kurpirkt.xml">kurpirkt.xml</a> · <a href="ceno.xml">ceno.xml</a> · <a href="cenueksperts.xml">cenueksperts.xml</a>${links} · ${stats.items} preces (Ceno: ${ceno.stats.items}, Cenueksperts: ${cenu.stats.items}${counts}) · ${now}</p>`);
   console.log(JSON.stringify(all, null, 2));
 }
 

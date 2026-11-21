@@ -34,9 +34,10 @@ tiek ierakstīts `status/last-run.json`, lai GitHub neatslēgtu grafiku 60 dienu
 |---|---|
 | Metrā tirgotās preces (tags `decimal`) | cena × 10 (par 1 m), atlikums ÷ 10 (metros), nosaukumā "(cena par 1 m)" |
 | Atlikumā mazāk par 1 m | nerāda |
-| 0 atlikums / atlikums netiek uzskaitīts | nerāda |
-| Dāvanu kartes, apdrukas preces (tips `Customizer`), digitālās preces, 0 € | nerāda |
-| T-krekli un džemperi (nosaukums sākas ar "T-krekls" / "Džemperis") | nerāda |
+| 0 atlikums / atlikums netiek uzskaitīts | nerāda (izņemot apdrukas preces, skat. zemāk) |
+| Dāvanu kartes, digitālās preces, 0 € | nerāda |
+| Apdrukas preces (tips `Customizer`, `CONFIG.madeToOrder`; Edgars 21.11.2026) | rāda; izgatavo pēc pasūtījuma – atlikums netiek likts (tukšs), piegādes termiņam pieskaita izgatavošanu 1–2 d.d. (Salidzini/Ceno 3 + 2 = 5 d., Cēsīs 0 + 2 = 2 d., Hind.ee/Kaina24 5 + 2 = 7 d., Google apstrāde 1–3 d.); nerāda tikai, ja Shopify variantu pasūtīt neļauj (uzskaitīts, 0, DENY) |
+| Apģērbi (tipi `Customizer`, `Apģērbi`; `CONFIG.apparel`; Edgars 21.11.2026) | cenu portālos viens ieraksts katrai krāsai (visi izmēri kopā; saite uz lētāko, tad pirmo izmēru; nosaukumā bez izmēra; atlikums – tā izmēra); Google failos katrs izmērs atsevišķi. Kategorija pēc nosaukuma: "Gatavie izstrādājumi un apdruka >> T-krekli / Džemperi / Priekšauti / Auduma maisiņi" (Hind.ee un Kaina24 – igauniski / lietuviski) |
 | Minimālā cena | nav (`minPrice: 0`); ja vajag, var iestatīt, piem. 3 € – metrā tirgotajām precēm tiek salīdzināta 1 m cena |
 | Vienāds nosaukums divreiz | rāda vienu reizi |
 | Nosaukumā "ar defektu", "bojāts", "lietots", "demo" | `<used>1</used>` (Salidzini prasība) |
@@ -100,7 +101,7 @@ Igaunijas veikals https://sharlottekangad.ee. Formāts – Hind.ee oficiālais p
 (lapā nav saites, bet fails ir; pārbaudīts 09.11.2026). Tas ir tieši tāds pats kā Kaina24 – abi portāli pieder
 UAB Elektroninės prekybos centras –, tāpēc abiem failiem ir kopīgs kods (`localizeItems` + `toProductsXml`).
 
-Preces – tās pašas kā Latvijas failos (`buildItems`: atlikums, metrā tirgotās, zem 1 m nerāda, T-krekli u.c. nerāda),
+Preces – tās pašas kā Latvijas failos (`buildItems`: atlikums, metrā tirgotās, zem 1 m nerāda, apģērbiem viens ieraksts krāsai),
 bet teksti un cena – no Igaunijas veikala publiskā `/products.json` (igauņu valodā, Igaunijas cena ar Igaunijas PVN).
 Lauki – kā tabulā sadaļā "Kaina24.lt", ar šīm atšķirībām:
 

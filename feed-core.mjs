@@ -16,11 +16,34 @@ export const CONFIG = {
   decimalNameSuffix: ' (cena par 1 m)', // pievieno nosaukumam, lai pircējs saprot, ka cena ir par metru
 
   // Produktu tipi, ko nerādām vispār.
-  excludeProductTypes: ['Dāvanu kartes', 'Customizer'],
+  // Edgars 21.11.2026: T-krekli, džemperi un apdrukas preces (tips "Customizer") tiek rādīti visos failos
+  // (agrāk – excludeProductTypes 'Customizer' un nosaukuma filtrs "T-krekls" / "Džemperis").
+  excludeProductTypes: ['Dāvanu kartes'],
 
-  // Apģērbi apdrukai (T-krekli, džemperi) – nerādām, arī ja tiem nav tipa "Customizer".
-  // ("T-kreklu dzija" un "Kreklu audums" netiek skarti.)
-  excludeTitlePattern: /(^|\s)(T-krekls|Džemperis)(\s|$)/i,
+  // Apdrukas preces (TeeInBlue, tips "Customizer") izgatavo pēc pasūtījuma: Shopify atlikumu parasti neuzskaita
+  // (vai uzskaita sagataves), pārdošana ir atļauta arī bez atlikuma (CONTINUE). Tāpēc atlikumu failā neliekam
+  // (Salidzini: "neobligāta vērtība"; tukšs – nevis izdomāts skaitlis), bet piegādes termiņam pieskaitām izgatavošanu.
+  madeToOrder: {
+    productTypes: ['Customizer'],
+    productionDays: [1, 2], // Edgars 21.11.2026: izgatavošana 1–2 darba dienas
+  },
+
+  // Apģērbi (T-krekli, džemperi, priekšauti, maisiņi – tukšie un ar apdruku).
+  // Cenu portāliem – viens ieraksts katrai krāsai (visi izmēri kopā; saite uz lētāko, tad pirmo izmēru), jo
+  // Salidzini: "viena prece norādīta tikai vienu reizi" (Edgars 21.11.2026). Google failos – katrs izmērs atsevišķi.
+  // Kategorija – pēc nosaukuma (produkts + variants), jo tips "Customizer" ir tehnisks, nevis preču kategorija.
+  // Tā pati grupa, kurā jau ir SOL'S GALA priekšauti, maisiņi un apdrukas paneļi (Shopify custom_label_0/1).
+  apparel: {
+    types: ['Customizer', 'Apģērbi'],
+    sizeOption: /^(izmērs|size)$/i,
+    categories: [
+      [/džemper|hūdij/i, 'Gatavie izstrādājumi un apdruka >> Džemperi'],
+      [/priekšaut/i, 'Gatavie izstrādājumi un apdruka >> Priekšauti'],
+      [/maisiņ/i, 'Gatavie izstrādājumi un apdruka >> Auduma maisiņi'],
+      [/krekl/i, 'Gatavie izstrādājumi un apdruka >> T-krekli'],
+    ],
+    fallback: 'Gatavie izstrādājumi un apdruka',
+  },
 
   // Bojātas, lietotas, demo preces – Salidzini prasa <used>1</used>.
   usedPattern: /(ar defektu|defekts|bojāt|lietot[aāsi]\b|\bdemo\b|ekspozīcij)/i,
@@ -124,6 +147,10 @@ export const CONFIG = {
     technicalTypePattern: /KULLER|KURIER|COURIER/i,
     // category_name ir obligāts: ja nav ne tipa, ne LV kategorijas atbilsmes – vispārīgā kategorija.
     defaultCategory: 'Õmblus- ja käsitöötarbed',
+    // Apģērbi (CONFIG.apparel): LV kategorija → igauniski (Igaunijas veikala tips ir "Kohandaja" vai latvisks "Apģērbi").
+    apparelCategories: { 'Gatavie izstrādājumi un apdruka >> T-krekli': 'T-särgid', 'Gatavie izstrādājumi un apdruka >> Džemperi': 'Pusad',
+      'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Põlled', 'Gatavie izstrādājumi un apdruka >> Auduma maisiņi': 'Riidest kotid',
+      'Gatavie izstrādājumi un apdruka': 'Rõivad' },
     descMax: 1000,
     // Piegāde uz Igauniju (Shopify General profile → Estonia; bez bezmaksas piegādes sliekšņa):
     // pakiautomaat – lētākais (Omniva 5,99 €; DPD 6,99 €), līdz 30 kg, ne "tikai kurjers"; kuller 15,90 €.
@@ -153,6 +180,10 @@ export const CONFIG = {
     technicalTypePattern: /KURJER|KULLER|COURIER/i,
     // category_name ir obligāts: ja nav ne tipa, ne LV kategorijas atbilsmes – vispārīgā kategorija.
     defaultCategory: 'Siuvimo ir rankdarbių prekės',
+    // Apģērbi (CONFIG.apparel): LV kategorija → lietuviski (Lietuvas veikala tips ir "Konfigūratorius" u.c. vai latvisks "Apģērbi").
+    apparelCategories: { 'Gatavie izstrādājumi un apdruka >> T-krekli': 'Marškinėliai', 'Gatavie izstrādājumi un apdruka >> Džemperi': 'Džemperiai',
+      'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Prijuostės', 'Gatavie izstrādājumi un apdruka >> Auduma maisiņi': 'Medžiaginiai maišeliai',
+      'Gatavie izstrādājumi un apdruka': 'Drabužiai' },
     descMax: 1000,
     // Piegāde uz Lietuvu (Shopify General profile → Lithuania; bez bezmaksas piegādes sliekšņa):
     // pakomāts – lētākais (Omniva 5,99 €; DPD 6,99 €), līdz 30 kg, ne "tikai kurjers"; kurjers 15,90 €.
@@ -333,6 +364,11 @@ function tagStats(products) {
 function categoryFor(product, variant, cfg, stats) {
   const parts = (variant.categoryPath || []).filter(Boolean);
   if (parts.length) return parts.join(' >> ');
+  if (cfg.apparel?.types?.includes(product.productType)) {
+    const s = `${product.title} ${variant.title || ''}`;
+    for (const [re, cat] of cfg.apparel.categories) if (re.test(s)) return cat;
+    return cfg.apparel.fallback;
+  }
   const type = product.productType === cfg.courierOnlyType ? '' : (product.productType || ''); // tehnisks tips, nav kategorija
   const generic = new Set(cfg.genericTags.map((t) => t.toLowerCase()));
   const s = stats?.get(product.productType || '');
@@ -356,15 +392,19 @@ function cleanName(s, cfg) {
 
 /**
  * products: [{ title, handle, productType, vendor, tags[], isGiftCard, image, onlineStore (bool),
- *   variants: [{ id, title, price, available, qty (number|null), tracked (bool|null),
- *                requiresShipping, grams, image, barcode, categoryPath[] }] }]
+ *   variants: [{ id, title, price, available, qty (number|null), tracked (bool|null), inventoryPolicy ('DENY'|'CONTINUE'|null),
+ *                position, selectedOptions: [{ name, value }], requiresShipping, grams, image, barcode, categoryPath[] }] }]
+ * items – visi varianti (Google). Ieraksti ar _portalSkip ir citi tās pašas krāsas izmēri (CONFIG.apparel): cenu
+ * portālu faili tos neizvada. stats.items – cenu portālu (Salidzini/KurPirkt) preču skaits.
  */
 export function buildItems(products, cfg = CONFIG) {
-  const stats = { products: products.length, items: 0, skipped: {} };
+  const stats = { products: products.length, items: 0, skipped: {}, madeToOrder: 0, sizesInOneItem: 0 };
   const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
   const seenNames = new Set();
   const items = [];
   const tags = tagStats(products);
+  const groups = new Map(); // apģērbi: produkts + opcijas bez izmēra → tās pašas krāsas izmēri
+  const mtoDays = cfg.madeToOrder?.productionDays || [0, 0];
 
   for (const p of products) {
     if (p.onlineStore === false) { skip('nav publicēts veikalā'); continue; }
@@ -375,17 +415,26 @@ export function buildItems(products, cfg = CONFIG) {
     if (cfg.excludeTitlePattern?.test(p.title)) { skip('T-krekli/džemperi'); continue; }
     const decimal = (p.tags || []).includes(cfg.decimalTag);
     const multi = p.variants.length > 1;
+    const mto = !!cfg.madeToOrder?.productTypes?.includes(p.productType);
+    const apparel = !!cfg.apparel?.types?.includes(p.productType);
+    // Apģērbiem – Shopify secībā (XXS, XS, S…), lai saite vestu uz pirmo izmēru.
+    const variants = apparel ? [...p.variants].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)) : p.variants;
 
-    for (const v of p.variants) {
+    for (const v of variants) {
       if (!v.requiresShipping) { skip('digitāla prece'); continue; }
       if (!(v.price > 0)) { skip('cena 0'); continue; }
-      if (v.tracked === false) { skip('atlikums netiek uzskaitīts'); continue; }
-      if (v.qty != null ? v.qty <= 0 : !v.available) { skip('0 atlikums'); continue; }
+      if (mto) {
+        // Pēc pasūtījuma: atlikums nav gatavu preču daudzums. Izlaižam tikai, ja Shopify šo variantu pasūtīt neļauj.
+        if (v.tracked !== false && v.qty != null && v.qty <= 0 && v.inventoryPolicy !== 'CONTINUE') { skip('0 atlikums'); continue; }
+      } else {
+        if (v.tracked === false) { skip('atlikums netiek uzskaitīts'); continue; }
+        if (v.qty != null ? v.qty <= 0 : !v.available) { skip('0 atlikums'); continue; }
+      }
 
       const price = decimal ? v.price / cfg.decimalStep : v.price;
-      let inStock = v.qty;
-      if (decimal && v.qty != null) {
-        inStock = Math.floor(v.qty * cfg.decimalStep + 1e-9);
+      let inStock = mto ? null : v.qty;
+      if (decimal && inStock != null) {
+        inStock = Math.floor(inStock * cfg.decimalStep + 1e-9);
         if (inStock < cfg.minDecimalMeters) { skip('atlikumā mazāk par 1 m'); continue; }
       }
       if (price < cfg.minPrice) { skip(`cena zem ${money(cfg.minPrice)} €`); continue; }
@@ -402,7 +451,8 @@ export function buildItems(products, cfg = CONFIG) {
         : (price >= d.freeFrom ? 0 : d.cheapest);
 
       const numericId = String(v.id).split('/').pop();
-      items.push({
+      const extraDays = mto ? mtoDays[1] : 0; // izgatavošana (maksimums) + parastais piegādes termiņš
+      const item = {
         name,
         link: cut(`${cfg.shopUrl}/products/${p.handle}${multi ? `?variant=${numericId}` : ''}`, 500),
         price: money(price),
@@ -412,10 +462,12 @@ export function buildItems(products, cfg = CONFIG) {
         ean: validGtin(v.barcode, numericId) || '',
         in_stock: inStock != null ? String(inStock) : '',
         delivery_latvija: money(delivery),
-        delivery_days_latvija: String(cfg.deliveryDaysLatvia),
-        delivery_days_shop: String(cfg.deliveryDaysShop),
+        delivery_days_latvija: String(cfg.deliveryDaysLatvia + extraDays),
+        delivery_days_shop: String(cfg.deliveryDaysShop + extraDays),
         used: cfg.usedPattern?.test(`${p.title} ${v.title || ''}`) ? '1' : '',
         _decimal: decimal,
+        _madeToOrder: mto,
+        _apparel: apparel,
         // Iekšējie lauki citām plūsmām (Ceno). toXml / toKurpirktXml tos neizvada.
         _baseName: cleanName(`${p.title}${variantTitle}`, cfg).replace(/\s+/g, ' ').trim(),
         _variantId: numericId,
@@ -434,12 +486,46 @@ export function buildItems(products, cfg = CONFIG) {
         _unitPrice: v.price,
         _unitCompareAt: v.compareAtPrice > 0 ? v.compareAtPrice : null,
         _unitGrams: v.grams || 0,
-      });
+      };
+      items.push(item);
+
+      // Apģērbi: tās pašas krāsas (visas opcijas, izņemot izmēru) varianti – vienā grupā.
+      if (apparel) {
+        const opts = v.selectedOptions || [];
+        const si = opts.findIndex((o) => cfg.apparel.sizeOption.test(String(o.name ?? '').trim()));
+        if (si >= 0) {
+          const rest = opts.filter((_, i) => i !== si).map((o) => String(o.value ?? '').trim()).filter((x) => x && x !== 'Default Title');
+          const key = `${p.id ?? p.handle}|${rest.join(' / ')}`;
+          if (!groups.has(key)) groups.set(key, { title: p.title, rest, sizeIndex: si, items: [] });
+          groups.get(key).items.push(item);
+        }
+      }
     }
   }
-  stats.items = items.length;
+
+  // Cenu portāliem viens ieraksts katrai krāsai: lētākais izmērs (vienādai cenai – pirmais), nosaukums bez izmēra.
+  // Pārējie izmēri paliek items (Google), bet ar _portalSkip.
+  const portalNames = new Set(items.map((it) => it.name));
+  for (const g of groups.values()) {
+    const rep = g.items.reduce((a, b) => (b._priceNum < a._priceNum - 0.004 ? b : a));
+    for (const it of g.items) if (it !== rep) { it._portalSkip = true; portalNames.delete(it.name); }
+    stats.sizesInOneItem += g.items.length - 1;
+    const base = cleanName(`${g.title}${g.rest.length ? ` - ${g.rest.join(' / ')}` : ''}`, cfg).replace(/\s+/g, ' ').trim();
+    const name = cut(base + (rep._decimal ? cfg.decimalNameSuffix : ''), 200);
+    if (name === rep.name || !portalNames.has(name)) {
+      portalNames.delete(rep.name);
+      portalNames.add(name);
+      Object.assign(rep, { name, _portalBaseName: base, _sizeIndex: g.sizeIndex, _sizes: g.items.length });
+    } // citādi (sakrīt ar citas preces nosaukumu) – paliek varianta nosaukums ar izmēru
+  }
+  const portal = items.filter((it) => !it._portalSkip);
+  stats.items = portal.length;
+  stats.madeToOrder = portal.filter((it) => it._madeToOrder).length;
   return { items, stats };
 }
+
+// Ieraksti cenu portālu failiem (bez citiem tās pašas krāsas izmēriem, skat. buildItems).
+export const portalItems = (items) => items.filter((it) => !it._portalSkip);
 
 const TAG_ORDER = ['name', 'link', 'price', 'image', 'category_full', 'brand', 'ean', 'in_stock',
   'delivery_latvija', 'delivery_days_latvija', 'delivery_days_shop', 'used'];
@@ -455,6 +541,7 @@ export function portalCategory(it, cfg = CONFIG) {
 export function toKurpirktXml(items, cfg = CONFIG) {
   const out = ["<?xml version='1.0' encoding='utf-8' ?>", '<root>'];
   for (const it of items) {
+    if (it._portalSkip) continue; // cits tās pašas krāsas izmērs
     const parts = String(portalCategory(it, cfg) || '').split(/\s*>>\s*/).filter(Boolean);
     const row = {
       name: it.name,
@@ -550,6 +637,7 @@ export function toCenoXml(items, cfg = CONFIG, ctx = {}) {
   const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>']; // kā Ceno paraugā
 
   for (const it of items) {
+    if (it._portalSkip) continue; // cits tās pašas krāsas izmērs
     if (c.skipUsed && it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
     if (!it.image) { skip('nav attēla'); continue; }
     if (it._decimal && it.in_stock === '') { skip('metrā tirgota, atlikums nav zināms'); continue; }
@@ -560,7 +648,7 @@ export function toCenoXml(items, cfg = CONFIG, ctx = {}) {
     const sale = it._compareAt != null && it._compareAt > it._priceNum + 0.004;
     if (sale) stats.compareAtHigher++;
     const row = {
-      name: cutKeepSuffix(it._baseName ?? it.name, it._decimal ? cfg.decimalNameSuffix : '', c.nameMax),
+      name: cutKeepSuffix(it._portalBaseName ?? it._baseName ?? it.name, it._decimal ? cfg.decimalNameSuffix : '', c.nameMax),
       link: it.link,
       // Akcija: price = sākotnējā cena, price_sale = cena, ko pircējs maksā (abas par to pašu vienību).
       price: c.salePrice && sale ? money(it._compareAt) : it.price,
@@ -575,8 +663,9 @@ export function toCenoXml(items, cfg = CONFIG, ctx = {}) {
       in_stock: it.in_stock,
       used: c.usedNew,
       ...cenoDelivery(it, cfg),
-      delivery_days_riga: String(c.deliveryDays),
-      delivery_days_latvija: String(c.deliveryDays),
+      // Apdrukas precēm (pēc pasūtījuma) – ar izgatavošanu.
+      delivery_days_riga: String(c.deliveryDays + (it._madeToOrder ? cfg.madeToOrder.productionDays[1] : 0)),
+      delivery_days_latvija: String(c.deliveryDays + (it._madeToOrder ? cfg.madeToOrder.productionDays[1] : 0)),
     };
     for (const k of ['ean', 'manufacturer', 'category_link', 'price_sale']) if (row[k]) stats.with[k]++;
     if (it._decimal) stats.decimal++;
@@ -607,6 +696,7 @@ export function toCenuekspertsXml(items, cfg = CONFIG) {
   const seen = new Set();
   const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<DataFeeds>'];
   for (const it of items) {
+    if (it._portalSkip) continue; // cits tās pašas krāsas izmērs
     if (it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
     if (!it.image) { skip('nav attēla'); continue; }
     const desc = cut(String(it._desc || '').replace(/\s+/g, ' ').trim(), 500);
@@ -623,7 +713,7 @@ export function toCenuekspertsXml(items, cfg = CONFIG) {
       item_image_url: it.image,
       item_upc: it.ean,
       item_price: it.price, // cena, ko pircējs maksā (metrā tirgotajām – par 1 m)
-      item_inventory: 'AVAILABLE', // failā ir tikai preces, kas ir noliktavā
+      item_inventory: 'AVAILABLE', // failā ir tikai preces, ko var pasūtīt (noliktavā vai apdruka pēc pasūtījuma)
       item_condition: 'New',
       item_shipping_charge: it.delivery_latvija, // lētākā piegāde Latvijā (kā Salidzini)
     };
@@ -668,6 +758,7 @@ function localizeItems(items, store, h, cfg) {
   // (tikai ja vismaz 5 preces un ≥ 60 % no tām ir ar vienu un to pašu tipu).
   const votes = new Map();
   for (const it of items) {
+    if (it._portalSkip || it._apparel) continue; // apģērbiem kategorija – h.apparelCategories
     const t = localType(it, store.get(String(it._variantId)));
     if (!t || !it.category_full) continue;
     if (!votes.has(it.category_full)) votes.set(it.category_full, new Map());
@@ -682,6 +773,7 @@ function localizeItems(items, store, h, cfg) {
   }
 
   for (const it of items) {
+    if (it._portalSkip) continue; // cits tās pašas krāsas izmērs
     if (it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
     if (!it.image) { skip('nav attēla'); continue; }
     if (it._decimal && it.in_stock === '') { skip('metrā tirgota, atlikums nav zināms'); continue; }
@@ -692,9 +784,15 @@ function localizeItems(items, store, h, cfg) {
     // Vietējā cena par Shopify vienību; metrā tirgotajām – par 1 m (Shopify vienība = 0,1 m).
     const price = it._decimal ? e.price / cfg.decimalStep : e.price;
     if (price < cfg.minPrice) { skip(`cena zem ${money(cfg.minPrice)} €`); continue; }
-    const variantTitle = e.variantTitle && e.variantTitle !== 'Default Title' ? ` - ${e.variantTitle}` : '';
+    // Apģērbi (viens ieraksts katrai krāsai): varianta nosaukumā bez izmēra (Shopify: opciju vērtības ar " / ").
+    let vt = e.variantTitle;
+    if (it._sizes && it._sizeIndex != null && vt) {
+      const segs = String(vt).split(' / ');
+      if (segs.length > it._sizeIndex) { segs.splice(it._sizeIndex, 1); vt = segs.join(' / '); }
+    }
+    const variantTitle = vt && vt !== 'Default Title' ? ` - ${vt}` : '';
     const base = cleanName(`${e.title}${variantTitle}`, h).replace(/\s+/g, ' ').trim();
-    if (base === it._baseName) stats.sameNameAsLv++;
+    if (base === (it._portalBaseName ?? it._baseName)) stats.sameNameAsLv++;
     const name = cutKeepSuffix(base, it._decimal ? h.decimalNameSuffix : '', h.nameMax);
     if (seenNames.has(name)) { skip('dublikāts (nosaukums)'); continue; }
     const multi = String(it.link).includes('?variant=');
@@ -703,7 +801,7 @@ function localizeItems(items, store, h, cfg) {
     seenNames.add(name);
     seenLinks.add(link);
 
-    let category = localType(it, e);
+    let category = it._apparel ? (h.apparelCategories?.[it.category_full] || '') : localType(it, e);
     if (!category && typeByLvCategory.has(it.category_full)) {
       category = typeByLvCategory.get(it.category_full);
       stats.categoryFromLv++;
@@ -731,6 +829,8 @@ function toProductsXml(items, store, k, cfg) {
     let category = r.category;
     if (!category) { category = k.defaultCategory; stats.defaultCategory++; }
     const tag = (name, val) => (val === '' || val == null ? '' : `<${name}>${escapeXml(val)}</${name}>`);
+    // Apdrukas precēm (pēc pasūtījuma) – ar izgatavošanu.
+    const days = it._madeToOrder ? String(Number(k.deliveryDays) + cfg.madeToOrder.productionDays[1]) : k.deliveryDays;
     out.push(`<product id="${escapeXml(it._variantId)}">`);
     out.push(tag('product_id', it._variantId));
     out.push(`<title>${cdata(r.name)}</title>`);
@@ -744,8 +844,8 @@ function toProductsXml(items, store, k, cfg) {
     out.push(`<category_name>${cdata(category)}</category_name>`);
     if (r.description) out.push(`<description>${cdata(r.description)}</description>`);
     out.push('<delivery>');
-    out.push(`<home_delivery>${tag('working_days', k.deliveryDays)}${tag('price', money(k.delivery.home))}</home_delivery>`);
-    if (locker) out.push(`<parcel_locker_delivery>${tag('working_days', k.deliveryDays)}${tag('price', money(k.delivery.parcelLocker.price))}</parcel_locker_delivery>`);
+    out.push(`<home_delivery>${tag('working_days', days)}${tag('price', money(k.delivery.home))}</home_delivery>`);
+    if (locker) out.push(`<parcel_locker_delivery>${tag('working_days', days)}${tag('price', money(k.delivery.parcelLocker.price))}</parcel_locker_delivery>`);
     out.push('</delivery>');
     out.push('</product>');
   }
@@ -975,15 +1075,20 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
     }
     // Piegāde. Latvija: failā tikai precēm, kurām pakomāts neder (tikai kurjers vai > 30 kg); pārējām – konta politika.
     // Igaunija / Lietuva: katrai precei – pakomāts (ja der) un kurjers.
+    // Apdrukas precēm (pēc pasūtījuma) apstrādes laikam pieskaita izgatavošanu (CONFIG.madeToOrder.productionDays).
+    const pd = it._madeToOrder ? cfg.madeToOrder.productionDays : null;
+    const hs = (s) => (pd ? { ...s, handling: [s.handling[0] + pd[0], s.handling[1] + pd[1]] } : s);
     const ships = [];
+    let handling = null; // Latvija ar konta piegādes politiku: apstrādes laiks kā atsevišķs lauks
     if (m) {
-      const s = m.shipping;
+      const s = hs(m.shipping);
       if (!it._courierOnly && grams <= s.locker.maxGrams) ships.push(shippingTag(m.country, s.locker.service, s.locker.price, s));
       ships.push(shippingTag(m.country, s.courier.service, s.courier.price, s));
     } else {
       const lockerOk = !it._courierOnly && grams <= (cfg.ceno.delivery.omniva?.maxGrams ?? 30000);
       const courier = cfg.ceno.delivery.courier;
-      if (!lockerOk) ships.push(shippingTag(g.shipping.country, g.shipping.service, grams > courier.heavyGrams ? courier.heavy : courier.light, g.shipping));
+      if (!lockerOk) ships.push(shippingTag(g.shipping.country, g.shipping.service, grams > courier.heavyGrams ? courier.heavy : courier.light, hs(g.shipping)));
+      else if (pd) handling = hs(g.shipping).handling;
     }
     const salePrice = it._compareAt != null && it._compareAt > it._priceNum + 0.004;
     const perSaleUnit = m ? (it._decimal ? unit / cfg.decimalStep : unit) : it._priceNum;
@@ -1017,6 +1122,8 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
       tag('google_product_category', category),
       tag('product_type', cut(productType, 750)),
       ...ships,
+      handling ? tag('min_handling_time', String(handling[0])) : null,
+      handling ? tag('max_handling_time', String(handling[1])) : null,
       grams > 0 ? tag('shipping_weight', `${grams1(grams)} g`) : null,
       tag('ships_from_country', g.shipsFrom),
       m?.returnPolicyLabelCut && it._decimal ? tag('return_policy_label', m.returnPolicyLabelCut) : null,
@@ -1048,6 +1155,7 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
 export function toXml(items, cfg = CONFIG) {
   const out = ['<?xml version="1.0" encoding="utf-8" ?>', '<root>'];
   for (const it of items) {
+    if (it._portalSkip) continue; // cits tās pašas krāsas izmērs
     out.push('<item>');
     for (const tag of TAG_ORDER) {
       const val = tag === 'category_full' ? portalCategory(it, cfg) : it[tag];

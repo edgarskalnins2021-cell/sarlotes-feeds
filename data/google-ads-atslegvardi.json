@@ -1088,7 +1088,7 @@
     "trikotāž"
    ],
    "nav_nosaukums": [
-    "manžet|ribb|rievot|cilpiņ|siltināt"
+    "manžet|apdares mala|cilpiņ|siltināt"
    ],
    "atslegvardi": [
     "trikotāža",
@@ -5876,6 +5876,12 @@
       "madeira",
       "stabilizator"
      ]
+    },
+    {
+     "kw": "ūdenī šķīstošs flizelīns",
+     "ja": [
+      "ūdenī šķīst"
+     ]
     }
    ],
    "nav_nosaukums": [
@@ -6088,7 +6094,7 @@
     "paliginstrumenti"
    ],
    "nosaukums": [
-    "uzpirksten|maneken|adatu spilventiņ"
+    "uzpirksten|maneken|adatu spilventiņ|(?<!\\p{L})šūšanas (piederumu )?komplekt|adatu un diegu komplekt"
    ],
    "atslegvardi": [
     "šūšanas piederumi",
@@ -6119,13 +6125,13 @@
     {
      "kw": "šūšanas komplekts",
      "ja": [
-      "šūšanas (piederumu )?komplekt|adatu un diegu komplekt"
+      "(?<!\\p{L})šūšanas (piederumu )?komplekt|adatu un diegu komplekt"
      ]
     },
     {
      "kw": "šūšanas komplekts bērniem",
      "ja": [
-      "šūšanas (piederumu )?komplekt|adatu un diegu komplekt",
+      "(?<!\\p{L})šūšanas (piederumu )?komplekt|adatu un diegu komplekt",
       "bērn"
      ]
     }

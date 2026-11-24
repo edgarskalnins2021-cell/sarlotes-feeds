@@ -1634,7 +1634,7 @@ const hasWords = (haystack, needle) => {
  *     ja par garu un vidū ir zināms zīmols ("Tamboradatas DROPS Pro Circus, …") – no zīmola (ne tad, ja zīmols ir
  *     piederums citai precei: "pēdiņa priekš Janome …", un ne apģērbiem: "Priekšauts … SOL’S"); apdrukas precēm –
  *     preces veids + dizaina nosaukums pēdiņās; tad saīsināts pa frāzēm / vārdiem.
- *   Item subtitle – varianta nosaukums (krāsa, izmērs), ja tas nav jau nosaukumā (veseli vārdi).
+ *   Item subtitle – varianta nosaukums (krāsa, izmērs), ja tas nav tieši tāds pats kā nosaukums.
  *   Item description – pirmais no: nosaukuma daļa pēc " - ", daļa pirms zīmola, atmestā nosaukuma daļa, kategorija;
  *     neatkārto virsrakstu vai apakšvirsrakstu.
  * Ja viss Shopify teksts ir ar lielajiem burtiem ("BALTA"), tas kļūst par teikumu ("Balta"); zīmoli (DROPS, SCHMETZ) un
@@ -1732,7 +1732,8 @@ function adsTexts(it, cfg, brandRe, brandCase) {
     const s = fitText(src, max, dangling);
     if (s.rest || !s.text) notes.push('apakšvirsraksts saīsināts');
     subtitle = fixCaps(upperFirst(s.text), 'apakšvirsraksts', src);
-    if (subtitle && hasWords(title, subtitle)) { subtitle = ''; notes.push('apakšvirsraksts jau nosaukumā'); }
+    // Tikai, ja tieši tāds pats kā nosaukums: citādi variantus (S un L, 2,5 mm un 5 mm) reklāmā nevarētu atšķirt.
+    if (subtitle && normCmp(subtitle) === normCmp(title)) { subtitle = ''; notes.push('apakšvirsraksts = nosaukums'); }
   }
 
   const category = String(it.category_full || '').split(/\s*>>\s*/).filter(Boolean).pop() || '';

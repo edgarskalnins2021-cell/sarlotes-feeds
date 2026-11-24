@@ -246,6 +246,7 @@ assert.throws(() => toGoogleAdsCustomCsv([dup[0], { ...dup[0], link: `${dup[0].l
 const T = {
   legingi: p({ title: 'Kokvilnas legingi bērniem', productType: 'Furnitūra', variants: opt('Izmērs', ['S', 'M', 'L', 'XL']) }),
   lenteMm: p({ title: 'Satīna lente 25 mm', productType: 'Furnitūra', variants: opt('Garums', ['2', '5', '25']) }),
+  skaititajs: p({ title: 'Rindu skaitītājs Pony S un L izmērs', productType: 'Furnitūra', variants: opt('Izmērs', ['S', 'L']) }),
   zelts: p({ title: 'Dzija ar zelta pavedienu - 50 g / 200 m', productType: 'Dzija' }),
   pedina: p({ title: 'Šujmašīnas pēdiņa priekš Janome Memory Craft 9450', productType: 'Šujmašīnu piederumi' }),
   spolites: p({ title: 'Spolītes priekš Brother šujmašīnām, 10 gab.', productType: 'Šujmašīnu piederumi' }),
@@ -279,7 +280,8 @@ const tr = (prod, i = 0) => {
   return r && { title: r[1], subtitle: r[2], description: r[3] };
 };
 assert.deepEqual(T.legingi.variants.map((_, i) => tr(T.legingi, i).subtitle), ['S', 'M', 'L', 'XL'], 'izmērs nav "kokvilnas" burts');
-assert.deepEqual(T.lenteMm.variants.map((_, i) => tr(T.lenteMm, i).subtitle), ['2', '5', ''], '"2" nav "25" daļa; "25" jau nosaukumā');
+assert.deepEqual(T.lenteMm.variants.map((_, i) => tr(T.lenteMm, i).subtitle), ['2', '5', '25'], 'katram variantam savs apakšvirsraksts');
+assert.deepEqual(T.skaititajs.variants.map((_, i) => tr(T.skaititajs, i).subtitle), ['S', 'L'], 'variantus var atšķirt');
 assert.equal(tr(T.zelts).title, 'Dzija ar zelta pavedienu', '"Dzija" paliek pirms maza burta');
 assert.ok(tr(T.pedina).title.startsWith('Šujmašīnas pēdiņa'), `piederums nav mašīna: ${tr(T.pedina).title}`);
 assert.ok(!/priekš$/i.test(tr(T.pedina).description) && !/priekš$/i.test(tr(T.spolites).description));

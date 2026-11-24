@@ -217,9 +217,9 @@ kolonnu pēc pirmās ielādes pievienot nevar**, tāpēc tukšās kolonnas palie
 | Kolonna | No kurienes |
 |---|---|
 | `ID` | Shopify varianta ciparu ID (Google: tikai burti un cipari, `shopify_ZZ_…` neder). Tam jāsakrīt ar taga `items[].id` |
-| `Item title` | produkta nosaukuma daļa līdz " - ", bez sākuma "Dzijas" (`DROPS Air`); līdz 25 zīmēm – saīsina pa frāzēm / veseliem vārdiem, bez daudzpunktes; garam nosaukumam ar zīmolu vidū – no zīmola (`DROPS Pro Circus`); apdrukas precēm paliek dizaina nosaukums pēdiņās (`Kokvilnas T-krekls “TĒTI”`) |
-| `Item subtitle` | varianta opcijas (krāsa, izmērs), bez TeeInBlue "Available Product"; līdz 25 zīmēm |
-| `Item description` | nosaukuma daļa pēc " - " (`50 g / 150 m`); ja nav – daļa pirms zīmola, atmestā nosaukuma daļa vai kategorija; līdz 25 zīmēm |
+| `Item title` | produkta nosaukuma daļa līdz " - ", bez sākuma "Dzijas" pirms zīmola (`DROPS Air`); līdz 25 zīmēm – saīsina pa frāzēm / veseliem vārdiem, bez daudzpunktes, nepārgriež izmēru (`20 × 30 cm`, `Ø13 mm`) un pēdiņas; garam nosaukumam ar zīmolu vidū – no zīmola (`DROPS Pro Circus`), bet ne piederumam (`pēdiņa priekš Janome …`); apdrukas precēm – preces veids + dizains (`Kokvilnas T-krekls “TĒTI”`), garš dizains – aprakstā |
+| `Item subtitle` | varianta opcijas (krāsa, izmērs), bez TeeInBlue "Available Product"; līdz 25 zīmēm; tukšs tikai, ja tieši tāds pats kā nosaukums |
+| `Item description` | garš dizaina nosaukums vai nosaukuma daļa pēc " - " (`50 g / 150 m`); ja nav – daļa pirms zīmola, atmestā nosaukuma daļa (`Bez šūšanas 12 mm` – "bez", "pret", "priekš" netiek atmesti) vai kategorija; līdz 25 zīmēm |
 | `Item category` | LV kategorijas pirmā daļa (`Dzija`, `Audumi`) |
 | `Final URL` | `https://sarlotesaudumi.lv/products/...`, variantiem ar `?variant=` |
 | `Image URL` | varianta / produkta attēls ar `width=1200` (Google: līdz 6 milj. pikseļu); Shopify PNG un WebP – ar `format=pjpg` (CDN tad vienmēr atdod JPEG; bez tā pārlūkiem, kas pieņem WebP, atdod WebP, ko Google neatbalsta) |
@@ -227,20 +227,28 @@ kolonnu pēc pirmās ielādes pievienot nevar**, tāpēc tukšās kolonnas palie
 | `Formatted price`, `Formatted sale price` | tikai metrā tirgotajām: `18,90 € / m` (aizstāj `Price` reklāmā) |
 | `Contextual keywords` | tukšs – atslēgvārdi drīkst nākt tikai no Edgara atslēgvārdu tabulas (1:1) |
 
-Teksts tikai ar lielajiem burtiem (Google to noraida) kļūst par teikumu (`BALTA` → `Balta`); zīmoli (`DROPS`, `SCHMETZ`)
-un izmēri (`XL`) paliek. Izslēgtas: kā `google-lv.xml.gz` (defekti/demo, bez attēla, metrā ar nezināmu atlikumu, dubulta
-saite) un papildus tipi `Dāvanu kartes`, `Digitālie materiāli`, `Meistarklases`, attēls nav JPG/PNG/GIF/WebP, nosaukumu
-nevar saīsināt bez pārgriezta vārda. Atkārtots ID – kļūda.
+Lielie burti (Google noraida tekstu tikai ar lielajiem burtiem): ja viss Shopify teksts ir ar lielajiem burtiem, tas kļūst
+par teikumu (`BALTA` → `Balta`); ja tikai daļa (`Šķēres … - TEXI TITANIUM CRAFT`) – nosaukuma rakstībā (`Texi Titanium
+Craft`). Zīmoli paliek zīmola rakstībā (`DROPS`, `SCHMETZ`, `PRYM` → `Prym`), kodi un izmēri (`XL`, `130/705 H`) – kā ir.
+Emocijzīmes visās formās (arī karogi 🇱🇻, ādas toņi, `1️⃣`), `!!` un dekoratīvas zīmes (`★`) tiek noņemtas.
 
-Drošība: pirms publicēšanas `validateGoogleAdsCustomCsv` pārbauda katru rindu (galvene, ID, garumi, cenas, saites,
-attēli, HTML, emocijzīmes). Ja ir kļūda, preču ir zem 100 vai uz pusi mazāk nekā iepriekš – paliek iepriekšējā versija
-(citādi Google Ads ieplānotā ielāde ielādētu bojātu failu). `verify` darbs pēc izvietošanas pārbauda publisko CSV.
+Izslēgtas: kā `google-lv.xml.gz` (defekti/demo/lietotas, bez attēla, metrā ar nezināmu atlikumu, dubulta saite) un
+papildus tipi `Dāvanu kartes`, `Digitālie materiāli`, `Meistarklases`, attēls nav JPG/PNG/GIF/WebP (piem. HEIC no iPhone),
+nosaukumu nevar saīsināt bez pārgriezta vārda, rinda neiziet rindas pārbaudi. Katrs izlaistais variants ar iemeslu ir
+`izlaistie.csv` (CLI). Atkārtots ID – kļūda.
+
+Drošība: katra rinda pirms ierakstīšanas iziet to pašu pārbaudi, ko `validateGoogleAdsCustomCsv` (garumi, cenas, saites,
+attēli, HTML, emocijzīmes, `!!`, daudzpunkte, vadības rakstzīmes) – rinda, kas neiziet, tiek izlaista, nevis aptur visu
+failu. Ja tomēr gatavajā failā ir kļūda (galvene, BOM, ID), preču ir zem 100 vai uz pusi mazāk nekā iepriekš – paliek
+iepriekšējā versija (citādi Google Ads ieplānotā ielāde ielādētu bojātu failu). Brīdinājumi (lielie burti, "bezmaksas") –
+`::warning` ar kopskaitu. `verify` darbs pēc izvietošanas pārbauda publisko CSV (arī Shopify attēliem `format=pjpg`).
 
 Pārbaude bez publicēšanas:
 ```
 node check-google-ads-custom.mjs public/google-ads-custom-lv.csv   # gatavs fails vai publiskā adrese
 node check-google-ads-custom.mjs --storefront custom-check         # uzbūvē no publiskā /products.json, saglabā CSV,
-                                                                   # saīsināto tekstu atskaiti un kopsavilkumu
+                                                                   # saisinajumi.csv, izlaistie.csv un summary.json
+                                                                   # (iekļautie + izlaistie = visi varianti, citādi kods 1)
 ```
 
 Pieslēgšana (katrs solis – tikai ar Edgara apstiprinājumu): Google Ads → Rīki → Uzņēmējdarbības dati → + → Dinamisko

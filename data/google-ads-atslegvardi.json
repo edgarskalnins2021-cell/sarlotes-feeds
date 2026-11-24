@@ -374,6 +374,9 @@
      "kw": "pogas",
      "ja": [
       "pog"
+     ],
+     "nav": [
+      "^(spiedpogu )?knaibl"
      ]
     },
     {
@@ -419,18 +422,27 @@
      "kw": "spiedpogas",
      "ja": [
       "spiedpog"
+     ],
+     "nav": [
+      "^(spiedpogu )?knaibl"
      ]
     },
     {
      "kw": "spiedpoga",
      "ja": [
       "spiedpog"
+     ],
+     "nav": [
+      "^(spiedpogu )?knaibl"
      ]
     },
     {
      "kw": "spiedpogas apģērbiem",
      "ja": [
       "spiedpog"
+     ],
+     "nav": [
+      "^(spiedpogu )?knaibl"
      ]
     },
     {
@@ -474,6 +486,26 @@
      "kw": "spiedpogu prese",
      "ja": [
       "\\bpres"
+     ]
+    },
+    {
+     "kw": "pogu apvilkšana ar audumu",
+     "ja": [
+      "apvelk|pašapvilk|apvilkš"
+     ]
+    },
+    {
+     "kw": "pogas uz kājiņas",
+     "ja": [
+      "uz kājiņ",
+      "pog"
+     ]
+    },
+    {
+     "kw": "poga uz kājiņas",
+     "ja": [
+      "uz kājiņ",
+      "pog"
      ]
     }
    ],
@@ -4496,6 +4528,12 @@
      "ja": [
       "^(dekoratīvs )?slīdn|^rāvējslēdzēja slīdn"
      ]
+    },
+    {
+     "kw": "rāvējslēdzēji gultas veļai",
+     "ja": [
+      "gultas veļ"
+     ]
     }
    ]
   },
@@ -5381,7 +5419,7 @@
       "adat"
      ],
      "nav": [
-      "adatu spilventiņ|kniepadatu"
+      "adatu spilventiņ|kniepadatu|ievērēj|ievērt"
      ]
     },
     {
@@ -5390,7 +5428,7 @@
       "adat"
      ],
      "nav": [
-      "adatu spilventiņ|kniepadatu"
+      "adatu spilventiņ|kniepadatu|ievērēj|ievērt"
      ]
     },
     {
@@ -5399,7 +5437,7 @@
       "adat"
      ],
      "nav": [
-      "adatu spilventiņ|kniepadatu"
+      "adatu spilventiņ|kniepadatu|ievērēj|ievērt"
      ]
     },
     {
@@ -5414,7 +5452,7 @@
       "adat"
      ],
      "nav": [
-      "pērlīš|izšūš|filcēš"
+      "pērlīš|izšūš|filcēš|ievērēj|ievērt"
      ]
     }
    ]
@@ -5802,6 +5840,9 @@
    ],
    "kategorijas": [
     "Auduma maisiņi"
+   ],
+   "nav_nosaukums": [
+    "priekšaut"
    ]
   },
   "Likra un peldkostīmu audumi": {
@@ -6653,7 +6694,12 @@
     "radosie-komplekti-berniem"
    ],
    "atslegvardi": [
-    "radošie komplekti bērniem"
+    {
+     "kw": "radošie komplekti bērniem",
+     "nav": [
+      "^[^|]*krūz"
+     ]
+    }
    ]
   },
   "Paliktņi un griezēji": {
@@ -11194,6 +11240,13 @@
    "excel_rinda": 3234,
    "excel_grupa": "Pogas un spiedpogas"
   },
+  "poga uz kājiņas": {
+   "tips": "Produkts + īpašība",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 3264,
+   "excel_grupa": "Pogas un spiedpogas"
+  },
   "pogas": {
    "tips": "Produkts 1:1",
    "svarigums": "A",
@@ -11213,6 +11266,20 @@
    "svarigums": "C",
    "meklejumi": 0,
    "excel_rinda": 3265,
+   "excel_grupa": "Pogas un spiedpogas"
+  },
+  "pogas uz kājiņas": {
+   "tips": "Produkts + īpašība",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 3269,
+   "excel_grupa": "Pogas un spiedpogas"
+  },
+  "pogu apvilkšana ar audumu": {
+   "tips": "Produkts + īpašība",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 3273,
    "excel_grupa": "Pogas un spiedpogas"
   },
   "polar flīss": {
@@ -11521,6 +11588,13 @@
    "svarigums": "A",
    "meklejumi": 70,
    "excel_rinda": 3293,
+   "excel_grupa": "Rāvējslēdzēji"
+  },
+  "rāvējslēdzēji gultas veļai": {
+   "tips": "Lietojums (kam der)",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 3308,
    "excel_grupa": "Rāvējslēdzēji"
   },
   "rāvējslēdzēji metros": {

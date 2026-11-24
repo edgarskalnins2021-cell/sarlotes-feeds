@@ -363,6 +363,9 @@
     "gumijas-ar-mezgini",
     "gumijas-ar-pogcaurumiem",
     "stieples"
+   ],
+   "nav_nosaukums": [
+    "^(komplekts\\s*-\\s*)?(palīg|instrument)"
    ]
   },
   "Pogas un spiedpogas": {
@@ -597,7 +600,7 @@
       "viskoz"
      ],
      "nav": [
-      "lina (toņ|krās|imitācij|izskat|efekt)"
+      "lin(a|u) (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -1445,7 +1448,7 @@
      ],
      "nav": [
       "tumsā spīdoš",
-      "lina (toņ|krās|imitācij|izskat|efekt)"
+      "lin(a|u) (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -1959,7 +1962,7 @@
       "\\blin(a|u|s)\\b"
      ],
      "nav": [
-      "lina (toņ|krās|imitācij|izskat|efekt)"
+      "lin(a|u) (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -2414,7 +2417,7 @@
    ],
    "nav_nosaukums": [
     "dzij|diegi|diegs|\\blent|mežģīn|aukl|lina toņ",
-    "lina (toņ|krās|imitācij|izskat|efekt)"
+    "lin(a|u) (toņ|krās|imitācij|izskat|efekt)"
    ],
    "atslegvardi": [
     "lins",
@@ -2582,7 +2585,7 @@
     "makrame-auklas-diegi"
    ],
    "nav_nosaukums": [
-    "overlok|mulinē|kastīt|spolīt"
+    "overlok|mulinē|kastīt"
    ],
    "atslegvardi": [
     {
@@ -2645,7 +2648,7 @@
       "\\blin(a|u)\\b"
      ],
      "nav": [
-      "lina (toņ|krās|imitācij|izskat|efekt)"
+      "lin(a|u) (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -2654,7 +2657,7 @@
       "\\blin(a|u)\\b"
      ],
      "nav": [
-      "lina (toņ|krās|imitācij|izskat|efekt)"
+      "lin(a|u) (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -2727,6 +2730,9 @@
      "kw": "slīpā diega lenta",
      "ja": [
       "slīp(ā|o) dieg"
+     ],
+     "nav": [
+      "^[^|]*(instrument|palīg)"
      ]
     }
    ]
@@ -3130,7 +3136,8 @@
     }
    ],
    "nav_nosaukums": [
-    "^(?![^|]*lent)[^|]*(?<!ar )(?<!\\p{L})aukl(a|as)(?!\\p{L})"
+    "^(?![^|]*lent)[^|]*(?<!ar )(?<!\\p{L})aukl(a|as)(?!\\p{L})",
+    "^(instrument|komplekts ar instrument|palīg)"
    ]
   },
   "Aizkaru audumi": {
@@ -3180,7 +3187,7 @@
       "\\blin(s|a|u)\\b"
      ],
      "nav": [
-      "lina (toņ|krās|imitācij|izskat|efekt)"
+      "lin(a|u) (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -3314,7 +3321,8 @@
     {
      "kw": "bernette b05 academy",
      "ja": [
-      "bernette b ?05"
+      "bernette b ?05",
+      "academy"
      ]
     },
     {
@@ -3326,13 +3334,13 @@
     {
      "kw": "bernette chicago 5",
      "ja": [
-      "bernette chicago"
+      "bernette chicago ?5(?!\\d)"
      ]
     },
     {
      "kw": "bernette sew and go 5",
      "ja": [
-      "sew ?(&|and) ?go"
+      "sew ?(&|and) ?go ?5(?!\\d)"
      ]
     },
     {
@@ -5999,7 +6007,7 @@
       "\\blin(a|s)\\b"
      ],
      "nav": [
-      "lina (toņ|krās|imitācij|izskat|efekt)"
+      "lin(a|u) (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -6425,7 +6433,7 @@
       "\\blin(a|s)\\b"
      ],
      "nav": [
-      "lina (toņ|krās|imitācij|izskat|efekt)"
+      "lin(a|u) (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -6434,7 +6442,7 @@
       "\\blin(a|s)\\b"
      ],
      "nav": [
-      "lina (toņ|krās|imitācij|izskat|efekt)"
+      "lin(a|u) (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     "vafeļauduma sedziņa",

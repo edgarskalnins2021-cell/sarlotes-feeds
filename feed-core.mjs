@@ -631,6 +631,9 @@ export function buildItems(products, cfg = CONFIG) {
         price: money(price),
         image: cut(v.image || p.image || '', 500),
         category_full: cut(categoryFor(p, v, cfg, tags), 200),
+        // Kategorija pēc Shopify tipa/tagiem (bez mm-google-shopping etiķetēm) – Contextual keywords grupām (adsKeywords),
+        // lai rezultāts nav atkarīgs no avota (Admin API ar etiķetēm "Audumi" / publiskais /products.json – "Audums").
+        _typeCategory: cut(categoryFor(p, { ...v, categoryPath: [] }, cfg, tags), 200),
         brand: detectBrand(p, cfg),
         ean: validGtin(v.barcode, numericId) || '',
         in_stock: inStock != null ? String(inStock) : '',
@@ -1960,7 +1963,8 @@ function fitText(s, max, ctx, strict = false) {
 //  grupas: { "<preču grupa>": { kolekcijas[], kategorijas[], nosaukums[] (regex), nav_nosaukums[] (regex),
 //            visparigs (bool – grupas vārdi pēdējie), atslegvardi: [ "vārds" | { kw, ja[] (visiem regex jāatbilst), nav[] } ] } }
 //  atslegvardi: { "<vārds>": { tips, svarigums (A/B/C), meklejumi } } – kārtošanai.
-// Prece ir grupā, ja tā ir kādā grupas kolekcijā, tās kategorija (Item category) ir grupas kategorijās vai nosaukums
+// Prece ir grupā, ja tā ir kādā grupas kolekcijā, tās kategorija pēc Shopify tipa (_typeCategory, nevis Item category
+// no mm-google-shopping etiķetēm) ir grupas kategorijās vai nosaukums
 // atbilst grupas regex. Nosacījumus ("ja", "nav") pārbauda pret produkta nosaukumu + to kolekciju nosaukumiem, kas
 // minētas kādā grupā (citas kolekcijas, piem. "Jaunumi", netiek ņemtas vērā; arī ne kolekcijas_bez_teksta – plašas
 // kolekcijas kā "Dzija adīšanai un tamborēšanai", kuru nosaukums neko nepasaka par konkrēto preci). Kārtība: konkrētās grupas pirms vispārīgās,
@@ -2004,7 +2008,7 @@ export function adsKeywords(it, data) {
   const handles = new Set(cols.map((x) => x.handle));
   const title = String(it._productTitle || it._lvTitle || it.name || '');
   const text = [title, ...cols.filter((x) => !noText.has(x.handle)).map((x) => x.title || '').sort()].join(' | ');
-  const category = String(it.category_full || '').split(/\s*>>\s*/)[0];
+  const category = String(it._typeCategory ?? it.category_full ?? '').split(/\s*>>\s*/)[0];
   const found = new Map();
   for (const g of groups) {
     const inGroup = [...g.cols].some((h) => handles.has(h)) || g.cats.has(category) || g.title.some((r) => r.test(title));

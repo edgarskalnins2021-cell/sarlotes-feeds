@@ -227,6 +227,17 @@ kolonnu pēc pirmās ielādes pievienot nevar**, tāpēc tukšās kolonnas palie
 | `Formatted price`, `Formatted sale price` | tikai metrā tirgotajām: `18,90 € / m` (aizstāj `Price` reklāmā) |
 | `Contextual keywords` | tukšs – atslēgvārdi drīkst nākt tikai no Edgara atslēgvārdu tabulas (1:1) |
 
+Saīsināšana līdz 25 zīmēm (`fitText`, `adsPhraseEnd`): teksts beidzas tikai frāzes beigās. Kas ir preces vārds un kas
+apzīmētājs, nosaka visa kataloga nosaukumi (`adsWordStats`): "kokvilnas" gandrīz vienmēr stāv pirms cita vārda (apzīmētājs),
+"audums", "pogas", "fiksators" – nosaukuma beigās (preces vārds). Teksts nebeidzas ar apzīmētāju (`Ūdensizturīgs`,
+`Velūrs ar burzījuma`), prievārdu vai "ar jūsu", neatrauj skaitli no mērvienības vai virknes (`100 g / 120 m`,
+`2,0 mm - 5,0 mm`, `ar 2 caurumiem`) un nesadala "X un Y" pusēs. Ja nosaukums neietilpst, sākumā drīkst atmest līdz trim
+apzīmētājiem – krāsu (`Sarkana dublēta vilnas trikotāža` → `Dublēta vilnas trikotāža`; "gaiši zils" un "oranži un zili" –
+tikai kopā), īpašības vārdu vai "X un" (`Viskozes un kokvilnas audums` → `Kokvilnas audums`); zīmols sākumā paliek
+(`SCHMETZ šujmašīnu adatas`). Apraksta secība: dizaina sauklis (tikai vesels teikums), nosaukuma atlikums ("ar", "bez",
+"priekš" paliek; "kleitām un blūzēm" – kopā), daļa pēc " - ", atmestie sākuma vārdi (ne viens pats īpašības vārds),
+kategorija. Ja vēlamais teksts neietilpst bez pārgriešanas, ņem nākamo.
+
 Lielie burti (Google noraida tekstu tikai ar lielajiem burtiem): ja viss Shopify teksts ir ar lielajiem burtiem, tas kļūst
 par teikumu (`BALTA` → `Balta`); ja tikai daļa (`Šķēres … - TEXI TITANIUM CRAFT`) – nosaukuma rakstībā (`Texi Titanium
 Craft`). Zīmoli paliek zīmola rakstībā (`DROPS`, `SCHMETZ`, `PRYM` → `Prym`), kodi un izmēri (`XL`, `130/705 H`) – kā ir.

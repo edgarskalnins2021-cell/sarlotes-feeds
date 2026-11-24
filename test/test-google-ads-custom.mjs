@@ -108,12 +108,12 @@ for (const r of rows) {
 const c = row(vid(circus));
 assert.deepEqual([c['Item title'], c['Item subtitle'], c['Item description']], ['DROPS Pro Circus', '2 mm', 'Tamboradatas']);
 assert.equal(row(vid(perlitesMix))['Item title'], 'Stikla pērlītšu mix', '"Ø3 - 20 mm" nav nosaukuma daļu atdalītājs');
-assert.equal(row(vid(perlitesMix))['Item description'], 'Dažādu krāsu varianti');
-assert.deepEqual([row(vid(lente))['Item title'], row(vid(lente))['Item description']], ['Tautiskā lente', 'Dzeltena ar melnu - LV']);
+assert.equal(row(vid(perlitesMix))['Item description'], 'Ø3 - 20 mm, dažādi izmēri', 'nosaukuma atlikums pirms daļas pēc " - "');
+assert.deepEqual([row(vid(lente))['Item title'], row(vid(lente))['Item description']], ['Tautiskā lente', 'Josta Ūsiņš 12 mm']);
 assert.equal(row(vid(filcs))['Item title'], 'Filca loksne, 1 mm');
 assert.equal(row(vid(uzgalis))['Item title'], 'Auklas nobeiguma uzgalis');
-assert.equal(row(vid(uzgalis))['Item description'], 'Praktisks un estētisks', 'beigās nav "un"');
-assert.equal(row(vid(adatas))['Item description'], 'Krāsainu actiņu Nr. 10-12', 'atmestās daļas sākumā nav "ar"');
+assert.equal(row(vid(uzgalis))['Item description'], 'Ar fiksatoru Ø5 mm', 'nosaukuma atlikums ar "ar"');
+assert.equal(row(vid(adatas))['Item description'], 'Ar krāsainu actiņu', 'prievārds "ar" paliek (bez tā – "Krāsainu actiņu")');
 assert.deepEqual([row(vid(sprādzeLacis))['Item title'], row(vid(sprādzeLacis))['Item description']], ['Dekoratīva sprādze', 'Lāča dizains 20 × 40 mm']);
 assert.ok(!/\p{Extended_Pictographic}/u.test(csv), 'bez emocijzīmēm');
 assert.deepEqual([row(vid(satins))['Item title'], row(vid(satins))['Item description']], ['Kāzu kleitu satīns', 'Melns - gabals 115 cm']);
@@ -126,7 +126,8 @@ assert.deepEqual([k['Item title'], k['Item subtitle'], k['Item description'], k[
 assert.equal(k['Final URL'], `https://sarlotesaudumi.lv/products/teti?variant=${vid(krekls)}`);
 assert.equal(k['Image URL'], `${CDN}/teti-XXS.webp?v=2&width=1200&format=pjpg`, 'WebP no Shopify CDN – piespiedu JPEG');
 const m = row(vid(maisins));
-assert.deepEqual([m['Item title'], m['Item subtitle'], m['Item description']], ['Maisiņš “Normāla zoss”', 'Dabīga / 38 × 42 cm', 'Auduma maisiņi']);
+assert.deepEqual([m['Item title'], m['Item subtitle'], m['Item description']], ['Maisiņš “Normāla zoss”', 'Dabīga / 38 × 42 cm', 'Kokvilnas auduma'],
+  'izlaistie vārdi pirms preces veida – aprakstā');
 assert.equal(m['Image URL'], `${CDN}/zoss.png?v=3&width=1200&format=pjpg`, 'PNG no Shopify CDN – piespiedu JPEG');
 assert.equal(m.Price, '14.90 EUR');
 // Lielie burti → teikums; zīmols un izmērs paliek
@@ -308,7 +309,7 @@ assert.equal(tr(T.lins2).title, 'Lina- un kokvilnas audums', 'piekares domuzīme
 assert.deepEqual([tr(T.filcs2).title, tr(T.filcs2).description], ['Filca loksne mīksta', '20 × 30 cm']);
 assert.deepEqual([tr(T.satins2).title, tr(T.satins2).description], ['Satīna lente', '6, 10, 15 un 25 mm, balta']);
 assert.equal(tr(T.skeres).title, 'Drēbnieka šķēres 10"', 'collas nav pēdiņa');
-assert.equal(tr(T.skeres).description, 'Mīkstiem rokturiem');
+assert.equal(tr(T.skeres).description, 'Ar mīkstiem rokturiem');
 assert.equal(tr(T.komplekts).title, 'Adīšanas komplekts');
 assert.equal(tr(T.o13).title, 'Piešujamās spiedpogas');
 assert.equal(tr(T.zekes).title, 'Vlna Hep Best Socks', 'skaitlis bez sava lietvārda ("4 kārtu") – nost');
@@ -326,6 +327,68 @@ assert.ok(tBad((s) => s.replace('Krūzīte forša!', 'Krūzīte forša!!!')).err
 assert.ok(tBad((s) => s.replace('Krūzīte forša!', 'Krūzīte ★ forša')).errors.some((e) => /triku/.test(e)));
 assert.ok(tBad((s) => s.replace('Krūzīte forša!', 'BEZMAKSAS piegāde')).warnings.some((e) => /reklāmas frāze/.test(e)));
 assert.equal(validateGoogleAdsCustomCsv(tOut.csv, CONFIG).errorCount, 0);
+
+// --- Saīsināšana pēc kataloga vārdu statistikas (24.11.2026): preces vārds paliek, apzīmētāji sākumā var iet nost ---
+// Vārdu skaits veikala katalogā [frāzes beigās, pirms cita vārda] – "kokvilnas" gandrīz vienmēr ir apzīmētājs, "audums" – preces vārds.
+const CATALOG_STATS = new Map(Object.entries({
+  metāla: [22, 239], auklas: [15, 21], fiksators: [18, 0], schmetz: [120, 55], rūpniecisko: [0, 76], šujmašīnu: [2, 177], adatas: [157, 30],
+  ādai: [36, 0], personalizēts: [0, 13], džemperis: [10, 3], ar: [247, 712], jūsu: [1, 28], logo: [3, 0], melns: [137, 17], dzijas: [78, 8],
+  alize: [13, 0], apļa: [0, 7], adāmadatas: [18, 2], drops: [42, 3], izmērs: [30, 0], velūrs: [26, 0], burzījuma: [0, 11], efektu: [38, 1],
+  dabīgā: [0, 8], liellopa: [0, 3], āda: [14, 0], rokdarbiem: [12, 0], mīksta: [2, 11], faktūru: [3, 0], un: [67, 221], elastīga: [3, 80],
+  organiskās: [0, 47], kokvilnas: [8, 1081], konfeti: [1, 2], sirsniņas: [11, 0], ab: [0, 3], mikss: [3, 0], iepakojums: [208, 0],
+  viskozes: [5, 143], audums: [910, 63], zilā: [6, 8], arabeska: [1, 0], ūdensizturīgs: [21, 12], lietusmēteļu: [0, 11], balts: [120, 5],
+  palīgs: [3, 9], gumiju: [2, 0], lentu: [0, 6], ievēršanai: [8, 4], oranži: [3, 10], zili: [5, 25], tropu: [0, 16], ziedi: [129, 6],
+  klipsis: [5, 1], brošu: [2, 0], sprādzīšu: [0, 2], izgatavošanai: [19, 1], komplektā: [78, 0], gaiši: [1, 170], zils: [140, 32],
+  tvills: [9, 0], nelielu: [0, 2], defektu: [5, 0], francija: [4, 0], sarkana: [71, 7], dublēta: [0, 1], vilnas: [1, 41], trikotāža: [195, 0],
+  mēteļiem: [2, 0], vilna: [16, 0], itālija: [14, 0], tumši: [4, 334], brūns: [49, 12], kleitām: [7, 0], blūzēm: [2, 0], sprādze: [20, 0],
+  jostai: [5, 0], vai: [7, 13], somai: [6, 0],
+}));
+const W = {
+  fiksators: p({ title: 'Metāla auklas fiksators 14 × 17 mm, 10 gab.', productType: 'Furnitūra' }),
+  schmetz: p({ title: 'DPx35 LR, 134-35 LR - SCHMETZ rūpniecisko šujmašīnu adatas ādai, 10 gab.', productType: 'Šujmašīnu adatas' }),
+  jusu: p({ title: 'Personalizēts džemperis ar jūsu logo - melns', productType: 'Customizer' }),
+  softy: p({ title: 'Dzijas Alize Softy Plus 100 g / 120 m', productType: 'Dzija' }),
+  dropsRange: p({ title: 'Apļa adāmadatas DROPS 60 cm, izmērs 2,0 mm - 5,0 mm', productType: 'Adāmadatas' }),
+  velurs: p({ title: 'Velūrs ar burzījuma efektu - melns', productType: 'Audums' }),
+  numurs: p({ title: '3. Dabīgā liellopa āda rokdarbiem - mīksta ar faktūru un elastīga 0,9-1,1 mm', productType: 'Audums' }),
+  pedinas: p({ title: 'Organiskās kokvilnas T-krekls"Kādreiz es biju noteicējs…"', productType: 'Customizer',
+    variants: [v({ qty: 0, tracked: false, inventoryPolicy: 'CONTINUE' })] }),
+  ab: p({ title: 'Konfeti sirsniņas ar AB efektu - mikss Nr. 3 (iepakojums)', productType: 'Dāvanu iesaiņojums' }),
+  viskoze: p({ title: 'Viskozes un kokvilnas audums - zilā arabeska', productType: 'Audums' }),
+  udens: p({ title: 'Ūdensizturīgs lietusmēteļu audums - balts', productType: 'Audums' }),
+  paligs: p({ title: 'Palīgs gumiju un lentu ievēršanai', productType: 'Piederumi un instrumenti' }),
+  tropu: p({ title: '100 % kokvilnas audums - oranži un zili tropu ziedi', productType: 'Audums' }),
+  klipsis: p({ title: 'Klipsis brošu un sprādzīšu izgatavošanai 25 × 40 mm (komplektā 2 gab.)', productType: 'Pērlītes un rotu furnitūra' }),
+  gaisi: p({ title: 'Gaiši zils viskozes tvills ar nelielu defektu - Francija', productType: 'Audums' }),
+  sarkana: p({ title: 'Sarkana dublēta vilnas trikotāža mēteļiem - 80 % vilna, Itālija', productType: 'Audums' }),
+  tumsi: p({ title: 'Tumši brūns viskozes tvills kleitām un blūzēm - Francija', productType: 'Audums' }),
+  jostai: p({ title: 'Metāla sprādze jostai vai somai 30-40 mm', productType: 'Furnitūra' }),
+};
+const wOut = toGoogleAdsCustomCsv(buildItems(Object.values(W), CONFIG).items, CONFIG, { wordStats: CATALOG_STATS });
+const wRows = parseCsv(wOut.csv).slice(1);
+const wr = (prod) => {
+  const r = wRows.find((x) => x[0] === vid(prod));
+  return r && `${r[1]} ¦ ${r[3]}`;
+};
+assert.equal(wr(W.fiksators), 'Metāla auklas fiksators ¦ 14 × 17 mm, 10 gab.', '"auklas" nav preces vārds');
+assert.equal(wr(W.schmetz), 'DPx35 LR, 134-35 LR ¦ SCHMETZ šujmašīnu adatas', 'zīmols paliek, "rūpniecisko" atmests');
+assert.equal(wr(W.jusu), 'Personalizēts džemperis ¦ Ar jūsu logo, melns', 'nebeidzas ar "ar jūsu"');
+assert.equal(wr(W.softy), 'Alize Softy Plus ¦ 100 g / 120 m', '"100 g" netiek atrauts no "/ 120 m"');
+assert.equal(wr(W.dropsRange), 'Apļa adāmadatas DROPS ¦ 60 cm', 'diapazons "2,0 mm - 5,0 mm" nav pārgriezts, "izmērs" bez vērtības – nost');
+assert.equal(wr(W.velurs), 'Velūrs ¦ Ar burzījuma efektu', 'nav "Velūrs ar burzījuma"');
+assert.equal(wr(W.numurs), 'Dabīgā liellopa āda ¦ Rokdarbiem', 'kārtas numurs sākumā ("3.") nav nosaukuma daļa');
+assert.equal(wr(W.pedinas), 'Kokvilnas T-krekls ¦ Kādreiz es biju noteicējs', 'pielipusi pēdiņa atdalīta, sauklis – vesels teikums');
+assert.equal(wr(W.ab), 'Konfeti sirsniņas ¦ Ar AB efektu, mikss Nr. 3', 'nav "ar AB" bez lietvārda');
+assert.equal(wr(W.viskoze), 'Kokvilnas audums ¦ Zilā arabeska', '"Viskozes un" – sākums var iet nost kopā ar "un"');
+assert.equal(wr(W.udens), 'Lietusmēteļu audums ¦ Balts', 'īpašības vārds sākumā – nost, nevis viens pats');
+assert.equal(wr(W.paligs), 'Palīgs gumiju un lentu ¦ Ievēršanai', '"Palīgs" ir preces vārds, ne īpašības vārds');
+assert.equal(wr(W.tropu), '100 % kokvilnas audums ¦ Tropu ziedi', 'abas krāsas nost kopā, ne pa vienai');
+assert.equal(wr(W.klipsis), 'Klipsis ¦ Sprādzīšu izgatavošanai', '"brošu" ir lietvārds');
+assert.equal(wr(W.gaisi), 'Viskozes tvills ¦ Ar nelielu defektu', 'nav "Zils …" bez "Gaiši"');
+assert.equal(wr(W.sarkana), 'Dublēta vilnas trikotāža ¦ Mēteļiem, 80 % vilna', 'krāsa sākumā – nost, preces vārds paliek');
+assert.equal(wr(W.tumsi), 'Viskozes tvills ¦ Kleitām un blūzēm', 'pāris "kleitām un blūzēm" kopā aprakstā');
+assert.equal(wr(W.jostai), 'Metāla sprādze ¦ Jostai vai somai 30-40 mm');
+assert.equal(validateGoogleAdsCustomCsv(wOut.csv, CONFIG).errorCount, 0);
 
 // --- Atskaite: iekļautie + izlaistie = visi varianti ---
 const recon = buildItems([...products, ...Object.values(T)], CONFIG);

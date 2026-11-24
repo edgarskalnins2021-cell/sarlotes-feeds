@@ -225,7 +225,20 @@ kolonnu pēc pirmās ielādes pievienot nevar**, tāpēc tukšās kolonnas palie
 | `Image URL` | varianta / produkta attēls; Shopify CDN – vienmēr ar `width=1200` (Google: līdz 6 milj. pikseļu) un `format=pjpg` (CDN JPG, PNG un WebP oriģinālus klientiem, kas pieņem WebP, citādi atdod kā WebP, ko Google neatbalsta). Izņēmumi (pārbaudīts 24.11.2026 visiem 15 661 attēlam): PNG/WebP ar caurspīdīgu fonu (~0,7 %) Shopify uz JPEG nepārveido – arī ar `format=png` atdod WebP, ja klients to pieņem (bez tā – PNG); tos labo, Shopify augšupielādējot JPG ar baltu fonu. HEIC (iPhone foto) netiek likts vispār |
 | `Price`, `Sale price` | `5.30 EUR`; metrā tirgotajām – **par 1 m** (kā preces lapā "18,90 €/m"); akcija (salīdzinājuma cena > cena): `Price` = salīdzinājuma cena, `Sale price` = cena |
 | `Formatted price`, `Formatted sale price` | tikai metrā tirgotajām: `18,90 € / m` (aizstāj `Price` reklāmā) |
-| `Contextual keywords` | tukšs – atslēgvārdi drīkst nākt tikai no Edgara atslēgvārdu tabulas (1:1) |
+| `Contextual keywords` | līdz 10 atslēgvārdiem, atdalīti ar `; `, **tikai no Edgara atslēgvārdu tabulas, rakstība 1:1** (`data/google-ads-atslegvardi.json`, skat. zemāk); ja neviens neder – tukšs |
+
+Contextual keywords (`adsKeywords`, `data/google-ads-atslegvardi.json`, Edgars 24.11.2026): vārdi nāk tikai no Edgara
+atslēgvārdu tabulas ("Mega 2 klasteris", rakstība 1:1, 3 342 vārdi, no tiem izmantoti 825). Tie sasaistīti ar preču
+grupām (102 grupas): prece ir grupā, ja tā ir kādā grupas Shopify kolekcijā, tās Shopify tips ir grupas kategorijās
+(`_typeCategory` – pēc tipa/tagiem, nevis mm-google-shopping etiķetēm, lai rezultāts ir vienāds no Admin API un publiskā
+`/products.json`) vai nosaukums atbilst grupas izteiksmei; grupas izņēmumi (`nav_nosaukums`, `tikai_kategorijas`) un
+katra vārda nosacījumi (`ja` – visiem jāatbilst, `nav` – neviens) pārbauda nosaukumu + grupu kolekciju nosaukumus.
+Kārtība: konkrētā grupa pirms vispārīgās, preces vārds / zīmols pirms lietojuma, nosacītie pirms vispārīgajiem, svarīgums
+A–C, meklējumu skaits. Visi produkta varianti saņem tos pašus vārdus. Pārbaudīts pa partijām (94 partijas, 5 966 produkti,
+katrs rezultāts salīdzināts ar preci): 5 800 produktiem ir vārdi, 166 tabulā nav atbilstoša vārda (rotaļlietu acis un
+deguni, krūštura aizdares, korsešu ribas, etiķetes, bumbuļi u.c. – atskaite projekta failos). Kolekcijas nāk no Admin API
+(publiskajā `/products.json` to nav, tāpēc `--storefront` pārbaudē vārdu ir mazāk). Grupas maina tikai ar Edgara ziņu;
+vārds, kura nav tabulā, ir kļūda (`adsKeywords` met izņēmumu, fails paliek iepriekšējais).
 
 Saīsināšana līdz 25 zīmēm (`fitText`, `adsPhraseEnd`): teksts beidzas tikai frāzes beigās. Kas ir preces vārds un kas
 apzīmētājs, nosaka visa kataloga nosaukumi (`adsWordStats`): "kokvilnas" gandrīz vienmēr stāv pirms cita vārda (apzīmētājs),

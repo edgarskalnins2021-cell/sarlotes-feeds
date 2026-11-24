@@ -13,7 +13,7 @@
 //
 // Palaišana: node generate.mjs   (Node 20+, bez papildu bibliotēkām)
 
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { pathToFileURL } from 'node:url';
 import { CONFIG, buildItems, toXml, toKurpirktXml, kurpirktCombinedItems, toCenoXml, toCenuekspertsXml, toHindeeXml, toKaina24Xml,
@@ -371,11 +371,14 @@ async function buildGoogleMarket({ key, file, market }, items, prev) {
 // google-ads-custom-lv.csv (Google Ads "Pielāgoti" plūsma, latviski): tie paši ieraksti kā google-lv.xml. Ja pārbaude
 // (validateGoogleAdsCustomCsv) atrod kļūdu, preču ir aizdomīgi maz vai to skaits nokritis vairāk nekā uz pusi – paliek
 // iepriekšējā versija (Google Ads ieplānotā ielāde citādi ielādētu bojātu failu); ja tādas nav – fails netiek izveidots.
+// Contextual keywords: data/google-ads-atslegvardi.json (Edgara atslēgvārdu tabula 1:1 + preču grupu noteikumi, skat. adsKeywords).
 const csvRows = (text) => Math.max(0, parseCsv(text).length - 1);
+export const loadAdsKeywords = async () =>
+  JSON.parse(await readFile(new URL('./data/google-ads-atslegvardi.json', import.meta.url), 'utf8'));
 async function buildGoogleAdsCustom(items, prev) {
   const { file } = CONFIG.googleAdsCustom;
   try {
-    const r = toGoogleAdsCustomCsv(items, CONFIG);
+    const r = toGoogleAdsCustomCsv(items, CONFIG, { keywords: await loadAdsKeywords() });
     const check = validateGoogleAdsCustomCsv(r.csv, CONFIG);
     if (check.errorCount) throw new Error(`pārbaudē ${check.errorCount} kļūdas, piem. ${check.errors.slice(0, 3).join('; ')}`);
     if (check.rows !== r.stats.items) throw new Error(`CSV rindu skaits ${check.rows} nesakrīt ar ${r.stats.items}`);

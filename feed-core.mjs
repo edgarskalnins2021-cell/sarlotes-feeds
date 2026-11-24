@@ -631,6 +631,9 @@ export function buildItems(products, cfg = CONFIG) {
         price: money(price),
         image: cut(v.image || p.image || '', 500),
         category_full: cut(categoryFor(p, v, cfg, tags), 200),
+        // Kategorija pēc Shopify tipa/tagiem (bez mm-google-shopping etiķetēm) – Contextual keywords grupām (adsKeywords),
+        // lai rezultāts nav atkarīgs no avota (Admin API ar etiķetēm "Audumi" / publiskais /products.json – "Audums").
+        _typeCategory: cut(categoryFor(p, { ...v, categoryPath: [] }, cfg, tags), 200),
         brand: detectBrand(p, cfg),
         ean: validGtin(v.barcode, numericId) || '',
         in_stock: inStock != null ? String(inStock) : '',
@@ -1955,6 +1958,74 @@ function fitText(s, max, ctx, strict = false) {
   return { text, rest: dropStrays(rest), dropped };
 }
 
+// ---------- Contextual keywords (Google Ads Custom) ----------
+// Dati: data/google-ads-atslegvardi.json – no Edgara atslēgvārdu tabulas (Mega 2 klasteris), rakstība 1:1.
+//  grupas: { "<preču grupa>": { kolekcijas[], kategorijas[], nosaukums[] (regex), nav_nosaukums[] (regex),
+//            visparigs (bool – grupas vārdi pēdējie), atslegvardi: [ "vārds" | { kw, ja[] (visiem regex jāatbilst), nav[] } ] } }
+//  atslegvardi: { "<vārds>": { tips, svarigums (A/B/C), meklejumi } } – kārtošanai.
+// Prece ir grupā, ja tā ir kādā grupas kolekcijā, tās kategorija pēc Shopify tipa (_typeCategory, nevis Item category
+// no mm-google-shopping etiķetēm) ir grupas kategorijās vai nosaukums
+// atbilst grupas regex. Nosacījumus ("ja", "nav") pārbauda pret produkta nosaukumu + to kolekciju nosaukumiem, kas
+// minētas kādā grupā (citas kolekcijas, piem. "Jaunumi", netiek ņemtas vērā; arī ne kolekcijas_bez_teksta – plašas
+// kolekcijas kā "Dzija adīšanai un tamborēšanai", kuru nosaukums neko nepasaka par konkrēto preci). Kārtība: konkrētās grupas pirms vispārīgās,
+// preces nosaukums/īpašība/zīmols, tad lietojums, izstrādājums, pērle; nosacītie pirms vispārīgajiem; A pirms B pirms C;
+// vairāk meklējumu pirms mazāk. Ne vairāk kā max vārdu.
+const ADS_KW_TYPE = { 'Produkts 1:1': 0, 'Produkts + īpašība': 0, 'Zīmols (mums ir)': 0, 'Lietojums (kam der)': 1,
+  'Materiāls → izstrādājums': 2, 'Pērle': 3 };
+const ADS_KW_SV = { A: 0, B: 1, C: 2 };
+const adsKwCache = new WeakMap();
+
+function adsKwCompile(data) {
+  let c = adsKwCache.get(data);
+  if (c) return c;
+  const re = (x) => new RegExp(x, 'iu');
+  const listed = new Set();
+  const noText = new Set(data.kolekcijas_bez_teksta || []);
+  const groups = Object.entries(data.grupas).map(([name, g]) => {
+    for (const h of g.kolekcijas || []) listed.add(h);
+    return {
+      name, general: !!g.visparigs,
+      cols: new Set(g.kolekcijas || []), cats: new Set(g.kategorijas || []),
+      onlyCats: g.tikai_kategorijas ? new Set(g.tikai_kategorijas) : null,
+      title: (g.nosaukums || []).map(re), notTitle: (g.nav_nosaukums || []).map(re),
+      words: g.atslegvardi.map((a) => (typeof a === 'string' ? { kw: a, ja: [], nav: [] }
+        : { kw: a.kw, ja: (a.ja || []).map(re), nav: (a.nav || []).map(re) })),
+    };
+  });
+  for (const g of groups) for (const w of g.words) {
+    if (!data.atslegvardi[w.kw]) throw new Error(`Contextual keywords: "${w.kw}" nav atslēgvārdu sarakstā`);
+  }
+  c = { groups, listed, noText, max: data.max || 10 };
+  adsKwCache.set(data, c);
+  return c;
+}
+
+/** Contextual keywords vienam ierakstam: atslēgvārdu masīvs (tukšs, ja neviens neder). */
+export function adsKeywords(it, data) {
+  if (!data) return [];
+  const { groups, listed, noText, max } = adsKwCompile(data);
+  const cols = (it._collections || []).filter((x) => listed.has(x.handle));
+  const handles = new Set(cols.map((x) => x.handle));
+  const title = String(it._productTitle || it._lvTitle || it.name || '');
+  const text = [title, ...cols.filter((x) => !noText.has(x.handle)).map((x) => x.title || '').sort()].join(' | ');
+  const category = String(it._typeCategory ?? it.category_full ?? '').split(/\s*>>\s*/)[0];
+  const found = new Map();
+  for (const g of groups) {
+    const inGroup = [...g.cols].some((h) => handles.has(h)) || g.cats.has(category) || g.title.some((r) => r.test(title));
+    if (!inGroup || (g.onlyCats && !g.onlyCats.has(category)) || g.notTitle.some((r) => r.test(title))) continue;
+    for (const w of g.words) {
+      if (w.ja.length && !w.ja.every((r) => r.test(text))) continue;
+      if (w.nav.some((r) => r.test(text))) continue;
+      const m = data.atslegvardi[w.kw];
+      const key = [g.general ? 1 : 0, ADS_KW_TYPE[m.tips] ?? 4, w.ja.length ? 0 : 1, ADS_KW_SV[m.svarigums] ?? 3, -(m.meklejumi || 0)];
+      const old = found.get(w.kw);
+      if (!old || adsKwLess(key, old)) found.set(w.kw, key);
+    }
+  }
+  return [...found].sort((a, b) => (adsKwLess(a[1], b[1]) ? -1 : adsKwLess(b[1], a[1]) ? 1 : 0)).slice(0, max).map(([kw]) => kw);
+}
+const adsKwLess = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i]; return false; };
+
 // Attēla adrese: tikai https un JPG/PNG/GIF; Shopify CDN – ar platumu imageWidth (Google: līdz 6 milj. pikseļu).
 // Shopify CDN – vienmēr ar format=pjpg (JPEG arī klientiem, kas pieņem WebP; skat. CONFIG.googleAdsCustom.shopifyForceJpeg).
 function adsImage(url, c) {
@@ -2271,7 +2342,8 @@ export function toGoogleAdsCustomCsv(items, cfg = CONFIG, opts = {}) {
       sale ? `${money(it._priceNum)} ${c.currency}` : '',
       it._decimal ? fmt(price) : '',
       it._decimal && sale ? fmt(it._priceNum) : '',
-      '', // Contextual keywords: tikai no Edgara atslēgvārdu tabulas (1:1), tāpēc pagaidām tukšs
+      // Contextual keywords: tikai no Edgara atslēgvārdu tabulas (1:1), skat. adsKeywords un data/google-ads-atslegvardi.json
+      adsKeywords(it, opts.keywords).join('; '),
     ];
     const bad = adsRowCheck(row, cfg).errors;
     if (bad.length) { skip(`rinda neiziet pārbaudi: ${bad[0].replace(/:.*$/, '')}`); continue; }
@@ -2286,6 +2358,7 @@ export function toGoogleAdsCustomCsv(items, cfg = CONFIG, opts = {}) {
     if (t.description) stats.with.description++;
     if (category) stats.with.category++;
     if (row[9]) stats.with.formatted_price++;
+    if (row[11]) stats.with.keywords = (stats.with.keywords || 0) + 1;
     for (const n of t.notes) stats.notes[n] = (stats.notes[n] || 0) + 1;
     if (t.notes.some((n) => n !== 'bez veida vārda')) {
       report.push({ id, source: t.source, title: t.title, subtitle: t.subtitle, description: t.description, notes: t.notes.join('; ') });

@@ -16,11 +16,11 @@ import { CONFIG, buildItems, toGoogleAdsCustomCsv, validateGoogleAdsCustomCsv, p
 const csvLine = (cells) => cells.map((x) => (/[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : String(x))).join(',');
 
 async function fromStorefrontBuild(dir) {
-  const { fromStorefront } = await import('./generate.mjs');
+  const { fromStorefront, loadAdsKeywords } = await import('./generate.mjs');
   const products = await fromStorefront();
   const { items, stats: b, skippedVariants } = buildItems(products, CONFIG);
   for (const it of items) if (it._decimal && it.in_stock === '') it.in_stock = String(CONFIG.minDecimalMeters); // tikai pārbaudei
-  const r = toGoogleAdsCustomCsv(items, CONFIG);
+  const r = toGoogleAdsCustomCsv(items, CONFIG, { keywords: await loadAdsKeywords() });
   await mkdir(dir, { recursive: true });
   await writeFile(`${dir}/${CONFIG.googleAdsCustom.file}`, r.csv, 'utf8');
   await writeFile(`${dir}/saisinajumi.csv`, [csvLine(['ID', 'Shopify nosaukums | variants', 'Item title', 'Item subtitle', 'Item description', 'Piezīmes']),
@@ -65,7 +65,7 @@ else if (/^https?:\/\//.test(arg)) {
 const check = validateGoogleAdsCustomCsv(text, CONFIG);
 const rows = parseCsv(text).slice(1);
 const count = (i) => rows.filter((r) => r[i]).length;
-console.log(`Rindas: ${check.rows}; ar Item subtitle ${count(2)}, Item description ${count(3)}, Sale price ${count(8)}, Formatted price ${count(9)}`);
+console.log(`Rindas: ${check.rows}; ar Item subtitle ${count(2)}, Item description ${count(3)}, Sale price ${count(8)}, Formatted price ${count(9)}, Contextual keywords ${count(11)}`);
 console.log(`Kļūdas: ${check.errorCount}${check.errors.length ? `\n  ${check.errors.join('\n  ')}` : ''}`);
 console.log(`Brīdinājumi: ${check.warningCount}${check.warnings.length ? `\n  ${check.warnings.slice(0, 20).join('\n  ')}` : ''}`);
 process.exit(check.errorCount || process.exitCode ? 1 : 0);

@@ -1,6 +1,7 @@
 // Google Ads dinamiskā remarketinga plūsma "Pielāgoti" (Custom), google-ads-custom-lv.csv: node test/test-google-ads-custom.mjs
 import assert from 'node:assert/strict';
-import { buildItems, toGoogleAdsCustomCsv, validateGoogleAdsCustomCsv, parseCsv, CONFIG } from '../feed-core.mjs';
+import { readFileSync } from 'node:fs';
+import { buildItems, toGoogleAdsCustomCsv, validateGoogleAdsCustomCsv, parseCsv, adsKeywords, CONFIG } from '../feed-core.mjs';
 
 let n = 1;
 const CDN = 'https://cdn.shopify.com/s/files/1/0517/4129/4751/files';
@@ -427,6 +428,47 @@ const accounted = [...parseCsv(rOut.csv).slice(1).map((r) => r[0]), ...rOut.excl
 assert.deepEqual([...accounted].sort(), [...allVariants].sort(), 'katrs variants ir vai nu failā, vai izlaists ar iemeslu');
 assert.ok(rOut.excluded.every((x) => x.id && x.reason) && recon.skippedVariants.every((x) => x.id && x.reason));
 assert.equal(recon.skippedVariants.find((x) => x.id === vid(davana)).reason, 'dāvanu karte');
+
+// --- Contextual keywords (data/google-ads-atslegvardi.json: Edgara tabula 1:1 + preču grupu noteikumi) ---
+const KW = JSON.parse(readFileSync(new URL('../data/google-ads-atslegvardi.json', import.meta.url), 'utf8'));
+const kcol = (handle, title) => ({ handle, title });
+const K = {
+  diegs: p({ title: 'Universāls šūšanas diegs Amanda Arena Nr. 120, 500 m, krāsa 422', handle: 'k-diegs', productType: 'Diegi',
+    collections: [kcol('diegi', 'Diegi'), kcol('diegi-susanai', 'Diegi šūšanai')] }),
+  spolite: p({ title: 'Lūdzu, pieskaņot diega spolīti audumam', handle: 'k-spolite', productType: 'Diegi',
+    collections: [kcol('diegi', 'Diegi'), kcol('diegi-susanai', 'Diegi šūšanai')] }),
+  kastite: p({ title: 'Plastmasas kastīte ar diega spolītēm', handle: 'k-kastite', productType: 'Šūšanas aksesuāri',
+    collections: [kcol('citi-diegi', 'Citi diegi'), kcol('susanas-piederumi', 'Šūšanas piederumi')] }),
+  lins: p({ title: '100 % mīkstināts lins - eikalipts 205 g/m²', handle: 'k-lins', productType: 'Audums' }),
+  acis: p({ title: 'Rotaļlietu acis Ø12 mm - oranžas (iepakojumā 5 pāri)', handle: 'k-acis', productType: 'Rotaļlietu izgatavošana' }),
+};
+// Admin API variantiem ir mm-google-shopping etiķetes ("Audumi", "Šūšanas materiāli"), publiskajā /products.json – nav;
+// atslēgvārdiem jābūt vienādiem abos gadījumos (grupas kategorija = Shopify tips, _typeCategory).
+const kwOf = (labels) => {
+  const prods = Object.values(K).map((x) => ({ ...x, variants: x.variants.map((y) => ({ ...y, categoryPath: labels })) }));
+  return Object.fromEntries(buildItems(prods, CONFIG).items.map((it) => [it._productTitle, adsKeywords(it, KW)]));
+};
+const kwStore = kwOf([]);
+assert.deepEqual(kwOf(['Šūšanas materiāli', 'Diegi']), kwStore, 'etiķetes nemaina atslēgvārdus');
+assert.deepEqual(kwOf(['Audumi', 'Lina audumi']), kwStore, 'etiķetes nemaina atslēgvārdus');
+const kwT = (prod) => kwStore[prod.title];
+assert.deepEqual(kwT(K.diegs), ['diegi', 'šūšanas diegi', 'šūšanas diegs', 'šujamie diegi', 'diegi šūšanai']);
+assert.deepEqual(kwT(K.spolite), kwT(K.diegs), 'diega spolīte audumam – diegi');
+assert.ok(!kwT(K.kastite).includes('diegi'), 'kastīte nav diegi');
+assert.equal(kwT(K.lins)[0], 'mīkstināts lina audums', 'konkrētākais vārds pirmais');
+assert.equal(kwT(K.lins).length, KW.max, 'ne vairāk kā max vārdu');
+assert.deepEqual(kwT(K.acis), [], 'nav atbilstības tabulā – tukšs');
+assert.deepEqual(adsKeywords(buildItems([K.diegs], CONFIG).items[0], undefined), [], 'bez datiem – tukšs');
+// Visi grupu vārdi ir tabulā (rakstība 1:1); citādi kļūda
+for (const g of Object.values(KW.grupas)) for (const a of g.atslegvardi) assert.ok(KW.atslegvardi[typeof a === 'string' ? a : a.kw]);
+const KWbad = structuredClone(KW);
+KWbad.grupas['Šūšanas diegi'].atslegvardi.push('diegi lēti');
+assert.throws(() => adsKeywords(buildItems([K.diegs], CONFIG).items[0], KWbad), /nav atslēgvārdu sarakstā/);
+// CSV kolonnā – "; " atdalīti, tie paši vārdi visiem produkta variantiem
+const kRows = parseCsv(toGoogleAdsCustomCsv(buildItems([K.diegs, K.lins, K.acis], CONFIG).items, CONFIG, { keywords: KW }).csv).slice(1);
+assert.equal(kRows.find((r) => r[5].endsWith('/k-diegs'))[11], kwT(K.diegs).join('; '));
+assert.equal(kRows.find((r) => r[5].endsWith('/k-acis'))[11], '');
+assert.ok(kRows.every((r) => r[11].split('; ').filter(Boolean).every((k) => KW.atslegvardi[k])));
 
 // --- generate.mjs importējas bez palaišanas ---
 await import('../generate.mjs');

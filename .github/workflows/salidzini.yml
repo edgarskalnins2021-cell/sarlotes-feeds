@@ -28,8 +28,8 @@ jobs:
         with:
           node-version: '24'
       - name: Noteikumu pārbaudes
-        run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null && node test/test-cenueksperts.mjs > /dev/null && node test/test-hindee.mjs > /dev/null && node test/test-kaina24.mjs > /dev/null && node test/test-google.mjs > /dev/null
-      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts, hindee, kaina24, google-lv/ee-en/lt-en .gz)
+        run: node test/test-core.mjs > /dev/null && node test/test-ceno.mjs > /dev/null && node test/test-cenueksperts.mjs > /dev/null && node test/test-hindee.mjs > /dev/null && node test/test-kaina24.mjs > /dev/null && node test/test-google.mjs > /dev/null && node test/test-google-ads-custom.mjs > /dev/null
+      - name: Ģenerē XML (salidzini, kurpirkt, ceno, cenueksperts, hindee, kaina24, google-lv/ee-en/lt-en .gz) un google-ads-custom-lv.csv
         env:
           SHOPIFY_STORE: sarlotesaudumi.myshopify.com
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
@@ -136,13 +136,36 @@ jobs:
               if name.startswith('google-'): msg += page_check(links)
               print(f'::{"notice" if ok else "error"} title={name}::{msg}')
               if not ok: raise SystemExit(1)
+          # Google Ads "Pielāgoti" (Custom) CSV: UTF-8 bez BOM, 12 kolonnas, unikāli ciparu ID, teksti līdz 25 zīmēm,
+          # cena "5.30 EUR", saites uz veikala preču lapām, rindu skaits sakrīt ar stats.json
+          custom = 'google-ads-custom-lv.csv'
+          if stats.get('googleAdsCustom', {}).get('items'):
+              import csv, io
+              want = stats['googleAdsCustom']['items']
+              status, ctype, body = get(custom)
+              text = body.decode('utf-8')  # nederīgs UTF-8 → kļūda
+              rows = list(csv.reader(io.StringIO(text)))
+              head, data = (rows[0] if rows else []), rows[1:]
+              cols = ['ID', 'Item title', 'Item subtitle', 'Item description', 'Item category', 'Final URL', 'Image URL',
+                      'Price', 'Sale price', 'Formatted price', 'Formatted sale price', 'Contextual keywords']
+              ids = [r[0] for r in data if r]
+              ok = (status == 200 and not text.startswith('\ufeff') and head == cols and len(data) == want
+                    and all(len(r) == 12 for r in data) and len(set(ids)) == len(ids) and all(re.fullmatch(r'\d+', x) for x in ids)
+                    and all(0 < len(r[1]) <= 25 and len(r[2]) <= 25 and len(r[3]) <= 25 for r in data)
+                    and all(re.fullmatch(r'\d+\.\d{2} EUR', r[7]) for r in data) and all(r[5].startswith(lv) for r in data)
+                    and all(r[6].startswith('https://') for r in data))
+              msg = f'HTTP {status}, {ctype}, {len(data)} rindas (stats.json: {want}), unikāli ID {len(set(ids))}' + page_check([r[5] for r in data])
+              print(f'::{"notice" if ok else "error"} title={custom}::{msg}')
+              if not ok: raise SystemExit(1)
+              expect[custom] = None
           _, _, html = get('index.html')
           if not all(f'href="{n}"' in html.decode() for n in expect):
               raise SystemExit('::error title=index.html::trūkst saites uz XML failiem')
           # Statistika – viena piezīme (GitHub rāda līdz 10 piezīmēm vienā solī)
           lines = []
           for key, title in (('ceno', 'Ceno'), ('cenueksperts', 'Cenueksperts'), ('hindee', 'Hind.ee'), ('kaina24', 'Kaina24'),
-                             ('google', 'Google LV'), ('googleEe', 'Google EE (EN)'), ('googleLt', 'Google LT (EN)')):
+                             ('google', 'Google LV'), ('googleEe', 'Google EE (EN)'), ('googleLt', 'Google LT (EN)'),
+                             ('googleAdsCustom', 'Google Ads Custom (LV)')):
               c = stats.get(key)
               if not c:
                   lines.append(f'{title}: fails šoreiz netika izveidots'); continue

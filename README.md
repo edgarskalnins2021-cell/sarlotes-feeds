@@ -1,8 +1,9 @@
 # Šarlotes audumi – cenu salīdzināšanas XML faili
 
 Katru stundu (6:17–21:17 pēc Latvijas laika) GitHub automātiski nolasa preces
-no Shopify, pārrēķina un vienā reizē uzbūvē deviņus failus (četri Latvijas cenu salīdzinātājiem, viens Igaunijai,
-viens Lietuvai un trīs Google Merchant Center – Latvijai latviski, Igaunijai un Lietuvai angliski):
+no Shopify, pārrēķina un vienā reizē uzbūvē desmit failus (četri Latvijas cenu salīdzinātājiem, viens Igaunijai,
+viens Lietuvai, trīs Google Merchant Center – Latvijai latviski, Igaunijai un Lietuvai angliski – un viena Google Ads
+dinamiskā remarketinga plūsma latviski):
 
 | Fails | Kam | Adrese |
 |---|---|---|
@@ -15,6 +16,7 @@ viens Lietuvai un trīs Google Merchant Center – Latvijai latviski, Igaunijai 
 | `google-lv.xml.gz` | Google Merchant Center, Latvija, latviešu valodā (skat. sadaļu "Google") – vēl nav pieslēgts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lv.xml.gz |
 | `google-ee-en.xml.gz` | Google Merchant Center, Igaunija, angliski (sharlottekangad.ee/en) – savs konts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-ee-en.xml.gz |
 | `google-lt-en.xml.gz` | Google Merchant Center, Lietuva, angliski (sarlotesaudiniai.lt/en) – savs konts (5902483950) | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lt-en.xml.gz |
+| `google-ads-custom-lv.csv` | Google Ads dinamiskā remarketinga plūsma "Pielāgoti" (Custom), latviski (skat. sadaļu "Google Ads Custom") – vēl nav pieslēgts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-ads-custom-lv.csv |
 
 Grafiks GitHub pusē mēdz kavēties; vajadzības gadījumā: **Actions → Salidzini XML → Run workflow**.
 
@@ -202,6 +204,49 @@ Tas pats kods kā `google-lv.xml.gz`, atšķirības:
 Drošība: ja `/en/` pāradresē prom vai vairāk nekā 25 % nosaukumu nav angliski – paliek iepriekšējā versija.
 Pārbaudes darbs pēc katras izvietošanas atver 3 nejaušas preču lapas kā Google robots (Storebot-Google).
 
+## Google Ads Custom (`google-ads-custom-lv.csv`, Latvija, latviski)
+
+Google Ads dinamiskā remarketinga plūsma tipā **"Pielāgoti" (Custom)** – reklāma parāda latviski tieši to preci, ko
+apmeklētājs skatīja (B ceļš, Edgars 24.11.2026). Specifikācija: https://support.google.com/google-ads/answer/6053288
+(sadaļa "Custom"). Ieraksti – tie paši kā `google-lv.xml.gz` (visi varianti, apģērbiem katrs izmērs). Darba uzdevums un
+pārbaužu saraksts – Claude Doc "Latviskā Custom plūsma (B ceļš)".
+
+Fails ir UTF-8 CSV bez BOM, komats kā atdalītājs, pēdiņas pēc RFC 4180. Kolonnas (angliski, tieši šādā secībā; **jaunu
+kolonnu pēc pirmās ielādes pievienot nevar**, tāpēc tukšās kolonnas paliek failā):
+
+| Kolonna | No kurienes |
+|---|---|
+| `ID` | Shopify varianta ciparu ID (Google: tikai burti un cipari, `shopify_ZZ_…` neder). Tam jāsakrīt ar taga `items[].id` |
+| `Item title` | produkta nosaukuma daļa līdz " - ", bez sākuma "Dzijas" (`DROPS Air`); līdz 25 zīmēm – saīsina pa frāzēm / veseliem vārdiem, bez daudzpunktes; garam nosaukumam ar zīmolu vidū – no zīmola (`DROPS Pro Circus`); apdrukas precēm paliek dizaina nosaukums pēdiņās (`Kokvilnas T-krekls “TĒTI”`) |
+| `Item subtitle` | varianta opcijas (krāsa, izmērs), bez TeeInBlue "Available Product"; līdz 25 zīmēm |
+| `Item description` | nosaukuma daļa pēc " - " (`50 g / 150 m`); ja nav – daļa pirms zīmola, atmestā nosaukuma daļa vai kategorija; līdz 25 zīmēm |
+| `Item category` | LV kategorijas pirmā daļa (`Dzija`, `Audumi`) |
+| `Final URL` | `https://sarlotesaudumi.lv/products/...`, variantiem ar `?variant=` |
+| `Image URL` | varianta / produkta attēls ar `width=1200` (Google: līdz 6 milj. pikseļu); Shopify PNG un WebP – ar `format=pjpg` (CDN tad vienmēr atdod JPEG; bez tā pārlūkiem, kas pieņem WebP, atdod WebP, ko Google neatbalsta) |
+| `Price`, `Sale price` | `5.30 EUR`; metrā tirgotajām – **par 1 m** (kā preces lapā "18,90 €/m"); akcija (salīdzinājuma cena > cena): `Price` = salīdzinājuma cena, `Sale price` = cena |
+| `Formatted price`, `Formatted sale price` | tikai metrā tirgotajām: `18,90 € / m` (aizstāj `Price` reklāmā) |
+| `Contextual keywords` | tukšs – atslēgvārdi drīkst nākt tikai no Edgara atslēgvārdu tabulas (1:1) |
+
+Teksts tikai ar lielajiem burtiem (Google to noraida) kļūst par teikumu (`BALTA` → `Balta`); zīmoli (`DROPS`, `SCHMETZ`)
+un izmēri (`XL`) paliek. Izslēgtas: kā `google-lv.xml.gz` (defekti/demo, bez attēla, metrā ar nezināmu atlikumu, dubulta
+saite) un papildus tipi `Dāvanu kartes`, `Digitālie materiāli`, `Meistarklases`, attēls nav JPG/PNG/GIF/WebP, nosaukumu
+nevar saīsināt bez pārgriezta vārda. Atkārtots ID – kļūda.
+
+Drošība: pirms publicēšanas `validateGoogleAdsCustomCsv` pārbauda katru rindu (galvene, ID, garumi, cenas, saites,
+attēli, HTML, emocijzīmes). Ja ir kļūda, preču ir zem 100 vai uz pusi mazāk nekā iepriekš – paliek iepriekšējā versija
+(citādi Google Ads ieplānotā ielāde ielādētu bojātu failu). `verify` darbs pēc izvietošanas pārbauda publisko CSV.
+
+Pārbaude bez publicēšanas:
+```
+node check-google-ads-custom.mjs public/google-ads-custom-lv.csv   # gatavs fails vai publiskā adrese
+node check-google-ads-custom.mjs --storefront custom-check         # uzbūvē no publiskā /products.json, saglabā CSV,
+                                                                   # saīsināto tekstu atskaiti un kopsavilkumu
+```
+
+Pieslēgšana (katrs solis – tikai ar Edgara apstiprinājumu): Google Ads → Rīki → Uzņēmējdarbības dati → + → Dinamisko
+reklāmu plūsma → **Pielāgoti** → ieplānotā ielāde no šīs adreses reizi dienā. Shopify pielāgotais pikselis sūta
+`view_item` / `add_to_cart` ar `items: [{ id: <varianta ID>, google_business_vertical: 'custom' }]` uz AW-442323683.
+
 ## Vienreizēja iestatīšana
 
 ### 1. GitHub
@@ -238,5 +283,6 @@ node test/test-cenueksperts.mjs  # Cenueksperts: formāts, apraksts, piegāde
 node test/test-hindee.mjs # Hind.ee: oficiālā struktūra, igauņu teksti, Igaunijas cena, metri, piegāde uz Igauniju
 node test/test-kaina24.mjs # Kaina24: oficiālā struktūra, lietuviešu teksti, metri, piegāde uz Lietuvu
 node test/test-google.mjs # Google: RSS/g: lauki, ID, cena par 10 cm + vienības cena, varianti, attēli, piegāde; EE/LT angliski
+node test/test-google-ads-custom.mjs # Google Ads Custom CSV: kolonnas, ID, 25 zīmes, cena par 1 m, akcijas, attēli, izslēgtās
 node generate.mjs         # uzbūvē visus failus mapē public/ (vajag Shopify atslēgas)
 ```

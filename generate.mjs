@@ -1,6 +1,7 @@
 // Ģenerē public/salidzini.xml, kurpirkt.xml, ceno.xml, cenueksperts.xml (Latvija), hindee.xml (Igaunija),
 // kaina24.xml (Lietuva), google-lv.xml.gz (Google Merchant Center, latviski) un google-ee-en.xml.gz / google-lt-en.xml.gz
-// (Google Merchant Center Igaunijai un Lietuvai, angliski; saspiesti .gz).
+// (Google Merchant Center Igaunijai un Lietuvai, angliski; saspiesti .gz) un google-ads-custom-lv.csv (Google Ads
+// dinamiskā remarketinga plūsma "Pielāgoti" / Custom, latviski).
 //
 // Datu avots:
 //  - ja ir iestatīti SHOPIFY_CLIENT_ID un SHOPIFY_CLIENT_SECRET → Shopify Admin API (pilni dati:
@@ -16,7 +17,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { pathToFileURL } from 'node:url';
 import { CONFIG, buildItems, toXml, toKurpirktXml, kurpirktCombinedItems, toCenoXml, toCenuekspertsXml, toHindeeXml, toKaina24Xml,
-  toGoogleXml, htmlToPlain, BALTIC_LETTERS } from './feed-core.mjs';
+  toGoogleXml, toGoogleAdsCustomCsv, validateGoogleAdsCustomCsv, parseCsv, htmlToPlain, BALTIC_LETTERS } from './feed-core.mjs';
 
 const STORE = process.env.SHOPIFY_STORE || 'sarlotesaudumi.myshopify.com';
 const API_VERSION = process.env.SHOPIFY_API_VERSION || '2026-10';
@@ -221,7 +222,7 @@ export function normalizeStorefront(list) {
   }));
 }
 
-async function fromStorefront() {
+export async function fromStorefront() {
   const all = [];
   for (let page = 1; page <= 200; page++) {
     const res = await fetchRetry(`${CONFIG.shopUrl}/products.json?limit=250&page=${page}`, {
@@ -293,11 +294,12 @@ async function fetchPrevious(file) {
 }
 
 // Pārņem iepriekšējo publicēto failu (arī tad, ja iepriekšējais stats.json nav nolasāms). Preču skaitu ņem no paša faila,
-// lai stats.json sakristu ar faila saturu. null – iepriekšējā faila nav.
+// lai stats.json sakristu ar faila saturu. null – iepriekšējā faila nav. itemTag – XML preces tags vai funkcija, kas
+// saskaita preces (CSV – rindas bez galvenes). Rezultāta "xml" – faila saturs (arī CSV).
 async function carryOver(key, file, prev, err, itemTag) {
   const old = await fetchPrevious(file);
   if (!old) return null;
-  const items = (old.match(new RegExp(`<${itemTag}[\\s>]`, 'g')) || []).length;
+  const items = typeof itemTag === 'function' ? itemTag(old) : (old.match(new RegExp(`<${itemTag}[\\s>]`, 'g')) || []).length;
   return { xml: old, stats: { decimal: null, skipped: {}, ...(prev?.[key] || {}), items, carriedOver: true, error: err.message } };
 }
 
@@ -360,6 +362,32 @@ async function buildGoogleMarket({ key, file, market }, items, prev) {
   } catch (err) {
     console.log(`::warning title=${file}::${err.message} – paliek iepriekšējā versija`);
     const old = await carryOver(key, file, prev, err, 'item');
+    if (old) return old;
+    console.log(`${file} šoreiz netiek izveidots (iepriekšējās versijas nav).`);
+    return null;
+  }
+}
+
+// google-ads-custom-lv.csv (Google Ads "Pielāgoti" plūsma, latviski): tie paši ieraksti kā google-lv.xml. Ja pārbaude
+// (validateGoogleAdsCustomCsv) atrod kļūdu, preču ir aizdomīgi maz vai to skaits nokritis vairāk nekā uz pusi – paliek
+// iepriekšējā versija (Google Ads ieplānotā ielāde citādi ielādētu bojātu failu); ja tādas nav – fails netiek izveidots.
+const csvRows = (text) => Math.max(0, parseCsv(text).length - 1);
+async function buildGoogleAdsCustom(items, prev) {
+  const { file } = CONFIG.googleAdsCustom;
+  try {
+    const r = toGoogleAdsCustomCsv(items, CONFIG);
+    const check = validateGoogleAdsCustomCsv(r.csv, CONFIG);
+    if (check.errorCount) throw new Error(`pārbaudē ${check.errorCount} kļūdas, piem. ${check.errors.slice(0, 3).join('; ')}`);
+    if (check.rows !== r.stats.items) throw new Error(`CSV rindu skaits ${check.rows} nesakrīt ar ${r.stats.items}`);
+    if (r.stats.items < 100) throw new Error(`aizdomīgi maz preču (${r.stats.items})`);
+    if (prev?.googleAdsCustom?.items && r.stats.items < prev.googleAdsCustom.items * 0.5 && process.env.FORCE !== '1') {
+      throw new Error(`preču skaits nokrities no ${prev.googleAdsCustom.items} uz ${r.stats.items}`);
+    }
+    if (check.warnings.length) console.log(`::warning title=${file}::${check.warnings.length} brīdinājumi, piem. ${check.warnings[0]}`);
+    return { xml: r.csv, stats: r.stats };
+  } catch (err) {
+    console.log(`::warning title=${file}::${err.message} – paliek iepriekšējā versija`);
+    const old = await carryOver('googleAdsCustom', file, prev, err, csvRows);
     if (old) return old;
     console.log(`${file} šoreiz netiek izveidots (iepriekšējās versijas nav).`);
     return null;
@@ -440,6 +468,9 @@ async function main() {
   foreign.push({ key: 'google', file: 'google-lv.xml.gz', title: 'Google', gzip: true, result: await buildGoogle(items, prev) });
   // Google Merchant Center Igaunijai un Lietuvai (angliski, katrai savs konts un domēns).
   for (const f of GOOGLE_MARKETS) foreign.push({ ...f, result: await buildGoogleMarket(f, items, prev) });
+  // Google Ads dinamiskā remarketinga plūsma "Pielāgoti" (Custom), latviski – tie paši ieraksti kā google-lv.xml.
+  foreign.push({ key: 'googleAdsCustom', file: CONFIG.googleAdsCustom.file, title: 'Google Ads Custom',
+    result: await buildGoogleAdsCustom(items, prev) });
 
   // Latvijas faili tiek rakstīti tikai tad, ja visi ir izveidoti (citādi izvietošana nenotiek
   // un publiski paliek iepriekšējā versija).

@@ -51,25 +51,34 @@
     {
      "kw": "rūtains audums",
      "ja": [
-      "rūtain|\\brūtis\\b|rūtiņ"
+      "rūtain|\\brūtis\\b|rūtiņ|rūtojum"
      ]
     },
     {
      "kw": "melns audums",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
      "kw": "balts audums",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
      "kw": "pelēks audums",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?pelēk(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?pelēk(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
@@ -657,7 +666,7 @@
     {
      "kw": "rūtains vilnas audums",
      "ja": [
-      "rūtain"
+      "rūtain|rūtojum|\\brūtis\\b"
      ]
     },
     {
@@ -1193,7 +1202,7 @@
       "kristāl"
      ],
      "nav": [
-      "līm"
+      "\\blīm(e|es|i)\\b"
      ]
     }
    ],
@@ -1784,30 +1793,45 @@
      "kw": "balta mežģīne",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
      "kw": "melna mežģīne",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
      "kw": "rozā mežģīne",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?rozā\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?rozā(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
      "kw": "brūna mežģīne",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?brūn(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?brūn(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
      "kw": "zaļa mežģīne",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
@@ -1853,12 +1877,18 @@
      "kw": "balts mežģīņu audums",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
      "kw": "melns mežģīņu audums",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
@@ -2073,7 +2103,8 @@
       "\\bt[ -]?krekl"
      ],
      "nav": [
-      "^[^|]*(džemper|hūdij)"
+      "^[^|]*(džemper|hūdij)",
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
@@ -2863,6 +2894,9 @@
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)",
       "\\blent"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
@@ -2983,6 +3017,9 @@
      "kw": "balta mākslīgā kažokāda",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
@@ -3087,6 +3124,9 @@
      "ja": [
       "bernette",
       "overlok|funlock"
+     ],
+     "nav": [
+      "plakanšuv|coverstitch|koverlok|b ?42"
      ]
     },
     {
@@ -3204,6 +3244,9 @@
      "kw": "balts džinsa audums",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
@@ -3301,6 +3344,9 @@
      "kw": "balts tilla audums",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
@@ -3342,18 +3388,27 @@
      "kw": "melns samta audums",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
      "kw": "sarkans samta audums",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?sarkan(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?sarkan(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
      "kw": "zaļš samta audums",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
@@ -4346,7 +4401,7 @@
       "rāvējslēdz"
      ],
      "nav": [
-      "kuģīt|slīdn|gal(i|a|s)\\b|fiksator|stoper"
+      "kuģīt|slīdn|gal(i|a|s)\\b|fiksator|stoper|piekariņ|atstarot|knaibl"
      ]
     },
     {
@@ -4355,7 +4410,7 @@
       "rāvējslēdz"
      ],
      "nav": [
-      "kuģīt|slīdn|gal(i|a|s)\\b|fiksator|stoper"
+      "kuģīt|slīdn|gal(i|a|s)\\b|fiksator|stoper|piekariņ|atstarot|knaibl"
      ]
     },
     {
@@ -4530,6 +4585,9 @@
      "kw": "auduma krāsa melna",
      "ja": [
       "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+     ],
+     "nav": [
+      "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
      ]
     },
     {
@@ -5249,12 +5307,18 @@
      "kw": "uzlīmes apģērbam",
      "ja": [
       "ielāp|aplikācij|termoaplik|uzšuv"
+     ],
+     "nav": [
+      "^(?![^|]*(gludin|termo|līm))[^|]*uzšuv"
      ]
     },
     {
      "kw": "apģērba uzlīmes",
      "ja": [
       "ielāp|aplikācij|termoaplik|uzšuv"
+     ],
+     "nav": [
+      "^(?![^|]*(gludin|termo|līm))[^|]*uzšuv"
      ]
     },
     {

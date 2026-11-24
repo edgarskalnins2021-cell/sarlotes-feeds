@@ -390,6 +390,9 @@ export const CONFIG = {
       },
       // Ja vairāk par šo daļu nosaukumu satur baltu burtus – /en/ nav angliski (droši vien pāradresācija) → nepublicē.
       maxNonEnglishShare: 0.25,
+      // Tipi, kuru nosaukums visās valodās ir vienāds (žurnālu nosaukumi, piem. "Burda Easy 03/2025-DE") –
+      // angļu nosaukums, kas sakrīt ar latvisko, nenozīmē "nav iztulkots". 24.11.2026.
+      sameNameTypes: ['Žurnāli'],
     },
   },
 };
@@ -1292,7 +1295,9 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
     if (m) {
       if (!e) { skip(`nav ${m.countryLabel} veikalā`); continue; }
       if (!(e.price > 0)) { skip(`nav ${m.countryLabel} cenas`); continue; }
-      if (normCmp(e.title) === normCmp(it._lvTitle ?? it._productTitle)) { skip('nav iztulkots angliski'); continue; }
+      if (normCmp(e.title) === normCmp(it._lvTitle ?? it._productTitle) && !m.sameNameTypes?.includes(it._productType)) {
+        skip('nav iztulkots angliski'); continue;
+      }
     }
     const productId = it._productId || e?.productId || '';
     if (!productId) { skip('nav produkta ID'); continue; }

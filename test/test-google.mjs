@@ -308,4 +308,19 @@ assert.equal(ee.stats.typeNotTranslated, 0);
   assert.ok(!bad.xml.includes('<g:product_type>)</g:product_type>') && !bad.xml.includes('<g:custom_label_0>)</g:custom_label_0>'));
 }
 
+// Žurnāli: nosaukums visās valodās vienāds ("Burda Easy 03/2025-DE") – nav "nav iztulkots angliski"; citam tipam – ir.
+{
+  const zurnals = p({ title: 'Burda Easy 03/2025-DE', handle: 'burda-easy-03-2025-de', productType: 'Žurnāli', variants: [v({ price: 8.5, qty: 2 })] });
+  const cits = p({ title: 'Gumija ar mežģīni - 1,6 cm melna', handle: 'gumija-melna', productType: 'Gumijas', variants: [v({ price: 0.69, qty: 9 })] });
+  const { items: zi } = buildItems([zurnals, cits], CONFIG);
+  const enZ = [zurnals, cits].map((pr) => ({ id: Number(pid(pr)), title: pr.title, handle: pr.handle, product_type: pr.productType, body_html: '<p>x</p>',
+    options: [{ name: 'Title' }], images: [], variants: [{ id: Number(vid(pr)), title: 'Default Title', option1: 'Default Title', price: '1.00' }] }));
+  for (const mk of [CONFIG.googleMarkets.ee, CONFIG.googleMarkets.lt]) {
+    const r = toGoogleXml(zi, normalizeLvStore(enZ), CONFIG, mk);
+    assert.equal(r.stats.items, 1, 'žurnāls ir failā');
+    assert.ok(r.xml.includes('<g:title>Burda Easy 03/2025-DE</g:title>'));
+    assert.equal(r.stats.skipped['nav iztulkots angliski'], 1, 'neiztulkotā gumija netiek likta');
+  }
+}
+
 console.log('Google pārbaudes izietas:', JSON.stringify(stats), '| EE:', JSON.stringify(ee.stats));

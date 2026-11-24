@@ -1,0 +1,68 @@
+# PAGAIDU (tiks izņemts pirms PR): nolasa veikala publiskās kolekcijas un to preces (/collections.json,
+# /collections/{handle}/products.json), lai atslēgvārdu grupas varētu sasaistīt ar kolekcijām. Nekas netiek publicēts,
+# atslēgas netiek lietotas.
+name: Kolekciju dati (bez publicēšanas)
+
+on:
+  push:
+    branches: ['claude/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kolekcijas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kolekcijas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Kolekcijas un to preces (publiskais veikals)
+        run: |
+          mkdir -p kol
+          node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          import { gzipSync } from 'node:zlib';
+          const shop = 'https://sarlotesaudumi.lv';
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+          async function get(url) {
+            for (let a = 1; ; a++) {
+              try {
+                const res = await fetch(url, { headers: { 'User-Agent': 'sarlotes-salidzini-feed/1.0' }, signal: AbortSignal.timeout(60000) });
+                if ((res.status === 429 || res.status >= 500) && a < 5) { await sleep(5000 * a); continue; }
+                if (!res.ok) throw new Error(`${res.status} ${url}`);
+                return await res.json();
+              } catch (e) { if (a >= 5) throw e; await sleep(5000 * a); }
+            }
+          }
+          const cols = [];
+          for (let page = 1; page <= 50; page++) {
+            const { collections } = await get(`${shop}/collections.json?limit=250&page=${page}`);
+            if (!collections?.length) break;
+            cols.push(...collections.map((c) => ({ id: c.id, handle: c.handle, title: c.title, count: c.products_count })));
+            await sleep(400);
+          }
+          const members = {};
+          let n = 0;
+          for (const c of cols) {
+            const ids = [];
+            for (let page = 1; page <= 100; page++) {
+              const { products } = await get(`${shop}/collections/${c.handle}/products.json?limit=250&page=${page}`);
+              if (!products?.length) break;
+              ids.push(...products.map((p) => p.id));
+              await sleep(300);
+            }
+            members[c.handle] = ids;
+            n += ids.length;
+          }
+          writeFileSync('kol/kolekcijas.json.gz', gzipSync(JSON.stringify({ collections: cols, members })));
+          console.log(`kolekcijas ${cols.length}, saistības ${n}`);
+          JS
+      - name: Rezultāts žurnālā (base64)
+        run: base64 -w 60000 kol/kolekcijas.json.gz | sed 's/^/KOL64 /'

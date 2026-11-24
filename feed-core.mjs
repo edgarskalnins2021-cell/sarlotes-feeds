@@ -1602,7 +1602,8 @@ function adsPhraseEnd(words, k, ctx, relaxed = false) {
     && !ADS_LINK.has(adsKey(words[k])) && !ADS_UNIT.test(words[k])) return false;
   // Skaitlis, kods, zīmols vai nosaukums ("Alfie", "KARTOPU", "DBx1") – vārdšķira nav jāvērtē; aizvērta iekava vai pēdiņa
   // ("(koka - dabīgas)") – frāzes beigas.
-  if (!/^\p{L}[\p{Ll}-]*$/u.test(bare) || (k > 1 && /^\p{Lu}/u.test(bare)) || /[)”»"]$/u.test(raw)) return true;
+  // Lielais burts aiz komata ir jaunas daļas sākums, ne nosaukums ("“Veggie”, Dārzeņu | kolekcija").
+  if (!/^\p{L}[\p{Ll}-]*$/u.test(bare) || (k > 1 && /^\p{Lu}/u.test(bare) && !/[,;:]$/u.test(words[k - 2])) || /[)”»"]$/u.test(raw)) return true;
   // Prievārds tuvāk par komatu: ar akuzatīvu – "ar vārda" (vietu) nepabeigts; ar ģenitīvu – "no mākslīgās ādas" pabeigts.
   let genPrep = false;
   for (let i = k - 2; i >= Math.max(0, k - 4); i--) {
@@ -1968,6 +1969,12 @@ function adsTexts(it, cfg, ctx) {
     while (j < end && !fits(words.slice(j, end))) j++;
     let keep = words.slice(j, end);
     while (keep.length && dangling.has(keep[0].toLowerCase())) keep = keep.slice(1);
+    // Tikai krāsa vai īpašības vārds bez preces veida ("Priekšauts tumši | zaļš “Slepenā recepte”") – labāk tikai dizains,
+    // preces veids un krāsa – aprakstā.
+    if (keep.length && keep.every((w) => (ADS_ADJ.test(adsKey(w)) && !ADS_NOT_ADJ.test(adsKey(w))) || ADS_COLOR.test(adsKey(w)))) {
+      keep = [];
+      j = end;
+    }
     head = `${keep.join(' ')} ${quote[0]}`.trim();
     quoteDropped = words.slice(0, j).join(' '); // "Organiskās kokvilnas", "Bērnu kokvilnas T-krekls"
     notes.push('nosaukums saīsināts', 'dizaina nosaukums paturēts');
@@ -2015,6 +2022,12 @@ function adsTexts(it, cfg, ctx) {
   const unwrap = (x) => String(x || '').trim().replace(/^\(([^()]*)\)$/u, '$1');
   const join = (a, b) => (unwrap(a) && unwrap(b) ? `${unwrap(a).replace(/[\s,;:\-–]+$/u, '')}, ${unwrap(b)}` : '');
   const category = String(it.category_full || '').split(/\s*>>\s*/).filter(Boolean).pop() || '';
+  // Atmestie sākuma vārdi ("Organiskās kokvilnas", "Ziemassvētku", "Filcēšanas") – informatīvāki par kategoriju, bet ne viens
+  // pats īpašības vārds vai krāsa ("Organiskās", "Sarkana").
+  const droppedPhrase = (x) => {
+    const w = String(x || '').replace(/[\s,;:\-–]+$/u, '').split(' ').filter(Boolean);
+    return !w.length || (w.length === 1 && (ADS_ADJ.test(adsKey(w[0])) || ADS_COLOR.test(adsKey(w[0])))) ? '' : w.join(' ');
+  };
   const cands = [
     [sentence(design), 'design'],
     [brandUsed ? join(before, tail) : '', ''],
@@ -2022,8 +2035,7 @@ function adsTexts(it, cfg, ctx) {
     [unwrap(tail), ''],
     [unwrap(before), ''],
     [unwrap(t.rest), ''],
-    [/^\S+$/u.test(t.dropped || quoteDropped) && (ADS_ADJ.test(adsKey(t.dropped || quoteDropped)) || ADS_COLOR.test(adsKey(t.dropped || quoteDropped)))
-      ? '' : t.dropped || quoteDropped, ''], // ne tikai "Organiskās"
+    [droppedPhrase(t.dropped || quoteDropped), ''],
     [clean(category), 'kategorija'],
   ];
   let description = '';

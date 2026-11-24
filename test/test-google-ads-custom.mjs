@@ -341,7 +341,7 @@ const CATALOG_STATS = new Map(Object.entries({
   klipsis: [5, 1], brošu: [2, 0], sprādzīšu: [0, 2], izgatavošanai: [19, 1], komplektā: [78, 0], gaiši: [1, 170], zils: [140, 32],
   tvills: [9, 0], nelielu: [0, 2], defektu: [5, 0], francija: [4, 0], sarkana: [71, 7], dublēta: [0, 1], vilnas: [1, 41], trikotāža: [195, 0],
   mēteļiem: [2, 0], vilna: [16, 0], itālija: [14, 0], tumši: [4, 334], brūns: [49, 12], kleitām: [7, 0], blūzēm: [2, 0], sprādze: [20, 0],
-  jostai: [5, 0], vai: [7, 13], somai: [6, 0],
+  jostai: [5, 0], vai: [7, 13], somai: [6, 0], auduma: [3, 116], bērnu: [4, 19], amigurumi: [0, 4], komplekts: [60, 9],
 }));
 const W = {
   fiksators: p({ title: 'Metāla auklas fiksators 14 × 17 mm, 10 gab.', productType: 'Furnitūra' }),
@@ -363,6 +363,11 @@ const W = {
   sarkana: p({ title: 'Sarkana dublēta vilnas trikotāža mēteļiem - 80 % vilna, Itālija', productType: 'Audums' }),
   tumsi: p({ title: 'Tumši brūns viskozes tvills kleitām un blūzēm - Francija', productType: 'Audums' }),
   jostai: p({ title: 'Metāla sprādze jostai vai somai 30-40 mm', productType: 'Furnitūra' }),
+  maisins: p({ title: 'Kokvilnas auduma maisiņš “Normāla zoss”', productType: 'Customizer',
+    variants: [v({ qty: 0, tracked: false, inventoryPolicy: 'CONTINUE', categoryPath: ['Gatavie izstrādājumi un apdruka', 'Auduma maisiņi'] })] }),
+  veggie: p({ title: 'DMC Amigurumi komplekts “Veggie” - Dārzeņu kolekcija', productType: 'Furnitūra' }),
+  priekssauts: p({ title: 'Priekšauts tumši zaļš “Slepenā recepte”', productType: 'Customizer',
+    variants: [v({ qty: 0, tracked: false, inventoryPolicy: 'CONTINUE' })] }),
 };
 const wOut = toGoogleAdsCustomCsv(buildItems(Object.values(W), CONFIG).items, CONFIG, { wordStats: CATALOG_STATS });
 const wRows = parseCsv(wOut.csv).slice(1);
@@ -388,6 +393,9 @@ assert.equal(wr(W.gaisi), 'Viskozes tvills ¦ Ar nelielu defektu', 'nav "Zils �
 assert.equal(wr(W.sarkana), 'Dublēta vilnas trikotāža ¦ Mēteļiem, 80 % vilna', 'krāsa sākumā – nost, preces vārds paliek');
 assert.equal(wr(W.tumsi), 'Viskozes tvills ¦ Kleitām un blūzēm', 'pāris "kleitām un blūzēm" kopā aprakstā');
 assert.equal(wr(W.jostai), 'Metāla sprādze ¦ Jostai vai somai 30-40 mm');
+assert.equal(wr(W.maisins), 'Maisiņš “Normāla zoss” ¦ Kokvilnas auduma', 'atmestie sākuma vārdi – aprakstā');
+assert.equal(wr(W.priekssauts), '“Slepenā recepte” ¦ Priekšauts tumši zaļš', 'nosaukumā nav tikai krāsa "Zaļš" pirms dizaina');
+assert.ok(!/Dārzeņu$/.test(wr(W.veggie)), `lielais burts aiz komata nav nosaukums: ${wr(W.veggie)}`);
 assert.equal(validateGoogleAdsCustomCsv(wOut.csv, CONFIG).errorCount, 0);
 
 // --- Atskaite: iekļautie + izlaistie = visi varianti ---

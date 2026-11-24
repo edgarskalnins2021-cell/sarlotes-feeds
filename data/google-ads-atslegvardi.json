@@ -1949,7 +1949,8 @@
       "kokviln"
      ],
      "nav": [
-      "^(?![^|]*kokviln).*poliestera mežģīnes"
+      "^(?![^|]*kokviln).*poliestera mežģīnes",
+      "^(?![^|]*kokviln)[^|]*(viskoz|poliest|neilon|poliamīd)"
      ]
     },
     {
@@ -2856,6 +2857,37 @@
      "ja": [
       "panel"
      ]
+    },
+    {
+     "kw": "filca rullītis",
+     "ja": [
+      "rullīt"
+     ]
+    },
+    {
+     "kw": "filca rullīši",
+     "ja": [
+      "rullīt"
+     ]
+    },
+    {
+     "kw": "filca rullīšu komplekts",
+     "ja": [
+      "rullīt",
+      "komplekt"
+     ]
+    },
+    {
+     "kw": "filca ruļļi",
+     "ja": [
+      "ruļļ|rullis"
+     ]
+    },
+    {
+     "kw": "filca rullis",
+     "ja": [
+      "ruļļ|rullis"
+     ]
     }
    ]
   },
@@ -3096,6 +3128,9 @@
       "slīp\\p{L}* diega lent|slīpdieg"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "^(?![^|]*lent)[^|]*(?<!ar )(?<!\\p{L})aukl(a|as)(?!\\p{L})"
    ]
   },
   "Aizkaru audumi": {
@@ -3468,7 +3503,7 @@
     "Audums"
    ],
    "nav_nosaukums": [
-    "^(?!.*(džins|denim).*(džins|denim))(?=.*džins(a|u) zil)"
+    "^(?!.*(džins|denim).*(džins|denim))(?=.*džins(a|u) (zil|ton|krās))"
    ]
   },
   "Softshell": {
@@ -4212,6 +4247,9 @@
       "suņ"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "rullīt"
    ]
   },
   "Kostīmaudums un mēteļu audumi": {
@@ -6718,7 +6756,7 @@
     }
    ],
    "nav_nosaukums": [
-    "ievēr"
+    "ievēr|^(magnētisk\\p{L}* )?palīg|vadul"
    ]
   },
   "Lineāli un mērinstrumenti": {
@@ -6812,7 +6850,7 @@
     "spalvas"
    ],
    "nosaukums": [
-    "spalv(as|u) "
+    "(?<!\\p{L})spalv(as|u) "
    ],
    "atslegvardi": [
     "spalvas",
@@ -9041,6 +9079,41 @@
    "svarigums": "B",
    "meklejumi": 20,
    "excel_rinda": 3499,
+   "excel_grupa": "Filcs"
+  },
+  "filca rullis": {
+   "tips": "Produkts 1:1",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 3544,
+   "excel_grupa": "Filcs"
+  },
+  "filca rullītis": {
+   "tips": "Produkts 1:1",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 3545,
+   "excel_grupa": "Filcs"
+  },
+  "filca rullīši": {
+   "tips": "Produkts 1:1",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 3546,
+   "excel_grupa": "Filcs"
+  },
+  "filca rullīšu komplekts": {
+   "tips": "Produkts 1:1",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 3547,
+   "excel_grupa": "Filcs"
+  },
+  "filca ruļļi": {
+   "tips": "Produkts + īpašība",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 3548,
    "excel_grupa": "Filcs"
   },
   "filcs": {

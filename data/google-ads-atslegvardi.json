@@ -36,7 +36,8 @@
   "gumijas",
   "gumijas-2",
   "dekorativas-lentes",
-  "spalvu-lentes"
+  "spalvu-lentes",
+  "vaskota-aukla"
  ],
  "grupas": {
   "Audumi (visi)": {
@@ -50,34 +51,25 @@
     {
      "kw": "rūtains audums",
      "ja": [
-      "rūtain"
+      "rūtain|\\brūtis\\b|rūtiņ"
      ]
     },
     {
      "kw": "melns audums",
      "ja": [
-      "\\bmeln"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
      "kw": "balts audums",
      "ja": [
-      "\\bbalt"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
      "kw": "pelēks audums",
      "ja": [
-      "\\bpelēk(s|a)\\b"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?pelēk(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?pelēk(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
@@ -90,6 +82,9 @@
      "kw": "biezs audums",
      "ja": [
       "\\bbiez"
+     ],
+     "nav": [
+      "vidēji biez"
      ]
     },
     {
@@ -261,6 +256,9 @@
       "izšuv|izšūt"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "dabīgā (liellopa )?āda|liellopa āda"
    ]
   },
   "Gumijas un stieples": {
@@ -376,6 +374,7 @@
       "pog"
      ],
      "nav": [
+      "kokos",
       "spiedpog"
      ]
     },
@@ -457,6 +456,9 @@
      "kw": "spiedpogu knaibles",
      "ja": [
       "knaibl"
+     ],
+     "nav": [
+      "bez knaibl"
      ]
     },
     {
@@ -521,6 +523,9 @@
      "ja": [
       "\\blin",
       "viskoz"
+     ],
+     "nav": [
+      "lina (toņ|krās)"
      ]
     },
     {
@@ -564,6 +569,9 @@
     "lins-ar-viskozi",
     "lins-ar-viskozi-vienkrasaini",
     "lins-ar-viskozi-apdrukati"
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Tvills": {
@@ -669,6 +677,9 @@
     "vilnas-audumi",
     "vilnas-audumi-dabigi",
     "audumi-ar-vilnu"
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Zīds": {
@@ -676,19 +687,43 @@
     "\\bzīd"
    ],
    "atslegvardi": [
-    "zīds",
-    "zīda audums",
-    "zīda audumi",
+    {
+     "kw": "zīds",
+     "ja": [],
+     "nav": [
+      "mākslīg"
+     ]
+    },
+    {
+     "kw": "zīda audums",
+     "ja": [],
+     "nav": [
+      "mākslīg"
+     ]
+    },
+    {
+     "kw": "zīda audumi",
+     "ja": [],
+     "nav": [
+      "mākslīg"
+     ]
+    },
     {
      "kw": "zīda kleita",
      "ja": [
       "kleit|satīn|šifon|krep"
+     ],
+     "nav": [
+      "mākslīg"
      ]
     },
     {
      "kw": "dabīgā zīda audums",
      "ja": [
       "dabīg|100 % zīd"
+     ],
+     "nav": [
+      "mākslīg"
      ]
     },
     {
@@ -701,18 +736,27 @@
      "kw": "zīda audums ar lāsojumu",
      "ja": [
       "lāsoj"
+     ],
+     "nav": [
+      "mākslīg"
      ]
     },
     {
      "kw": "plāns zīda audums",
      "ja": [
       "\\bplān"
+     ],
+     "nav": [
+      "mākslīg"
      ]
     },
     {
      "kw": "zīda blūze",
      "ja": [
       "blūz"
+     ],
+     "nav": [
+      "mākslīg"
      ]
     }
    ],
@@ -821,6 +865,9 @@
    ],
    "nav_nosaukums": [
     "\\blent|mežģīn|aukl"
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Kokvilnas audumi": {
@@ -909,6 +956,9 @@
     "platie-kokvilnas-audumi-vienkrasas",
     "citi-kokvilnas-audumi",
     "izsuta-kokvilna"
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Poplīns": {
@@ -1019,6 +1069,9 @@
     "kokvilnas-trikotaza",
     "kokvilnas-trikotaza-ar-apdruku",
     "kokvilnas-trikotaza-vienkrasaina"
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Līmes": {
@@ -1209,12 +1262,18 @@
      "kw": "vilnas dzija",
      "ja": [
       "\\b(jaun)?viln|merino|alpak|wool"
+     ],
+     "nav": [
+      "metālisk|metallic"
      ]
     },
     {
      "kw": "vilnas dzijas",
      "ja": [
       "\\b(jaun)?viln|merino|alpak|wool"
+     ],
+     "nav": [
+      "metālisk|metallic"
      ]
     },
     {
@@ -1228,6 +1287,9 @@
      "ja": [
       "zeķ|socks",
       "\\bviln|wool|merino"
+     ],
+     "nav": [
+      "metālisk|metallic"
      ]
     },
     {
@@ -1270,12 +1332,18 @@
      "kw": "akrila dzija",
      "ja": [
       "akril|acryl"
+     ],
+     "nav": [
+      "tumsā spīdoš"
      ]
     },
     {
      "kw": "kokvilnas dzija",
      "ja": [
       "kokviln|cotton"
+     ],
+     "nav": [
+      "tumsā spīdoš"
      ]
     },
     {
@@ -1289,6 +1357,10 @@
      "kw": "lina dzija",
      "ja": [
       "\\blin(a|u)\\b"
+     ],
+     "nav": [
+      "tumsā spīdoš",
+      "lina (toņ|krās)"
      ]
     },
     {
@@ -1664,6 +1736,10 @@
       "nako angora luks"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Dzija",
+    "Rokdarbu komplekti"
    ]
   },
   "Mežģīnes": {
@@ -1699,51 +1775,39 @@
      "kw": "lina mežģīne",
      "ja": [
       "\\blin(a|u|s)\\b"
+     ],
+     "nav": [
+      "lina (toņ|krās)"
      ]
     },
     {
      "kw": "balta mežģīne",
      "ja": [
-      "\\bbalt"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
      "kw": "melna mežģīne",
      "ja": [
-      "\\bmeln"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
      "kw": "rozā mežģīne",
      "ja": [
-      "rozā"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?rozā\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?rozā(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
      "kw": "brūna mežģīne",
      "ja": [
-      "\\bbrūn"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?brūn(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?brūn(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
      "kw": "zaļa mežģīne",
      "ja": [
-      "\\bzaļ"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
@@ -1788,13 +1852,13 @@
     {
      "kw": "balts mežģīņu audums",
      "ja": [
-      "\\bbalt"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
      "kw": "melns mežģīņu audums",
      "ja": [
-      "\\bmeln"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
@@ -2005,7 +2069,7 @@
     {
      "kw": "balts t krekls",
      "ja": [
-      "\\bbalt",
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)",
       "\\bt[ -]?krekl"
      ],
      "nav": [
@@ -2117,6 +2181,9 @@
       "kniede"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Lina audumi": {
@@ -2139,7 +2206,8 @@
     "\\blin(s|a|u)\\b|\\blina\\b"
    ],
    "nav_nosaukums": [
-    "dzij|diegi|diegs|\\blent|mežģīn|aukl|lina toņ"
+    "dzij|diegi|diegs|\\blent|mežģīn|aukl|lina toņ",
+    "lina (toņ|krās)"
    ],
    "atslegvardi": [
     "lins",
@@ -2172,7 +2240,10 @@
     {
      "kw": "biezs lina audums",
      "ja": [
-      "\\bbiez|2[3-6]0 g"
+      "\\bbiez|\\b(2[3-9]\\d|[34]\\d\\d) ?g"
+     ],
+     "nav": [
+      "vidēji biez"
      ]
     },
     {
@@ -2250,6 +2321,9 @@
       "dvieļ"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Bez grupas (izvēlēti)": {
@@ -2301,7 +2375,7 @@
     "makrame-auklas-diegi"
    ],
    "nav_nosaukums": [
-    "overlok|mulinē"
+    "overlok|mulinē|kastīt|spolīt"
    ],
    "atslegvardi": [
     {
@@ -2362,12 +2436,18 @@
      "kw": "lina diegi",
      "ja": [
       "\\blin(a|u)\\b"
+     ],
+     "nav": [
+      "lina (toņ|krās)"
      ]
     },
     {
      "kw": "lina diegs",
      "ja": [
       "\\blin(a|u)\\b"
+     ],
+     "nav": [
+      "lina (toņ|krās)"
      ]
     },
     {
@@ -2494,6 +2574,9 @@
      "kw": "biezs filca audums",
      "ja": [
       "\\bbiez|[3-9] ?mm"
+     ],
+     "nav": [
+      "vidēji biez"
      ]
     },
     {
@@ -2598,24 +2681,36 @@
      "kw": "lenta",
      "ja": [
       "\\blent"
+     ],
+     "nav": [
+      "taisnstūr|aplīš|\\bapļi"
      ]
     },
     {
      "kw": "lentes",
      "ja": [
       "\\blent"
+     ],
+     "nav": [
+      "taisnstūr|aplīš|\\bapļi"
      ]
     },
     {
      "kw": "lente",
      "ja": [
       "\\blent"
+     ],
+     "nav": [
+      "taisnstūr|aplīš|\\bapļi"
      ]
     },
     {
      "kw": "lentas",
      "ja": [
       "\\blent"
+     ],
+     "nav": [
+      "taisnstūr|aplīš|\\bapļi"
      ]
     },
     {
@@ -2685,6 +2780,9 @@
      "kw": "velcro lenta",
      "ja": [
       "velcro|lipek|līplent"
+     ],
+     "nav": [
+      "taisnstūr|aplīš|\\bapļi"
      ]
     },
     {
@@ -2704,24 +2802,36 @@
      "ja": [
       "velcro|lipek",
       "pašlīm|līmēj"
+     ],
+     "nav": [
+      "taisnstūr|aplīš|\\bapļi"
      ]
     },
     {
      "kw": "latvijas karoga lenta",
      "ja": [
       "karog|sarkanbalt"
+     ],
+     "nav": [
+      "^[^|]*(igaunij|lietuv|ukrain)"
      ]
     },
     {
      "kw": "latvijas karoga lente",
      "ja": [
       "karog|sarkanbalt"
+     ],
+     "nav": [
+      "^[^|]*(igaunij|lietuv|ukrain)"
      ]
     },
     {
      "kw": "latvijas lentīte",
      "ja": [
       "karog|sarkanbalt"
+     ],
+     "nav": [
+      "^[^|]*(igaunij|lietuv|ukrain)"
      ]
     },
     {
@@ -2751,11 +2861,8 @@
     {
      "kw": "balta lenta",
      "ja": [
-      "\\bbalt",
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)",
       "\\blent"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
      ]
     },
     {
@@ -2769,6 +2876,9 @@
      "kw": "prievīte",
      "ja": [
       "prievīt|tautisk|jost"
+     ],
+     "nav": [
+      "^[^|]*karoga lent"
      ]
     }
    ]
@@ -2818,6 +2928,9 @@
      "kw": "lina aizkaru audums",
      "ja": [
       "\\blin(s|a|u)\\b"
+     ],
+     "nav": [
+      "lina (toņ|krās)"
      ]
     },
     {
@@ -2850,7 +2963,12 @@
    ],
    "atslegvardi": [
     "mākslīgā kažokāda",
-    "mākslīgās kažokādas audums",
+    {
+     "kw": "mākslīgās kažokādas audums",
+     "nav": [
+      "^[^|]*\\blent"
+     ]
+    },
     "kažokāda",
     {
      "kw": "mākslīgās kažokādas mētelis",
@@ -2864,10 +2982,7 @@
     {
      "kw": "balta mākslīgā kažokāda",
      "ja": [
-      "\\bbalt"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
@@ -3060,6 +3175,9 @@
       "oxford|oksford"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Džinsa audums": {
@@ -3085,10 +3203,7 @@
     {
      "kw": "balts džinsa audums",
      "ja": [
-      "\\bbalt"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
@@ -3103,6 +3218,12 @@
       "kokviln"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
+   ],
+   "nav_nosaukums": [
+    "^(?!.*(džins|denim).*(džins|denim))(?=.*džins(a|u) zil)"
    ]
   },
   "Softshell": {
@@ -3179,10 +3300,7 @@
     {
      "kw": "balts tilla audums",
      "ja": [
-      "\\bbalt"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
@@ -3191,6 +3309,9 @@
       "aizkar"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Samts": {
@@ -3220,28 +3341,19 @@
     {
      "kw": "melns samta audums",
      "ja": [
-      "\\bmeln"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
      "kw": "sarkans samta audums",
      "ja": [
-      "\\bsarkan"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?sarkan(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?sarkan(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
      "kw": "zaļš samta audums",
      "ja": [
-      "\\bzaļ"
-     ],
-     "nav": [
-      "uz [\\wāčēģīķļņšūž]+ fona"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
@@ -3268,6 +3380,9 @@
       "kokviln"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Samta lentes": {
@@ -3590,6 +3705,9 @@
       "mēbe"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Flanelis": {
@@ -3711,6 +3829,9 @@
       "palag|pul\\b|frot"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Piegrieztnes": {
@@ -3876,6 +3997,9 @@
      "ja": [
       "\\b(jaun)?viln",
       "\\bbiez|mēteļ"
+     ],
+     "nav": [
+      "vidēji biez"
      ]
     },
     {
@@ -3912,6 +4036,9 @@
       "\\bviln"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Mākslīgā āda": {
@@ -3976,6 +4103,9 @@
       "atgriez"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Mēbeļu audumi": {
@@ -4021,13 +4151,13 @@
     {
      "kw": "āra mēbeļu audums",
      "ja": [
-      "ūdensizturīg|āra|dārz"
+      "ūdensizturīg|\\bāra\\b|dārza mēbe|outdoor"
      ]
     },
     {
      "kw": "dārza mēbeļu audums",
      "ja": [
-      "ūdensizturīg|dārz"
+      "ūdensizturīg|dārza mēbe|outdoor"
      ]
     },
     {
@@ -4092,7 +4222,7 @@
     "\\baukl|šņor"
    ],
    "nav_nosaukums": [
-    "fiksator|nobeigum|gal(i|s)\\b"
+    "fiksator|nobeigum|gal(i|s)\\b|mašīn"
    ],
    "atslegvardi": [
     {
@@ -4216,7 +4346,7 @@
       "rāvējslēdz"
      ],
      "nav": [
-      "kuģīt|slīdn|gali"
+      "kuģīt|slīdn|gal(i|a|s)\\b|fiksator|stoper"
      ]
     },
     {
@@ -4225,7 +4355,7 @@
       "rāvējslēdz"
      ],
      "nav": [
-      "kuģīt|slīdn|gali"
+      "kuģīt|slīdn|gal(i|a|s)\\b|fiksator|stoper"
      ]
     },
     {
@@ -4399,7 +4529,7 @@
     {
      "kw": "auduma krāsa melna",
      "ja": [
-      "\\bmeln"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ]
     },
     {
@@ -4420,6 +4550,9 @@
       "batik"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "gliter"
    ]
   },
   "Šūšanas žurnāli": {
@@ -4670,15 +4803,43 @@
     "flizelīn|līmaudum|starplik"
    ],
    "atslegvardi": [
-    "flizelīns",
-    "līmaudums",
-    "flizelīns šūšanai",
-    "starplikas audums",
-    "starplikas audumi",
+    {
+     "kw": "flizelīns",
+     "nav": [
+      "hermetiz"
+     ]
+    },
+    {
+     "kw": "līmaudums",
+     "nav": [
+      "hermetiz"
+     ]
+    },
+    {
+     "kw": "flizelīns šūšanai",
+     "nav": [
+      "hermetiz"
+     ]
+    },
+    {
+     "kw": "starplikas audums",
+     "nav": [
+      "hermetiz"
+     ]
+    },
+    {
+     "kw": "starplikas audumi",
+     "nav": [
+      "hermetiz"
+     ]
+    },
     {
      "kw": "flizelīna audums",
      "ja": [
       "flizelīn"
+     ],
+     "nav": [
+      "\\blent"
      ]
     },
     {
@@ -5105,13 +5266,15 @@
     {
      "kw": "uzgludināmi ielāpi",
      "ja": [
-      "gludin|termo"
+      "gludin|termo",
+      "ielāp|aplikācij|termoaplik|uzšuv"
      ]
     },
     {
      "kw": "uzgludināms ielāps",
      "ja": [
-      "gludin|termo"
+      "gludin|termo",
+      "ielāp|aplikācij|termoaplik|uzšuv"
      ]
     },
     {
@@ -5203,7 +5366,7 @@
     {
      "kw": "kniepadatas",
      "ja": [
-      "kniepadat"
+      "kniepadat|ar galviņ"
      ],
      "nav": [
       "spilvent|turētāj|aproce"
@@ -5212,7 +5375,7 @@
     {
      "kw": "kniepadatas šūšanai",
      "ja": [
-      "kniepadat"
+      "kniepadat|ar galviņ"
      ],
      "nav": [
       "spilvent|turētāj|aproce"
@@ -5221,7 +5384,7 @@
     {
      "kw": "saspraužamās adatas",
      "ja": [
-      "kniepadat"
+      "kniepadat|ar galviņ"
      ],
      "nav": [
       "spilvent|turētāj|aproce"
@@ -5245,6 +5408,9 @@
       "saspraud"
      ]
     }
+   ],
+   "kategorijas": [
+    "Kniepadatas"
    ]
   },
   "Sintētiskie audumi": {
@@ -5353,7 +5519,7 @@
     "punch-needle-jeb-cilposanas-adatas"
    ],
    "nosaukums": [
-    "izšūšanas komplekt|krustdūrien|tapošan"
+    "izšūšanas komplekt|krustdūrien|tapošan|izšūšanas adat"
    ],
    "atslegvardi": [
     {
@@ -5423,6 +5589,9 @@
       "punch needle|izšūšanas adat"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "poplīn|trikotāž|flanel|kokvilnas audums|viskozes audums"
    ]
   },
   "Audumi izšūšanai": {
@@ -5459,6 +5628,9 @@
      "kw": "lina audums izšūšanai",
      "ja": [
       "\\blin(a|s)\\b"
+     ],
+     "nav": [
+      "lina (toņ|krās)"
      ]
     },
     {
@@ -5696,25 +5868,10 @@
      "ja": [
       "brunč|viln"
      ]
-    },
-    {
-     "kw": "tautiskās jostas",
-     "ja": [
-      "\\bjost"
-     ]
-    },
-    {
-     "kw": "tautiskā josta",
-     "ja": [
-      "\\bjost"
-     ]
-    },
-    {
-     "kw": "latvju rakstu josta",
-     "ja": [
-      "\\bjost"
-     ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Mākslīgā zamšāda": {
@@ -5894,12 +6051,18 @@
      "kw": "lina vafeļaudums",
      "ja": [
       "\\blin(a|s)\\b"
+     ],
+     "nav": [
+      "lina (toņ|krās)"
      ]
     },
     {
      "kw": "lina vafeļu audums",
      "ja": [
       "\\blin(a|s)\\b"
+     ],
+     "nav": [
+      "lina (toņ|krās)"
      ]
     },
     "vafeļauduma sedziņa",
@@ -6075,7 +6238,7 @@
       "šķēr"
      ],
      "nav": [
-      "asināt|izšūšan"
+      "asināt|izšūšan|diegu"
      ]
     },
     {
@@ -6084,7 +6247,7 @@
       "šķēr"
      ],
      "nav": [
-      "asināt|izšūšan"
+      "asināt|izšūšan|diegu"
      ]
     },
     {
@@ -6093,7 +6256,7 @@
       "šķēr"
      ],
      "nav": [
-      "asināt|izšūšan"
+      "asināt|izšūšan|diegu"
      ]
     },
     {
@@ -6215,7 +6378,8 @@
     {
      "kw": "rūpniecisko šujmašīnu pēdiņas",
      "ja": [
-      "rūpniec|industri"
+      "rūpniec|industri",
+      "pēdiņ"
      ]
     }
    ]
@@ -6267,6 +6431,9 @@
    "atslegvardi": [
     "džutas audums",
     "džutas audumi"
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Fliteru audums": {
@@ -6298,6 +6465,9 @@
       "fliter"
      ]
     }
+   ],
+   "tikai_kategorijas": [
+    "Audums"
    ]
   },
   "Spalvas": {
@@ -6431,6 +6601,72 @@
    ],
    "atslegvardi": [
     "griešanas paliktnis"
+   ]
+  },
+  "Tautiskās jostas": {
+   "kolekcijas": [
+    "tautiskas-lentes-jostas"
+   ],
+   "nosaukums": [
+    "tautisk|latvju|lielvārd"
+   ],
+   "tikai_kategorijas": [
+    "Lentas"
+   ],
+   "atslegvardi": [
+    {
+     "kw": "tautiskās jostas",
+     "ja": [
+      "\\bjost"
+     ]
+    },
+    {
+     "kw": "tautiskā josta",
+     "ja": [
+      "\\bjost"
+     ]
+    },
+    {
+     "kw": "latvju rakstu josta",
+     "ja": [
+      "\\bjost"
+     ]
+    }
+   ],
+   "nav_nosaukums": [
+    "karoga lent"
+   ]
+  },
+  "Adīšanas piederumi": {
+   "visparigs": true,
+   "kolekcijas": [
+    "adisanas-piederumi"
+   ],
+   "nosaukums": [
+    "tinēj|adīšanas (marķ|piederum)"
+   ],
+   "atslegvardi": [
+    {
+     "kw": "adīšanas piederumi",
+     "ja": [
+      "adīš|adāmadat|tamboradat|tambor|valdziņ|marķier|rindu skaitītāj|tinēj|pompon|bumbul|dzij|loom|tapoš|adījum|lāpīš|formētāj|adatu mērītāj|adatu uzgaļ|adatu aizsarg"
+     ],
+     "nav": [
+      "šķēr|izšūšan|kanv|pūku"
+     ]
+    },
+    {
+     "kw": "dzijas tinējs",
+     "ja": [
+      "tinēj"
+     ]
+    },
+    {
+     "kw": "adīšanas piederumu komplekts",
+     "ja": [
+      "komplekt"
+     ]
+    }
    ]
   }
  },
@@ -6615,6 +6851,20 @@
    "svarigums": "A",
    "meklejumi": 140,
    "excel_rinda": 2385,
+   "excel_grupa": "Dzija"
+  },
+  "adīšanas piederumi": {
+   "tips": "Produkts 1:1",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2610,
+   "excel_grupa": "Dzija"
+  },
+  "adīšanas piederumu komplekts": {
+   "tips": "Produkts 1:1",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 2611,
    "excel_grupa": "Dzija"
   },
   "aitu vilna filcēšanai": {
@@ -8141,6 +8391,13 @@
    "svarigums": "A",
    "meklejumi": 1600,
    "excel_rinda": 2366,
+   "excel_grupa": "Dzija"
+  },
+  "dzijas tinējs": {
+   "tips": "Produkts + īpašība",
+   "svarigums": "B",
+   "meklejumi": 20,
+   "excel_rinda": 2516,
    "excel_grupa": "Dzija"
   },
   "dārza mēbeļu audums": {

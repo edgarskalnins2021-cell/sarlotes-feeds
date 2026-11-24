@@ -16,7 +16,7 @@ concurrency:
 jobs:
   dry-run:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -63,6 +63,49 @@ jobs:
           out.push(`Paraugs: ${sample.length}, kļūdas: ${bad}`);
           writeFileSync('custom-check/paraugs-30.txt', out.join('\n') + '\n');
           console.log(out.join('\n'));
+          JS
+      - name: Visu attēlu formāts (GET ar Accept webp, tikai galvenes)
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { parseCsv } from './feed-core.mjs';
+          const rows = parseCsv(readFileSync('custom-check/google-ads-custom-lv.csv', 'utf8')).slice(1);
+          const out = [];
+          const count = {};
+          let next = 0;
+          async function worker() {
+            while (next < rows.length) {
+              const r = rows[next++];
+              const ext = (new URL(r[6]).pathname.match(/\.(\w+)$/) || [])[1]?.toLowerCase() || '?';
+              let type = 'kļūda';
+              let status = 0;
+              for (let a = 0; a < 3 && !status; a++) {
+                try {
+                  const res = await fetch(r[6], { headers: { Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8' }, signal: AbortSignal.timeout(20000) });
+                  status = res.status;
+                  type = (res.headers.get('content-type') || '?').split(';')[0];
+                  await res.body?.cancel();
+                } catch (e) { type = `kļūda ${e.name}`; }
+              }
+              const k = `${ext} -> ${status} ${type}`;
+              count[k] = (count[k] || 0) + 1;
+              if (status !== 200 || !/^image\/(jpeg|png|gif)$/.test(type)) out.push([r[0], ext, status, type, r[6]].join(','));
+            }
+          }
+          await Promise.all(Array.from({ length: 12 }, worker));
+          writeFileSync('custom-check/attelu-formati.csv', ['ID,paplašinājums,HTTP,content-type,attēls', ...out].join('\n') + '\n');
+          writeFileSync('custom-check/attelu-formati.json', JSON.stringify(count, null, 2));
+          console.log(JSON.stringify(count, null, 2));
+          JS
+      - name: Veikala dati lokālai pārbaudei (tikai šajā pagaidu darbplūsmā)
+        run: |
+          node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          import { gzipSync } from 'node:zlib';
+          import { fromStorefront } from './generate.mjs';
+          const products = await fromStorefront();
+          writeFileSync('custom-check/products.json.gz', gzipSync(JSON.stringify(products)));
+          console.log(`produkti ${products.length}`);
           JS
       - name: Rezultāts žurnālā (tar.gz, base64)
         run: tar czf - custom-check | base64 -w 60000 | sed 's/^/DRYRUN64 /'

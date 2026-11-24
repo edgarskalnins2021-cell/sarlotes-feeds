@@ -337,8 +337,9 @@ export const CONFIG = {
     // Shopify CDN atdod attēlu šajā platumā (Google: līdz 6 miljoniem pikseļu; daži oriģināli ir 2500×2500 un vairāk).
     imageWidth: 1200,
     imageExt: /\.(jpe?g|png|gif)$/i, // Google: tikai JPG, PNG, GIF (WebP nav atbalstīts)
-    // Shopify CDN PNG un WebP oriģinālus pārlūkiem, kas pieņem WebP, atdod kā WebP; ar format=pjpg – vienmēr JPEG
-    // (pārbaudīts 24.11.2026 ar Accept "*/*" un "image/webp"). JPG oriģināli paliek JPEG arī bez šī parametra.
+    // Shopify CDN pēc Accept galvenes JPG, PNG un WebP oriģinālus klientiem, kas pieņem WebP, atdod kā WebP (Google to
+    // Custom plūsmai neatbalsta); ar format=pjpg – JPEG visiem (pārbaudīts 24.11.2026). Izņēmums: PNG ar caurspīdīgu fonu
+    // un HEIC Shopify uz JPEG nepārveido (atdod PNG vai WebP), tāpēc HEIC (iPhone foto) netiek likts – jāaugšupielādē JPG.
     shopifyImageExt: /\.(jpe?g|png|gif|webp)$/i,
     shopifyForceJpeg: 'pjpg',
     // Papildus buildItems filtriem (requiresShipping, dāvanu kartes): ne-fiziskas preces pēc tipa – drošībai.
@@ -1520,7 +1521,7 @@ function fitText(s, max, dangling) {
 }
 
 // Attēla adrese: tikai https un JPG/PNG/GIF; Shopify CDN – ar platumu imageWidth (Google: līdz 6 milj. pikseļu).
-// Shopify CDN PNG/WebP – ar format=pjpg (vienmēr JPEG, skat. CONFIG.googleAdsCustom.shopifyForceJpeg).
+// Shopify CDN – vienmēr ar format=pjpg (JPEG arī klientiem, kas pieņem WebP; skat. CONFIG.googleAdsCustom.shopifyForceJpeg).
 function adsImage(url, c) {
   let u;
   try { u = new URL(String(url ?? '').trim()); } catch { return ''; }
@@ -1529,7 +1530,7 @@ function adsImage(url, c) {
   if (!shopify) return c.imageExt.test(u.pathname) ? u.toString() : '';
   if (!c.shopifyImageExt.test(u.pathname)) return '';
   if (c.imageWidth) u.searchParams.set('width', String(c.imageWidth));
-  if (!/\.jpe?g$/i.test(u.pathname) && c.shopifyForceJpeg) u.searchParams.set('format', c.shopifyForceJpeg);
+  if (c.shopifyForceJpeg) u.searchParams.set('format', c.shopifyForceJpeg);
   return u.toString();
 }
 

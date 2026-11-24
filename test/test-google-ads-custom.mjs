@@ -59,9 +59,11 @@ const digitala = p({ title: 'Piegrieztne (digitāla)', handle: 'digi', productTy
 const materiali = p({ title: 'Darba lapa', handle: 'lapa', productType: 'Digitālie materiāli' });
 const davana = p({ title: 'Dāvanu karte', handle: 'davana', productType: 'Dāvanu kartes', isGiftCard: true });
 const svesaWebp = p({ title: 'Prece ar svešu attēlu', handle: 'svesa', image: 'https://example.com/a.webp' });
+const heic = p({ title: 'Šujmašīnu adatas DPx35', handle: 'heic', image: `${CDN}/FullSizeRender.heic?v=1` });
+const svesaJpg = p({ title: 'Prece ar JPG citur', handle: 'svesa-jpg', image: 'https://example.com/b.jpg?x=1' });
 
 const products = [drops, lins, spradze, zombiji, perlites, circus, perlitesMix, lente, filcs, uzgalis, adatas, sprādzeLacis, satins, komats,
-  krekls, maisins, lielie, defekts, bezAttela, metrsBezAtlikuma, digitala, materiali, davana, svesaWebp];
+  krekls, maisins, lielie, defekts, bezAttela, metrsBezAtlikuma, digitala, materiali, davana, svesaWebp, heic, svesaJpg];
 const { items } = buildItems(products, CONFIG);
 const { csv, stats, report } = toGoogleAdsCustomCsv(items, CONFIG);
 const rows = parseCsv(csv);
@@ -82,9 +84,9 @@ assert.ok(rows.every((r) => r.length === 12));
 
 // --- Dokumenta paraugi: tieši tādas pašas rindas ---
 assert.equal(csv.split('\n').find((l) => l.startsWith('54765329219918,')),
-  `54765329219918,DROPS Air,13 · rust mix,50 g / 150 m,Dzija,https://sarlotesaudumi.lv/products/dzijas-drops-air?variant=54765329219918,${CDN}/Dzijas_DROPS_Air_-_50g_150m-8536.jpg?v=1757077024&width=1200,5.30 EUR,,,,`);
+  `54765329219918,DROPS Air,13 · rust mix,50 g / 150 m,Dzija,https://sarlotesaudumi.lv/products/dzijas-drops-air?variant=54765329219918,${CDN}/Dzijas_DROPS_Air_-_50g_150m-8536.jpg?v=1757077024&width=1200&format=pjpg,5.30 EUR,,,,`);
 assert.equal(csv.split('\n').find((l) => l.startsWith('49716926873934,')),
-  `49716926873934,100 % mīkstināts lins,,Silts rožu tonis 205 g/m²,Audumi,https://sarlotesaudumi.lv/products/lins-silts-rozu-tonis,${CDN}/100-mikstinats-lins-silts-rozu-tonis-205-gm2-977084.jpg?v=1731272855&width=1200,18.90 EUR,,"18,90 € / m",,`);
+  `49716926873934,100 % mīkstināts lins,,Silts rožu tonis 205 g/m²,Audumi,https://sarlotesaudumi.lv/products/lins-silts-rozu-tonis,${CDN}/100-mikstinats-lins-silts-rozu-tonis-205-gm2-977084.jpg?v=1731272855&width=1200&format=pjpg,18.90 EUR,,"18,90 € / m",,`);
 assert.equal(row(vid(drops, 1)), undefined, 'variants bez atlikuma netiek iekļauts');
 
 // --- Cenas ---
@@ -133,14 +135,17 @@ assert.deepEqual([l1['Item title'], l1['Item subtitle'], l1['Item description']]
 assert.equal(l2['Item subtitle'], 'SCHMETZ', 'zīmols paliek ar lielajiem burtiem');
 
 // --- Izslēgtās preces ---
-for (const prod of [defekts, bezAttela, metrsBezAtlikuma, digitala, materiali, davana, svesaWebp]) {
+for (const prod of [defekts, bezAttela, metrsBezAtlikuma, digitala, materiali, davana, svesaWebp, heic]) {
   assert.equal(row(vid(prod)), undefined, `${prod.title} nedrīkst būt failā`);
 }
 assert.equal(stats.skipped['ar defektu / demo / lietota'], 1);
 assert.equal(stats.skipped['nav attēla'], 1);
 assert.equal(stats.skipped['metrā tirgota, atlikums nav zināms'], 1);
 assert.equal(stats.skipped['tips Digitālie materiāli'], 1);
-assert.equal(stats.skipped['attēls nav JPG/PNG/GIF/WebP'], 1);
+assert.equal(stats.skipped['attēls nav JPG/PNG/GIF/WebP'], 2, 'WebP ne no Shopify un HEIC');
+assert.equal(row(vid(svesaJpg))['Image URL'], 'https://example.com/b.jpg?x=1', 'ne Shopify attēls – bez izmaiņām');
+assert.ok(rows.filter((r) => r[6].startsWith('https://cdn.shopify.com/')).every((r) => /[?&]width=1200&format=pjpg$/.test(r[6])),
+  'visiem Shopify attēliem width=1200 un format=pjpg');
 // Visi buildItems ieraksti = rindas + izlaistās
 assert.equal(items.length, stats.items + Object.values(stats.skipped).reduce((a, b) => a + b, 0));
 assert.equal(new Set(rows.map((r) => r[0])).size, rows.length, 'ID unikāli');

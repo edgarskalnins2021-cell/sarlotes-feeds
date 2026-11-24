@@ -376,7 +376,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(universālais )?rīks"
      ]
     },
     {
@@ -386,7 +386,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese",
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)",
       "kokos",
       "spiedpog"
      ]
@@ -398,7 +398,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -408,7 +408,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -418,7 +418,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -428,7 +428,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -437,7 +437,7 @@
       "spiedpog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -446,7 +446,7 @@
       "spiedpog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -455,7 +455,7 @@
       "spiedpog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -465,7 +465,7 @@
       "metāl"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -475,7 +475,7 @@
       "plastmas"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -485,7 +485,7 @@
       "piešuj"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -495,7 +495,7 @@
       "prym"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -526,7 +526,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     },
     {
@@ -536,7 +536,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
      ]
     }
    ],
@@ -597,7 +597,7 @@
       "viskoz"
      ],
      "nav": [
-      "lina (toņ|krās)"
+      "lina (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -1212,62 +1212,62 @@
     {
      "kw": "pērlītes",
      "ja": [
-      "pērlīt"
+      "pērlī(t|š)"
      ],
      "nav": [
-      "^[^|]*kulon"
+      "^[^|]*(kulon|adat)"
      ]
     },
     {
      "kw": "pērlītes rokdarbiem",
      "ja": [
-      "pērlīt"
+      "pērlī(t|š)"
      ],
      "nav": [
-      "^[^|]*kulon"
+      "^[^|]*(kulon|adat)"
      ]
     },
     {
      "kw": "pērļošanas materiāli",
      "ja": [
-      "pērlīt"
+      "pērlī(t|š)"
      ],
      "nav": [
-      "^[^|]*kulon"
+      "^[^|]*(kulon|adat)"
      ]
     },
     {
      "kw": "stikla pērlītes",
      "ja": [
-      "pērlīt",
+      "pērlī(t|š)",
       "stikl"
      ]
     },
     {
      "kw": "čehu pērlītes",
      "ja": [
-      "pērlīt",
+      "pērlī(t|š)",
       "čeh"
      ]
     },
     {
      "kw": "pērlītes ar burtiem",
      "ja": [
-      "pērlīt",
+      "pērlī(t|š)",
       "burt"
      ]
     },
     {
      "kw": "pērlītes bērniem",
      "ja": [
-      "pērlīt",
+      "pērlī(t|š)",
       "bērn"
      ]
     },
     {
      "kw": "pērlītes rokassprādzēm",
      "ja": [
-      "pērlīt",
+      "pērlī(t|š)",
       "rokassprādz"
      ]
     },
@@ -1444,7 +1444,7 @@
      ],
      "nav": [
       "tumsā spīdoš",
-      "lina (toņ|krās)"
+      "lina (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -1894,6 +1894,24 @@
      "ja": [
       "nako angora luks simli"
      ]
+    },
+    {
+     "kw": "alize baby softy",
+     "ja": [
+      "alize baby softy"
+     ]
+    },
+    {
+     "kw": "t kreklu dzija",
+     "ja": [
+      "\\bt[- ]?krekl\\p{L}* (spageti )?dzij|spageti dzij"
+     ]
+    },
+    {
+     "kw": "trikotāžas dzija",
+     "ja": [
+      "\\bt[- ]?krekl\\p{L}* (spageti )?dzij|spageti dzij"
+     ]
     }
    ],
    "tikai_kategorijas": [
@@ -1939,7 +1957,7 @@
       "\\blin(a|u|s)\\b"
      ],
      "nav": [
-      "lina (toņ|krās)"
+      "lina (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -2394,7 +2412,7 @@
    ],
    "nav_nosaukums": [
     "dzij|diegi|diegs|\\blent|mežģīn|aukl|lina toņ",
-    "lina (toņ|krās)"
+    "lina (toņ|krās|imitācij|izskat|efekt)"
    ],
    "atslegvardi": [
     "lins",
@@ -2625,7 +2643,7 @@
       "\\blin(a|u)\\b"
      ],
      "nav": [
-      "lina (toņ|krās)"
+      "lina (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -2634,7 +2652,7 @@
       "\\blin(a|u)\\b"
      ],
      "nav": [
-      "lina (toņ|krās)"
+      "lina (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -3120,7 +3138,7 @@
       "\\blin(s|a|u)\\b"
      ],
      "nav": [
-      "lina (toņ|krās)"
+      "lina (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -4197,19 +4215,19 @@
     "metelu-audumi"
    ],
    "nosaukums": [
-    "kostīm|mēteļ|buklē|bouclé"
+    "(?<!\\p{L})kostīm|mēteļ|buklē|bouclé"
    ],
    "atslegvardi": [
     {
      "kw": "kostīmaudums",
      "ja": [
-      "kostīm"
+      "(?<!\\p{L})kostīm"
      ]
     },
     {
      "kw": "kostīmu audums",
      "ja": [
-      "kostīm"
+      "(?<!\\p{L})kostīm"
      ]
     },
     {
@@ -5044,7 +5062,7 @@
     }
    ],
    "nav_nosaukums": [
-    "^preses|knaibles\\b"
+    "^preses|knaibles\\b|pres(es|formas) uzga(l|ļ)|^instruments"
    ]
   },
   "Somu furnitūra": {
@@ -5056,6 +5074,9 @@
    "atslegvardi": [
     "somu furnitūra",
     "furnitūra somām"
+   ],
+   "kategorijas": [
+    "Somu furnitūra"
    ]
   },
   "Līmaudums un flizelīns": {
@@ -5142,6 +5163,9 @@
       "ūdenī šķīst"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "plēve|crinkle"
    ]
   },
   "Minky flīss": {
@@ -5924,7 +5948,7 @@
       "\\blin(a|s)\\b"
      ],
      "nav": [
-      "lina (toņ|krās)"
+      "lina (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -6350,7 +6374,7 @@
       "\\blin(a|s)\\b"
      ],
      "nav": [
-      "lina (toņ|krās)"
+      "lina (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     {
@@ -6359,7 +6383,7 @@
       "\\blin(a|s)\\b"
      ],
      "nav": [
-      "lina (toņ|krās)"
+      "lina (toņ|krās|imitācij|izskat|efekt)"
      ]
     },
     "vafeļauduma sedziņa",
@@ -6679,6 +6703,9 @@
       "pēdiņ"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "ievēr"
    ]
   },
   "Lineāli un mērinstrumenti": {
@@ -7301,6 +7328,13 @@
    "svarigums": "B",
    "meklejumi": null,
    "excel_rinda": 2623,
+   "excel_grupa": "Dzija"
+  },
+  "alize baby softy": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2625,
    "excel_grupa": "Dzija"
   },
   "alize diva": {
@@ -12595,6 +12629,13 @@
    "excel_rinda": 4,
    "excel_grupa": "Apģērbs un maisiņi ar apdruku"
   },
+  "t kreklu dzija": {
+   "tips": "Lietojums (kam der)",
+   "svarigums": "A",
+   "meklejumi": 40,
+   "excel_rinda": 2483,
+   "excel_grupa": "Dzija"
+  },
   "tafta odere": {
    "tips": "Produkts + īpašība",
    "svarigums": "C",
@@ -12902,6 +12943,13 @@
    "meklejumi": 90,
    "excel_rinda": 1762,
    "excel_grupa": "Trikotāža (Jersey)"
+  },
+  "trikotāžas dzija": {
+   "tips": "Produkts 1:1",
+   "svarigums": "B",
+   "meklejumi": 40,
+   "excel_rinda": 2488,
+   "excel_grupa": "Dzija"
   },
   "trikotāžas kleitas": {
    "tips": "Materiāls → izstrādājums",

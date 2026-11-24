@@ -376,7 +376,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(universālais )?rīks"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(universālais )?rīks|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -386,7 +386,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)",
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b",
       "kokos",
       "spiedpog"
      ]
@@ -398,7 +398,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -408,7 +408,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -418,7 +418,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -428,7 +428,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -437,7 +437,7 @@
       "spiedpog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -446,7 +446,7 @@
       "spiedpog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -455,7 +455,7 @@
       "spiedpog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -465,7 +465,7 @@
       "metāl"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -475,7 +475,7 @@
       "plastmas"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -485,7 +485,7 @@
       "piešuj"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -495,7 +495,7 @@
       "prym"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -526,7 +526,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     },
     {
@@ -536,7 +536,7 @@
       "pog"
      ],
      "nav": [
-      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese|pres(es|formas) uzga(l|ļ)|^(rokas )?(spiedpogu )?prese\\b"
      ]
     }
    ],
@@ -1212,7 +1212,7 @@
     {
      "kw": "pērlītes",
      "ja": [
-      "pērlī(t|š)"
+      "pērlīt|pērlīšu (komplekt|mi[kx]s)"
      ],
      "nav": [
       "^[^|]*(kulon|adat)"
@@ -1221,7 +1221,7 @@
     {
      "kw": "pērlītes rokdarbiem",
      "ja": [
-      "pērlī(t|š)"
+      "pērlīt|pērlīšu (komplekt|mi[kx]s)"
      ],
      "nav": [
       "^[^|]*(kulon|adat)"
@@ -1230,7 +1230,7 @@
     {
      "kw": "pērļošanas materiāli",
      "ja": [
-      "pērlī(t|š)"
+      "pērlīt|pērlīšu (komplekt|mi[kx]s)"
      ],
      "nav": [
       "^[^|]*(kulon|adat)"
@@ -1239,35 +1239,35 @@
     {
      "kw": "stikla pērlītes",
      "ja": [
-      "pērlī(t|š)",
+      "pērlīt|pērlīšu (komplekt|mi[kx]s)",
       "stikl"
      ]
     },
     {
      "kw": "čehu pērlītes",
      "ja": [
-      "pērlī(t|š)",
+      "pērlīt|pērlīšu (komplekt|mi[kx]s)",
       "čeh"
      ]
     },
     {
      "kw": "pērlītes ar burtiem",
      "ja": [
-      "pērlī(t|š)",
+      "pērlīt|pērlīšu (komplekt|mi[kx]s)",
       "burt"
      ]
     },
     {
      "kw": "pērlītes bērniem",
      "ja": [
-      "pērlī(t|š)",
+      "pērlīt|pērlīšu (komplekt|mi[kx]s)",
       "bērn"
      ]
     },
     {
      "kw": "pērlītes rokassprādzēm",
      "ja": [
-      "pērlī(t|š)",
+      "pērlīt|pērlīšu (komplekt|mi[kx]s)",
       "rokassprādz"
      ]
     },
@@ -1277,7 +1277,8 @@
       "kristāl"
      ],
      "nav": [
-      "\\blīm(e|es|i)\\b"
+      "\\blīm(e|es|i)\\b",
+      "^[^|]*aplikator"
      ]
     }
    ],
@@ -3088,6 +3089,12 @@
      "nav": [
       "^[^|]*karoga lent"
      ]
+    },
+    {
+     "kw": "slīpā diega lenta",
+     "ja": [
+      "slīp\\p{L}* diega lent|slīpdieg"
+     ]
     }
    ]
   },
@@ -3381,7 +3388,7 @@
      "kw": "kanvas ar apdruku",
      "ja": [
       "kanv",
-      "apdruk|\\s-\\s"
+      "apdruk|ornament|patchwork"
      ]
     },
     {
@@ -4479,7 +4486,8 @@
     "\\baukl|šņor"
    ],
    "nav_nosaukums": [
-    "fiksator|nobeigum|gal(i|s)\\b|mašīn|maisiņ|mugursom|\\bsom(a|as|iņa)\\b"
+    "fiksator|nobeigum|gal(i|s)\\b|mašīn|maisiņ|mugursom|\\bsom(a|as|iņa)\\b",
+    "lent\\p{L}* (\\p{L}+ )?ar aukliņ"
    ],
    "atslegvardi": [
     {
@@ -4603,7 +4611,7 @@
       "rāvējslēdz"
      ],
      "nav": [
-      "kuģīt|slīdn|gal(i|a|s)\\b|fiksator|stoper|piekariņ|atstarot|knaibl"
+      "(?<!(?:^|\\s)ar (?:\\p{L}+ )?)kuģīt|slīdn|gal(i|a|s)\\b|fiksator|stoper|piekariņ|atstarot|knaibl"
      ]
     },
     {
@@ -4612,7 +4620,7 @@
       "rāvējslēdz"
      ],
      "nav": [
-      "kuģīt|slīdn|gal(i|a|s)\\b|fiksator|stoper|piekariņ|atstarot|knaibl"
+      "(?<!(?:^|\\s)ar (?:\\p{L}+ )?)kuģīt|slīdn|gal(i|a|s)\\b|fiksator|stoper|piekariņ|atstarot|knaibl"
      ]
     },
     {
@@ -4818,7 +4826,8 @@
     }
    ],
    "nav_nosaukums": [
-    "gliter"
+    "gliter",
+    "^sāls"
    ]
   },
   "Šūšanas žurnāli": {
@@ -4891,7 +4900,7 @@
       "sintepon"
      ],
      "nav": [
-      "^[^|]*(kokviln|vilnas|dabīg)"
+      "^[^|]*(kokviln|vilnas|dabīg|griķ|sēnal)"
      ]
     },
     {
@@ -4900,7 +4909,7 @@
       "sintepon|pildījum"
      ],
      "nav": [
-      "^[^|]*(kokviln|vilnas|dabīg)"
+      "^[^|]*(kokviln|vilnas|dabīg|griķ|sēnal)"
      ]
     },
     {
@@ -4923,7 +4932,7 @@
       "spilven|pildījum"
      ],
      "nav": [
-      "^[^|]*(kokviln|vilnas|dabīg)"
+      "^[^|]*(kokviln|vilnas|dabīg|griķ|sēnal)"
      ]
     },
     {
@@ -4933,7 +4942,7 @@
       "rotaļ|pildījum"
      ],
      "nav": [
-      "^[^|]*(kokviln|vilnas|dabīg)"
+      "^[^|]*(kokviln|vilnas|dabīg|griķ|sēnal)"
      ]
     },
     {
@@ -5062,7 +5071,7 @@
     }
    ],
    "nav_nosaukums": [
-    "^preses|knaibles\\b|pres(es|formas) uzga(l|ļ)|^instruments"
+    "^preses|knaibles\\b|pres(es|formas) uzga(l|ļ)|^instruments|^(rokas )?(spiedpogu )?prese\\b"
    ]
   },
   "Somu furnitūra": {
@@ -5465,7 +5474,8 @@
    "nav_nosaukums": [
     "uzgaļ|aizsarg",
     "pērļ|šūšan|šujam|quilting|izšūš",
-    "^kabe|savienotāj"
+    "^kabe|savienotāj",
+    "^(\\p{L}+ )?(kārb|kast|organizator)"
    ]
   },
   "Tamboradatas": {
@@ -5502,6 +5512,9 @@
       "tunis|tunēz"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "mērītāj"
    ]
   },
   "Ielāpi un aplikācijas": {
@@ -6810,6 +6823,9 @@
       "\\bboa\\b"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "motīv|apdruk"
    ]
   },
   "Rievotā trikotāža un auduma mala": {
@@ -6831,6 +6847,24 @@
      "kw": "auduma mala",
      "ja": [
       "apdares mala|manžet"
+     ]
+    },
+    {
+     "kw": "manžetes audumi",
+     "ja": [
+      "manžet"
+     ]
+    },
+    {
+     "kw": "trikotāžas manžetes",
+     "ja": [
+      "manžet"
+     ]
+    },
+    {
+     "kw": "manžetes audumu",
+     "ja": [
+      "manžet"
      ]
     }
    ]
@@ -6929,6 +6963,12 @@
      "kw": "tamborēšanas komplekts",
      "ja": [
       "tamborēšanas komplekt"
+     ]
+    },
+    {
+     "kw": "filca komplekts",
+     "ja": [
+      "filc\\p{L}* (rokdarbu )?komplekt"
      ]
     }
    ],
@@ -10501,6 +10541,20 @@
    "excel_rinda": 4128,
    "excel_grupa": "Šūšanas piederumi un instrumenti"
   },
+  "manžetes audumi": {
+   "tips": "Produkts 1:1",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 379,
+   "excel_grupa": "Audumi (visi)"
+  },
+  "manžetes audumu": {
+   "tips": "Produkts 1:1",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 380,
+   "excel_grupa": "Audumi (visi)"
+  },
   "marles audumi": {
    "tips": "Produkts 1:1",
    "svarigums": "C",
@@ -12956,6 +13010,13 @@
    "svarigums": "B",
    "meklejumi": 40,
    "excel_rinda": 1763,
+   "excel_grupa": "Trikotāža (Jersey)"
+  },
+  "trikotāžas manžetes": {
+   "tips": "Produkts + īpašība",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 1817,
    "excel_grupa": "Trikotāža (Jersey)"
   },
   "tunisijas tamboradata": {

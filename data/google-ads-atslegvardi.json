@@ -57,7 +57,7 @@
     {
      "kw": "melns audums",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -66,7 +66,7 @@
     {
      "kw": "balts audums",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -75,7 +75,7 @@
     {
      "kw": "pelēks audums",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?pelēk(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?pelēk(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?pelēk(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?pelēk(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -376,7 +376,7 @@
       "pog"
      ],
      "nav": [
-      "^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -386,6 +386,7 @@
       "pog"
      ],
      "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese",
       "kokos",
       "spiedpog"
      ]
@@ -395,6 +396,9 @@
      "ja": [
       "kājiņ",
       "pog"
+     ],
+     "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -402,6 +406,9 @@
      "ja": [
       "kājiņ",
       "pog"
+     ],
+     "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -409,6 +416,9 @@
      "ja": [
       "bērn",
       "pog"
+     ],
+     "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -416,6 +426,9 @@
      "ja": [
       "mārīt",
       "pog"
+     ],
+     "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -424,7 +437,7 @@
       "spiedpog"
      ],
      "nav": [
-      "^(spiedpogu )?knaibl"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -433,7 +446,7 @@
       "spiedpog"
      ],
      "nav": [
-      "^(spiedpogu )?knaibl"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -442,7 +455,7 @@
       "spiedpog"
      ],
      "nav": [
-      "^(spiedpogu )?knaibl"
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -450,6 +463,9 @@
      "ja": [
       "spiedpog",
       "metāl"
+     ],
+     "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -457,6 +473,9 @@
      "ja": [
       "spiedpog",
       "plastmas"
+     ],
+     "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -464,6 +483,9 @@
      "ja": [
       "spiedpog",
       "piešuj"
+     ],
+     "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -471,6 +493,9 @@
      "ja": [
       "spiedpog",
       "prym"
+     ],
+     "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -499,6 +524,9 @@
      "ja": [
       "uz kājiņ",
       "pog"
+     ],
+     "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -506,6 +534,9 @@
      "ja": [
       "uz kājiņ",
       "pog"
+     ],
+     "nav": [
+      "^preses|knaibles\\b|^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     }
    ],
@@ -1139,6 +1170,9 @@
      "kw": "gumijas līme",
      "ja": [
       "gumij"
+     ],
+     "nav": [
+      "neslīd|pretslīd"
      ]
     },
     {
@@ -1508,6 +1542,9 @@
      "kw": "yarnart dzija",
      "ja": [
       "yarn ?art"
+     ],
+     "nav": [
+      "^(?![^|]*yarn ?art)[^|]*(scheepjes|drops|alize|vlna hep|dmc|himalaya|schachenmayr|kartopu)"
      ]
     },
     {
@@ -1785,6 +1822,78 @@
      "ja": [
       "nako angora luks"
      ]
+    },
+    {
+     "kw": "scheepjes yarn",
+     "ja": [
+      "scheepjes"
+     ]
+    },
+    {
+     "kw": "pāces vilnas fabrika",
+     "ja": [
+      "pāces vilnas"
+     ]
+    },
+    {
+     "kw": "pāces vilnas dzija",
+     "ja": [
+      "pāces vilnas"
+     ]
+    },
+    {
+     "kw": "alize superlana klasik",
+     "ja": [
+      "alize superlana (klasik|classic)"
+     ]
+    },
+    {
+     "kw": "midara sequin",
+     "ja": [
+      "midara sequin"
+     ]
+    },
+    {
+     "kw": "midara linas",
+     "ja": [
+      "midara linas"
+     ]
+    },
+    {
+     "kw": "yarnart flowers unicolor",
+     "ja": [
+      "yarn ?art flowers unicolor"
+     ]
+    },
+    {
+     "kw": "yarnart cotton gold paillettes",
+     "ja": [
+      "yarn ?art cotton gold paillettes"
+     ]
+    },
+    {
+     "kw": "yarnart paillettes",
+     "ja": [
+      "yarn ?art (cotton gold )?paillettes"
+     ]
+    },
+    {
+     "kw": "yarnart baby",
+     "ja": [
+      "yarn ?art baby"
+     ]
+    },
+    {
+     "kw": "jeans bamboo yarnart",
+     "ja": [
+      "yarn ?art jeans bamboo"
+     ]
+    },
+    {
+     "kw": "nako angora luks simli",
+     "ja": [
+      "nako angora luks simli"
+     ]
     }
    ],
    "tikai_kategorijas": [
@@ -1819,6 +1928,9 @@
      "kw": "kokvilnas mežģīnes",
      "ja": [
       "kokviln"
+     ],
+     "nav": [
+      "^(?![^|]*kokviln).*poliestera mežģīnes"
      ]
     },
     {
@@ -1833,7 +1945,7 @@
     {
      "kw": "balta mežģīne",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -1842,7 +1954,7 @@
     {
      "kw": "melna mežģīne",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -1851,7 +1963,7 @@
     {
      "kw": "rozā mežģīne",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?rozā\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?rozā(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?rozā\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?rozā(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -1860,7 +1972,7 @@
     {
      "kw": "brūna mežģīne",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?brūn(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?brūn(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?brūn(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?brūn(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -1869,7 +1981,7 @@
     {
      "kw": "zaļa mežģīne",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?zaļ(š|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?zaļ(š|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -1917,7 +2029,7 @@
     {
      "kw": "balts mežģīņu audums",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -1926,7 +2038,7 @@
     {
      "kw": "melns mežģīņu audums",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -2140,7 +2252,7 @@
     {
      "kw": "balts t krekls",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)",
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)",
       "\\bt[ -]?krekl"
      ],
      "nav": [
@@ -2195,6 +2307,9 @@
       "columbia"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "^(keramikas )?krūze"
    ]
   },
   "Dabīgā āda": {
@@ -2933,7 +3048,7 @@
     {
      "kw": "balta lenta",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)",
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)",
       "\\blent"
      ],
      "nav": [
@@ -3057,7 +3172,7 @@
     {
      "kw": "balta mākslīgā kažokāda",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -3181,6 +3296,27 @@
      "ja": [
       "academy|iesācēj|sew ?(&|and) ?go"
      ]
+    },
+    {
+     "kw": "overloks bernette b44",
+     "ja": [
+      "bernette",
+      "b ?44"
+     ]
+    },
+    {
+     "kw": "overloks bernina",
+     "ja": [
+      "bernina",
+      "overlok"
+     ]
+    },
+    {
+     "kw": "bernina l 450",
+     "ja": [
+      "bernina",
+      "l ?450"
+     ]
     }
    ]
   },
@@ -3284,7 +3420,7 @@
     {
      "kw": "balts džinsa audums",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -3384,7 +3520,7 @@
     {
      "kw": "balts tilla audums",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?balt(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -3428,7 +3564,7 @@
     {
      "kw": "melns samta audums",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -3437,7 +3573,7 @@
     {
      "kw": "sarkans samta audums",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?sarkan(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?sarkan(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?sarkan(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?sarkan(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -3446,7 +3582,7 @@
     {
      "kw": "zaļš samta audums",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?zaļ(š|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?zaļ(š|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?zaļ(š|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -3755,7 +3891,14 @@
       "rūpniec|industri"
      ]
     },
-    "šūšanas mašīnu adatas"
+    "šūšanas mašīnu adatas",
+    {
+     "kw": "schmetz hlx5",
+     "ja": [
+      "schmetz",
+      "hlx ?5"
+     ]
+    }
    ]
   },
   "Velvets": {
@@ -4631,7 +4774,7 @@
     {
      "kw": "auduma krāsa melna",
      "ja": [
-      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši)\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
+      "^((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?meln(s|a)\\s|(\\s?-\\s|,\\s|\\sun\\s|\\d\\s?(cm|mm)\\s)((tumši|gaiši|dziļi|silti|maigi|koši|matēti|ļoti tumši|smalk(?:a|s))\\s)?meln(s|a)(?=$|\\s*[,(|]|\\s\\d|\\s-\\s|\\s(ar|un|vai)\\s)"
      ],
      "nav": [
       "(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā),\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)\\s(un|ar)\\s(?:(?:meln|balt|pelēk|zil|sarkan|brūn|zaļ|dzelten|oranž|violet|bēš)\\p{L}*|rozā)"
@@ -4901,7 +5044,7 @@
     }
    ],
    "nav_nosaukums": [
-    "^preses|^(luversu |kniežu |spiedpogu )?knaibl"
+    "^preses|knaibles\\b"
    ]
   },
   "Somu furnitūra": {
@@ -5297,7 +5440,8 @@
    ],
    "nav_nosaukums": [
     "uzgaļ|aizsarg",
-    "pērļ|šūšan|šujam|quilting|izšūš"
+    "pērļ|šūšan|šujam|quilting|izšūš",
+    "^kabe|savienotāj"
    ]
   },
   "Tamboradatas": {
@@ -5447,7 +5591,7 @@
       "adat"
      ],
      "nav": [
-      "adatu spilventiņ|kniepadatu|ievērēj|ievērt"
+      "adatu spilventiņ|kniepadatu|ievērēj|ievērt|^(palīg|pincete|diegu ievēr)"
      ]
     },
     {
@@ -5456,7 +5600,7 @@
       "adat"
      ],
      "nav": [
-      "adatu spilventiņ|kniepadatu|ievērēj|ievērt"
+      "adatu spilventiņ|kniepadatu|ievērēj|ievērt|^(palīg|pincete|diegu ievēr)"
      ]
     },
     {
@@ -5465,7 +5609,7 @@
       "adat"
      ],
      "nav": [
-      "adatu spilventiņ|kniepadatu|ievērēj|ievērt"
+      "adatu spilventiņ|kniepadatu|ievērēj|ievērt|^(palīg|pincete|diegu ievēr)"
      ]
     },
     {
@@ -5480,7 +5624,7 @@
       "adat"
      ],
      "nav": [
-      "pērlīš|izšūš|filcēš|ievērēj|ievērt"
+      "pērlīš|izšūš|filcēš|ievērēj|ievērt|^(palīg|pincete|diegu ievēr)"
      ]
     }
    ]
@@ -5717,6 +5861,20 @@
      "kw": "izšūšanas adata",
      "ja": [
       "punch needle|izšūšanas adat"
+     ]
+    },
+    {
+     "kw": "madeira avalon",
+     "ja": [
+      "madeira",
+      "avalon"
+     ]
+    },
+    {
+     "kw": "madeira stabilizer",
+     "ja": [
+      "madeira",
+      "stabilizator"
      ]
     }
    ],
@@ -6729,8 +6887,20 @@
      "kw": "radošie komplekti bērniem",
      "nav": [
       "^[^|]*krūz"
+     ],
+     "ja": [
+      "radošie komplekti bērniem"
+     ]
+    },
+    {
+     "kw": "tamborēšanas komplekts",
+     "ja": [
+      "tamborēšanas komplekt"
      ]
     }
+   ],
+   "nosaukums": [
+    "tamborēšanas komplekt"
    ]
   },
   "Paliktņi un griezēji": {
@@ -6784,7 +6954,7 @@
     "adisanas-piederumi"
    ],
    "nosaukums": [
-    "tinēj|adīšanas (marķ|piederum)"
+    "tinēj|adīšanas (marķ|piederum)|(kabe|savienotāj)\\p{L}* .*adāmadat"
    ],
    "atslegvardi": [
     {
@@ -7174,6 +7344,13 @@
    "svarigums": "B",
    "meklejumi": null,
    "excel_rinda": 2645,
+   "excel_grupa": "Dzija"
+  },
+  "alize superlana klasik": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2654,
    "excel_grupa": "Dzija"
   },
   "alize superlana midi": {
@@ -7958,6 +8135,13 @@
    "svarigums": "B",
    "meklejumi": null,
    "excel_rinda": 3801,
+   "excel_grupa": "Šujmašīnas un overloki"
+  },
+  "bernina l 450": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 3802,
    "excel_grupa": "Šujmašīnas un overloki"
   },
   "biezs audums": {
@@ -9346,6 +9530,13 @@
    "excel_rinda": 3386,
    "excel_grupa": "Izšūšana un tapošana"
   },
+  "jeans bamboo yarnart": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2771,
+   "excel_grupa": "Dzija"
+  },
   "kanva": {
    "tips": "Produkts 1:1",
    "svarigums": "A",
@@ -10228,6 +10419,20 @@
    "excel_rinda": 3048,
    "excel_grupa": "Auklas un šņores"
   },
+  "madeira avalon": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2310,
+   "excel_grupa": "Šūšanas diegi"
+  },
+  "madeira stabilizer": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2311,
+   "excel_grupa": "Šūšanas diegi"
+  },
   "maisiņu apdruka": {
    "tips": "Produkts 1:1",
    "svarigums": "B",
@@ -10422,6 +10627,20 @@
    "svarigums": "B",
    "meklejumi": null,
    "excel_rinda": 2834,
+   "excel_grupa": "Dzija"
+  },
+  "midara linas": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2835,
+   "excel_grupa": "Dzija"
+  },
+  "midara sequin": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2836,
    "excel_grupa": "Dzija"
   },
   "mikrošķiedras satīns": {
@@ -10781,6 +11000,13 @@
    "excel_rinda": 2849,
    "excel_grupa": "Dzija"
   },
+  "nako angora luks simli": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2850,
+   "excel_grupa": "Dzija"
+  },
   "nakts aizkari": {
    "tips": "Materiāls → izstrādājums",
    "svarigums": "A",
@@ -10968,6 +11194,20 @@
    "svarigums": "A",
    "meklejumi": 170,
    "excel_rinda": 3775,
+   "excel_grupa": "Šujmašīnas un overloki"
+  },
+  "overloks bernette b44": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "C",
+   "meklejumi": null,
+   "excel_rinda": 3818,
+   "excel_grupa": "Šujmašīnas un overloki"
+  },
+  "overloks bernina": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "C",
+   "meklejumi": 0,
+   "excel_rinda": 3819,
    "excel_grupa": "Šujmašīnas un overloki"
   },
   "oxford audums": {
@@ -11474,6 +11714,20 @@
    "excel_rinda": 2399,
    "excel_grupa": "Dzija"
   },
+  "pāces vilnas dzija": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": 20,
+   "excel_rinda": 2523,
+   "excel_grupa": "Dzija"
+  },
+  "pāces vilnas fabrika": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "A",
+   "meklejumi": 590,
+   "excel_rinda": 2369,
+   "excel_grupa": "Dzija"
+  },
   "pērlītes": {
    "tips": "Produkts 1:1",
    "svarigums": "A",
@@ -11894,11 +12148,25 @@
    "excel_rinda": 2879,
    "excel_grupa": "Dzija"
   },
+  "scheepjes yarn": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2880,
+   "excel_grupa": "Dzija"
+  },
   "schmetz adatas ādai": {
    "tips": "Zīmols (mums ir)",
    "svarigums": "C",
    "meklejumi": 0,
    "excel_rinda": 3869,
+   "excel_grupa": "Šujmašīnu adatas"
+  },
+  "schmetz hlx5": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 3870,
    "excel_grupa": "Šujmašīnu adatas"
   },
   "sherpa flīss": {
@@ -12355,6 +12623,13 @@
    "meklejumi": null,
    "excel_rinda": 2964,
    "excel_grupa": "Tamboradatas"
+  },
+  "tamborēšanas komplekts": {
+   "tips": "Produkts 1:1",
+   "svarigums": "C",
+   "meklejumi": null,
+   "excel_rinda": 2911,
+   "excel_grupa": "Dzija"
   },
   "tapošana": {
    "tips": "Produkts 1:1",
@@ -13112,11 +13387,25 @@
    "excel_rinda": 16,
    "excel_grupa": "Apģērbs un maisiņi ar apdruku"
   },
+  "yarnart baby": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2939,
+   "excel_grupa": "Dzija"
+  },
   "yarnart camellia": {
    "tips": "Zīmols (mums ir)",
    "svarigums": "B",
    "meklejumi": null,
    "excel_rinda": 2940,
+   "excel_grupa": "Dzija"
+  },
+  "yarnart cotton gold paillettes": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2941,
    "excel_grupa": "Dzija"
   },
   "yarnart dolce baby": {
@@ -13131,6 +13420,13 @@
    "svarigums": "A",
    "meklejumi": 40,
    "excel_rinda": 2492,
+   "excel_grupa": "Dzija"
+  },
+  "yarnart flowers unicolor": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2943,
    "excel_grupa": "Dzija"
   },
   "yarnart imperial merino": {
@@ -13152,6 +13448,13 @@
    "svarigums": "B",
    "meklejumi": null,
    "excel_rinda": 2946,
+   "excel_grupa": "Dzija"
+  },
+  "yarnart paillettes": {
+   "tips": "Zīmols (mums ir)",
+   "svarigums": "B",
+   "meklejumi": null,
+   "excel_rinda": 2947,
    "excel_grupa": "Dzija"
   },
   "zamša audumi": {

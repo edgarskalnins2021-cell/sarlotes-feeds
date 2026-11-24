@@ -376,7 +376,7 @@
       "pog"
      ],
      "nav": [
-      "^(spiedpogu )?knaibl"
+      "^(spiedpogu )?knaibl|^veidne|^(rokas )?prese"
      ]
     },
     {
@@ -491,7 +491,7 @@
     {
      "kw": "pogu apvilkšana ar audumu",
      "ja": [
-      "apvelk|pašapvilk|apvilkš"
+      "apvelk|pašapvilk|apvilkš|auduma pogu"
      ]
     },
     {
@@ -1179,18 +1179,27 @@
      "kw": "pērlītes",
      "ja": [
       "pērlīt"
+     ],
+     "nav": [
+      "^[^|]*kulon"
      ]
     },
     {
      "kw": "pērlītes rokdarbiem",
      "ja": [
       "pērlīt"
+     ],
+     "nav": [
+      "^[^|]*kulon"
      ]
     },
     {
      "kw": "pērļošanas materiāli",
      "ja": [
       "pērlīt"
+     ],
+     "nav": [
+      "^[^|]*kulon"
      ]
     },
     {
@@ -4256,7 +4265,7 @@
     {
      "kw": "auto griestu audums",
      "ja": [
-      "auto"
+      "griest|auto ?(salon|polster|sēdekļ)|automašīn"
      ]
     }
    ]
@@ -4309,7 +4318,7 @@
     "\\baukl|šņor"
    ],
    "nav_nosaukums": [
-    "fiksator|nobeigum|gal(i|s)\\b|mašīn"
+    "fiksator|nobeigum|gal(i|s)\\b|mašīn|maisiņ|mugursom|\\bsom(a|as|iņa)\\b"
    ],
    "atslegvardi": [
     {
@@ -4719,12 +4728,18 @@
      "kw": "sintepons",
      "ja": [
       "sintepon"
+     ],
+     "nav": [
+      "^[^|]*(kokviln|vilnas|dabīg)"
      ]
     },
     {
      "kw": "sintepons pildījumam",
      "ja": [
       "sintepon|pildījum"
+     ],
+     "nav": [
+      "^[^|]*(kokviln|vilnas|dabīg)"
      ]
     },
     {
@@ -4745,6 +4760,9 @@
      "ja": [
       "sintepon|pildījum",
       "spilven|pildījum"
+     ],
+     "nav": [
+      "^[^|]*(kokviln|vilnas|dabīg)"
      ]
     },
     {
@@ -4752,6 +4770,9 @@
      "ja": [
       "sintepon|pildījum",
       "rotaļ|pildījum"
+     ],
+     "nav": [
+      "^[^|]*(kokviln|vilnas|dabīg)"
      ]
     },
     {
@@ -4878,6 +4899,9 @@
       "spiedpog"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "^preses|^(luversu |kniežu |spiedpogu )?knaibl"
    ]
   },
   "Somu furnitūra": {
@@ -5270,6 +5294,10 @@
       "\\b12(,0+)? ?mm"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "uzgaļ|aizsarg",
+    "pērļ|šūšan|šujam|quilting|izšūš"
    ]
   },
   "Tamboradatas": {
@@ -6659,6 +6687,9 @@
       "plecu"
      ]
     }
+   ],
+   "nav_nosaukums": [
+    "stīp|underwire"
    ]
   },
   "Pretslīdes audums": {

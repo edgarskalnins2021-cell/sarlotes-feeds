@@ -222,7 +222,7 @@ kolonnu pēc pirmās ielādes pievienot nevar**, tāpēc tukšās kolonnas palie
 | `Item description` | garš dizaina nosaukums vai nosaukuma daļa pēc " - " (`50 g / 150 m`); ja nav – daļa pirms zīmola, atmestā nosaukuma daļa (`Bez šūšanas 12 mm` – "bez", "pret", "priekš" netiek atmesti) vai kategorija; līdz 25 zīmēm |
 | `Item category` | LV kategorijas pirmā daļa (`Dzija`, `Audumi`) |
 | `Final URL` | `https://sarlotesaudumi.lv/products/...`, variantiem ar `?variant=` |
-| `Image URL` | varianta / produkta attēls ar `width=1200` (Google: līdz 6 milj. pikseļu); Shopify PNG un WebP – ar `format=pjpg` (CDN tad vienmēr atdod JPEG; bez tā pārlūkiem, kas pieņem WebP, atdod WebP, ko Google neatbalsta) |
+| `Image URL` | varianta / produkta attēls; Shopify CDN – vienmēr ar `width=1200` (Google: līdz 6 milj. pikseļu) un `format=pjpg` (CDN JPG, PNG un WebP oriģinālus klientiem, kas pieņem WebP, citādi atdod kā WebP, ko Google neatbalsta). Izņēmumi (pārbaudīts 24.11.2026 visiem 15 661 attēlam): PNG/WebP ar caurspīdīgu fonu (~0,7 %) Shopify uz JPEG nepārveido – arī ar `format=png` atdod WebP, ja klients to pieņem (bez tā – PNG); tos labo, Shopify augšupielādējot JPG ar baltu fonu. HEIC (iPhone foto) netiek likts vispār |
 | `Price`, `Sale price` | `5.30 EUR`; metrā tirgotajām – **par 1 m** (kā preces lapā "18,90 €/m"); akcija (salīdzinājuma cena > cena): `Price` = salīdzinājuma cena, `Sale price` = cena |
 | `Formatted price`, `Formatted sale price` | tikai metrā tirgotajām: `18,90 € / m` (aizstāj `Price` reklāmā) |
 | `Contextual keywords` | tukšs – atslēgvārdi drīkst nākt tikai no Edgara atslēgvārdu tabulas (1:1) |

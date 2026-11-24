@@ -1586,6 +1586,9 @@ function fitText(s, max, dangling) {
     if (n > 1 && n < words.length && ADS_NUM.test(words[n - 1]) && /:$/.test(words[n - 2])) n--;
     // Skaitlis aiz prievārda ("poga ar 2" no "… ar 2 caurumiem") – nost abi.
     if (n > 2 && n < words.length && ADS_NUM.test(words[n - 1]) && dangling.has(words[n - 2].toLowerCase())) n -= 2;
+    // Skaitlis, kas atrauts no sava lietvārda ("Best Socks 4" no "… 4 kārtu zeķu dzija", "komplekts 2" no "2 krāsu"); ne "Nr. 30".
+    else if (n > 1 && n < words.length && /^\d+$/.test(words[n - 1]) && /^\p{Ll}/u.test(words[n]) && !ADS_UNIT.test(words[n])
+      && !/^(nr\.?|no\.?|#)$/i.test(words[n - 2])) n--;
     if (!n) n = n0; // teksts sākas ar izmēru – labāk tas nekā nekas
     text = tidy(words.slice(0, n).join(' '));
   }

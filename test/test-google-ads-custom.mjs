@@ -266,6 +266,7 @@ const T = {
   skeres: p({ title: 'Drēbnieka šķēres 10" ar mīkstiem rokturiem, melnas', productType: 'Furnitūra' }),
   komplekts: p({ title: 'Adīšanas komplekts: 5 adatas + 2 diegi + šķēres', productType: 'Furnitūra' }),
   o13: p({ title: 'Piešujamās spiedpogas Ø13 mm, sudraba krāsā', productType: 'Furnitūra' }),
+  zekes: p({ title: 'Dzijas Vlna Hep Best Socks 4 kārtu zeķu dzija - 100 g / 420 m', productType: 'Dzija' }),
   karogs: p({ title: 'Atstarotājs Latvija 🇱🇻', productType: 'Furnitūra', variants: [v({ title: 'Sarkana 🇱🇻', selectedOptions: [{ name: 'Krāsa', value: 'Sarkana 🇱🇻' }] }), v({ title: 'Balta' , selectedOptions: [{ name: 'Krāsa', value: 'Balta' }] })] }),
   keycap: p({ title: 'Uzšuve 1️⃣ numurs', productType: 'Furnitūra' }),
   tonis: p({ title: 'Krūzīte 👍🏻 forša!!!', productType: 'Furnitūra' }),
@@ -310,6 +311,7 @@ assert.equal(tr(T.skeres).title, 'Drēbnieka šķēres 10"', 'collas nav pēdiņ
 assert.equal(tr(T.skeres).description, 'Mīkstiem rokturiem');
 assert.equal(tr(T.komplekts).title, 'Adīšanas komplekts');
 assert.equal(tr(T.o13).title, 'Piešujamās spiedpogas');
+assert.equal(tr(T.zekes).title, 'Vlna Hep Best Socks', 'skaitlis bez sava lietvārda ("4 kārtu") – nost');
 assert.deepEqual(tr(T.karogs), { title: 'Atstarotājs Latvija', subtitle: 'Sarkana', description: 'Furnitūra' });
 assert.equal(tr(T.keycap).title, 'Uzšuve numurs');
 assert.equal(tr(T.tonis).title, 'Krūzīte forša!');

@@ -233,10 +233,14 @@ apzīmētājs, nosaka visa kataloga nosaukumi (`adsWordStats`): "kokvilnas" gand
 `Velūrs ar burzījuma`), prievārdu vai "ar jūsu", neatrauj skaitli no mērvienības vai virknes (`100 g / 120 m`,
 `2,0 mm - 5,0 mm`, `ar 2 caurumiem`) un nesadala "X un Y" pusēs. Ja nosaukums neietilpst, sākumā drīkst atmest līdz trim
 apzīmētājiem – krāsu (`Sarkana dublēta vilnas trikotāža` → `Dublēta vilnas trikotāža`; "gaiši zils" un "oranži un zili" –
-tikai kopā), īpašības vārdu vai "X un" (`Viskozes un kokvilnas audums` → `Kokvilnas audums`); zīmols sākumā paliek
-(`SCHMETZ šujmašīnu adatas`). Apraksta secība: dizaina sauklis (tikai vesels teikums), nosaukuma atlikums ("ar", "bez",
+tikai kopā), īpašības vārdu vai "X un" (`Brošu un sprādzīšu izgatavošanai` → `Sprādzīšu izgatavošanai`; sastāvu
+"viskozes un kokvilnas" – tikai abus kopā); zīmols sākumā paliek (`SCHMETZ šujmašīnu adatas`). "Mākslīgās", "sintētiskā",
+"caurumu" (pirms "veidošanas") netiek atmesti vieni – tikai kopā ar nākamo vārdu, un tad tie ir aprakstā
+(`Mākslīgās ādas slīpā diega lenta` → `Slīpā diega lenta` + `Mākslīgās ādas`). Vārds ar lielo burtu nosaukuma vidū ir
+nosaukums (`Punto di Roma`), ja vien katalogā tas nav rakstīts arī ar mazo burtu (`Organiskā Kokvilnas trikotāža`). Apraksta secība: dizaina sauklis (tikai vesels teikums), nosaukuma atlikums ("ar", "bez",
 "priekš" paliek; "kleitām un blūzēm" – kopā), daļa pēc " - ", atmestie sākuma vārdi (ne viens pats īpašības vārds),
-kategorija. Ja vēlamais teksts neietilpst bez pārgriešanas, ņem nākamo.
+kategorija, daļa aiz komata. Ja vēlamais teksts neietilpst bez pārgriešanas, ņem nākamo; ja nekas neder, apraksts paliek
+tukšs (Google to atļauj) – piemēram, ja viss nosaukums jau ietilpst (`Šuvju ārdītājs`).
 
 Lielie burti (Google noraida tekstu tikai ar lielajiem burtiem): ja viss Shopify teksts ir ar lielajiem burtiem, tas kļūst
 par teikumu (`BALTA` → `Balta`); ja tikai daļa (`Šķēres … - TEXI TITANIUM CRAFT`) – nosaukuma rakstībā (`Texi Titanium

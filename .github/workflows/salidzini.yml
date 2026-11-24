@@ -137,7 +137,7 @@ jobs:
               print(f'::{"notice" if ok else "error"} title={name}::{msg}')
               if not ok: raise SystemExit(1)
           # Google Ads "Pielāgoti" (Custom) CSV: UTF-8 bez BOM, 12 kolonnas, unikāli ciparu ID, teksti līdz 25 zīmēm,
-          # cena "5.30 EUR", saites uz veikala preču lapām, rindu skaits sakrīt ar stats.json
+          # cena "5.30 EUR", saites uz veikala preču lapām, Shopify attēli ar format=pjpg, rindu skaits sakrīt ar stats.json
           custom = 'google-ads-custom-lv.csv'
           if stats.get('googleAdsCustom', {}).get('items'):
               import csv, io
@@ -153,8 +153,10 @@ jobs:
                     and all(len(r) == 12 for r in data) and len(set(ids)) == len(ids) and all(re.fullmatch(r'\d+', x) for x in ids)
                     and all(0 < len(r[1]) <= 25 and len(r[2]) <= 25 and len(r[3]) <= 25 for r in data)
                     and all(re.fullmatch(r'\d+\.\d{2} EUR', r[7]) for r in data) and all(r[5].startswith(lv) for r in data)
-                    and all(r[6].startswith('https://') for r in data))
-              msg = f'HTTP {status}, {ctype}, {len(data)} rindas (stats.json: {want}), unikāli ID {len(set(ids))}' + page_check([r[5] for r in data])
+                    and all(r[6].startswith('https://') for r in data)
+                    # Shopify CDN attēli – piespiedu JPEG (bez tā PNG/JPG nāk kā WebP, ko Google neatbalsta)
+                    and all('format=pjpg' in r[6] for r in data if 'cdn.shopify.com' in r[6] or '/cdn/shop/' in r[6]))
+              msg = f'HTTP {status}, {ctype}, {len(data)} rindas (stats.json: {want}), unikāli ID {len(set(ids))}' + page_check([r[5] for r in data if len(r) > 5])
               print(f'::{"notice" if ok else "error"} title={custom}::{msg}')
               if not ok: raise SystemExit(1)
               expect[custom] = None

@@ -9,6 +9,7 @@ const v = (o) => ({ id: `gid://shopify/ProductVariant/${7000 + n++}`, title: 'De
 const p = (o) => ({ id: `gid://shopify/Product/${100 + n++}`, title: 'X', handle: `g${n++}`, productType: 'Audums', vendor: 'STOK', tags: [],
   isGiftCard: false, onlineStore: true, image: `${CDN}/x.jpg?v=1`, collections: [], description: '', variants: [v({})], ...o });
 const vid = (prod, i = 0) => prod.variants[i].id.split('/').pop();
+const opt = (name, values, o = {}) => values.map((x) => v({ title: x, selectedOptions: [{ name, value: x }], ...o }));
 
 // Dokumenta paraugs (Claude Doc "Latviskā Custom plūsma", sadaļa "Kolonnas"): DROPS Air 13 · rust mix un lins.
 const drops = p({ title: 'Dzijas DROPS Air - 50 g / 150 m', handle: 'dzijas-drops-air', productType: 'Dzija',
@@ -173,13 +174,163 @@ assert.ok(bad((s) => s.replace('15.90 EUR,7.90 EUR', '7.90 EUR,15.90 EUR')).erro
 assert.ok(bad((s) => s.replace('49716926873934,', '54765329219918,')).errors.some((e) => /atkārtojas/.test(e)));
 assert.ok(bad((s) => s.replace('54765329219918,', 'shopify_ZZ_1_54765329219918,')).errors.some((e) => /tikai cipari/.test(e)));
 assert.ok(bad((s) => s.replace('https://sarlotesaudumi.lv/products/lins', 'https://example.com/products/lins')).errors.some((e) => /Final URL/.test(e)));
-assert.ok(bad((s) => s.replace('Kokvilnas T-krekls “TĒTI”', 'KOKVILNAS T-KREKLS')).warnings.some((e) => /lielajiem burtiem/.test(e)));
+assert.equal(ok.warningCount, 0, `bez brīdinājumiem ("SCHMETZ" ir zīmols): ${ok.warnings.join('; ')}`);
+assert.ok(bad((s) => s.replace('Kokvilnas T-krekls “TĒTI”', 'KOKVILNAS T-KREKLS')).warnings
+  .some((e) => /Item title tikai ar lielajiem burtiem: KOKVILNAS T-KREKLS/.test(e)));
 assert.ok(bad((s) => s.replace('teti-XXS.webp?v=2&width=1200&format=pjpg', 'teti-XXS.webp?v=2&width=1200')).errors.some((e) => /Image URL/.test(e)));
 assert.ok(bad((s) => s.replace(/\n[^\n]*\n$/, '\n1,a,b\n')).errors.some((e) => /kolonnas/.test(e)));
+// Katrs pārbaudes noteikums (rindu un lauku līmenī)
+const lineOf = (id) => csv.split('\n').find((l) => l.startsWith(`${id},`));
+const withCell = (id, col, val) => (s) => {
+  const r = parseCsv(`${lineOf(id)}\n`)[0];
+  r[col] = val;
+  return s.replace(lineOf(id), r.map((x) => (/[",\n\r]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x)).join(','));
+};
+const D = '54765329219918';
+for (const [col, val, re] of [
+  [1, '', /tukšs Item title/],
+  [1, ' DROPS Air', /atstarpi/],
+  [1, 'DROPS\nAir', /rindas pārnesums/],
+  [1, 'DROPS <b>Air</b>', /HTML/],
+  [1, 'DROPS Air 🐻', /emocijzīme/],
+  [1, 'DROPS Air 🇱🇻', /emocijzīme/],
+  [2, 'Default Title', /Default Title/],
+  [3, 'Lente…', /daudzpunkte/],
+  [1, 'DROPS Air!!', /triku/],
+  [1, 'DROPS\u0007Air', /vadības/],
+  [2, 'x'.repeat(26), /Item subtitle garāks par 25/],
+  [3, 'x'.repeat(26), /Item description garāks par 25/],
+  [9, '123 456 789,00 € / m!', /Formatted price garāks par 20/],
+  [7, '0.00 EUR', /Price formāts/],
+  [8, '5.30 EUR', /Sale price/],
+  [8, '5,30 EUR', /Sale price/],
+  [10, '4,00 € / m', /Formatted sale price bez Sale price/],
+  [6, `${CDN}/Dzijas_DROPS_Air_-_50g_150m-8536.jpg?v=1757077024`, /Image URL/],
+  [6, `${CDN}/Dzijas_DROPS_Air_-_50g_150m-8536.jpg?v=1757077024&width=1200`, /Image URL/],
+  [6, `${CDN}/Dzijas_DROPS_Air_-_50g_150m-8536.jpg?v=1757077024&format=pjpg&width=5000`, /Image URL/],
+  [6, 'https://sarlotesaudumi.lv/cdn/shop/files/zoss.png?v=3', /Image URL/],
+  [6, `${CDN}/a b.jpg?width=1200&format=pjpg`, /Image URL/],
+]) {
+  const r = bad(withCell(D, col, val));
+  assert.ok(r.errors.some((e) => re.test(e)), `${header[col]}="${val}" → ${re}: ${r.errors.join('; ')}`);
+}
+assert.ok(bad(withCell(vid(lins), 10, '9,00 € / m')).errors.some((e) => /Formatted sale price bez Sale price/.test(e)));
+assert.ok(bad(withCell(vid(lins), 10, '9,00 € / m / ļoti garš')).errors.some((e) => /Formatted sale price garāks par 20/.test(e)));
+assert.equal(bad((s) => s.replace(/\n/g, '\r\n')).errorCount, 0, 'CRLF rindu beigas arī derīgas');
+assert.ok(bad((s) => `${s}${lineOf(D).replace(D, '1')}\n`.replace(/(\n1,)DROPS Air/, '$1SCHMETZ PRO LINE')).warnings.some((e) => /SCHMETZ PRO LINE/.test(e)));
+// Brīdinājumu kopskaits nav ierobežots ar 100
+const many = [header.join(','), ...Array.from({ length: 150 }, (_, i) => lineOf(D).replace(D, String(i + 1)).replace(',DROPS Air,', ',LIELIE BURTI,'))].join('\n');
+assert.equal(validateGoogleAdsCustomCsv(many, CONFIG).warningCount, 150);
+
+// Viena prece ar "…" vai bojātu rakstzīmi neaptur failu: teksts iztīrīts vai rinda izlaista, pārbaude bez kļūdām
+const odd = buildItems([
+  p({ title: 'Pārsteiguma paka…', handle: 'paka' }),
+  p({ title: 'Diegi', handle: 'diegi', variants: opt('Krāsa', ['Balts…', 'Za\uFFFDa']) }),
+  p({ title: 'Lente satīna', handle: 'lente-vienada', variants: [v({ price: 2.5, compareAtPrice: 2.5 })] }),
+  p({ title: 'Audums vienāda cena', handle: 'audums-vienada', tags: ['decimal'], variants: [v({ price: 1.5, compareAtPrice: 1.5, qty: 30 })] }),
+], CONFIG).items;
+const oddOut = toGoogleAdsCustomCsv(odd, CONFIG);
+const oddCheck = validateGoogleAdsCustomCsv(oddOut.csv, CONFIG);
+assert.equal(oddCheck.errorCount, 0, oddCheck.errors.join('; '));
+assert.equal(oddOut.stats.items, 5);
+assert.ok(!/…|\uFFFD/.test(oddOut.csv));
+for (const r of parseCsv(oddOut.csv).slice(1).filter((x) => /vienada/.test(x[5]))) {
+  assert.deepEqual([r[8], r[10]], ['', ''], 'salīdzinājuma cena = cena – nav akcija');
+}
 
 // --- Dubults ID – kļūda (Google: "IDs must be unique") ---
 const dup = buildItems([drops], CONFIG).items;
 assert.throws(() => toGoogleAdsCustomCsv([dup[0], { ...dup[0], link: `${dup[0].link}&x=1` }], CONFIG), /atkārtojas/);
+
+// --- Pārskata atradumi (24.11.2026): teksti, kas citādi maldinātu vai būtu nepareizi ---
+const T = {
+  legingi: p({ title: 'Kokvilnas legingi bērniem', productType: 'Furnitūra', variants: opt('Izmērs', ['S', 'M', 'L', 'XL']) }),
+  lenteMm: p({ title: 'Satīna lente 25 mm', productType: 'Furnitūra', variants: opt('Garums', ['2', '5', '25']) }),
+  zelts: p({ title: 'Dzija ar zelta pavedienu - 50 g / 200 m', productType: 'Dzija' }),
+  pedina: p({ title: 'Šujmašīnas pēdiņa priekš Janome Memory Craft 9450', productType: 'Šujmašīnu piederumi' }),
+  spolites: p({ title: 'Spolītes priekš Brother šujmašīnām, 10 gab.', productType: 'Šujmašīnu piederumi' }),
+  spiedpogas: p({ title: 'Spiedpogas metāla bez šūšanas 12 mm, 10 gab.', productType: 'Furnitūra' }),
+  ravejs: p({ title: 'Rāvējslēdzējs neatdalāms bez metāla zobiem 20 cm', productType: 'Furnitūra' }),
+  zvaigzne: p({ title: 'Lente „Zvaigzne“ sarkana ar baltu maliņu, 25 mm', productType: 'Furnitūra' }),
+  eglite: p({ title: 'Aplikācija „Ziemassvētku eglīte“ uzgludināma, 8 cm', productType: 'Furnitūra' }),
+  riga: p({ title: 'T-krekls "Rīga - mana pilsēta"', productType: 'Furnitūra' }),
+  pogas: p({ title: 'Pogas (koka - dabīgas) 15 mm', productType: 'Furnitūra' }),
+  zwi: p({ title: 'Dubultā adata SCHMETZ 130/705 H ZWI, 2,0/80', productType: 'Šujmašīnu adatas' }),
+  priekssauts: p({ title: 'Priekšauts ar kabatām SOL’S GALA', productType: 'Apģērbi', variants: [v({ title: 'Melna', selectedOptions: [{ name: 'Krāsa', value: 'Melna' }] })] }),
+  cesis: p({ title: 'Unisex džemperis ar kapuci “Cēsis”', productType: 'Customizer', variants: [v({ qty: 0, tracked: false, inventoryPolicy: 'CONTINUE' })] }),
+  pukis: p({ title: 'Bērnu T-krekls ar īsām piedurknēm “Mazais pūķis”', productType: 'Customizer', variants: [v({ qty: 0, tracked: false, inventoryPolicy: 'CONTINUE' })] }),
+  lins2: p({ title: 'Lina- un kokvilnas audums - zils', productType: 'Audums' }),
+  filcs2: p({ title: 'Filca loksne mīksta 20 × 30 cm', productType: 'Furnitūra' }),
+  satins2: p({ title: 'Satīna lente 6, 10, 15 un 25 mm, balta', productType: 'Furnitūra' }),
+  skeres: p({ title: 'Drēbnieka šķēres 10" ar mīkstiem rokturiem, melnas', productType: 'Furnitūra' }),
+  komplekts: p({ title: 'Adīšanas komplekts: 5 adatas + 2 diegi + šķēres', productType: 'Furnitūra' }),
+  o13: p({ title: 'Piešujamās spiedpogas Ø13 mm, sudraba krāsā', productType: 'Furnitūra' }),
+  karogs: p({ title: 'Atstarotājs Latvija 🇱🇻', productType: 'Furnitūra', variants: [v({ title: 'Sarkana 🇱🇻', selectedOptions: [{ name: 'Krāsa', value: 'Sarkana 🇱🇻' }] }), v({ title: 'Balta' , selectedOptions: [{ name: 'Krāsa', value: 'Balta' }] })] }),
+  keycap: p({ title: 'Uzšuve 1️⃣ numurs', productType: 'Furnitūra' }),
+  tonis: p({ title: 'Krūzīte 👍🏻 forša!!!', productType: 'Furnitūra' }),
+  lietota: p({ title: 'Šujmašīna Janome lietotā', productType: 'Šujmašīnas' }),
+  lietotas: p({ title: 'Lietotas adāmadatas komplekts', productType: 'Furnitūra' }),
+};
+const tItems = buildItems(Object.values(T), CONFIG).items;
+const tOut = toGoogleAdsCustomCsv(tItems, CONFIG);
+const tRows = parseCsv(tOut.csv).slice(1);
+const tr = (prod, i = 0) => {
+  const r = tRows.find((x) => x[0] === vid(prod, i));
+  return r && { title: r[1], subtitle: r[2], description: r[3] };
+};
+assert.deepEqual(T.legingi.variants.map((_, i) => tr(T.legingi, i).subtitle), ['S', 'M', 'L', 'XL'], 'izmērs nav "kokvilnas" burts');
+assert.deepEqual(T.lenteMm.variants.map((_, i) => tr(T.lenteMm, i).subtitle), ['2', '5', ''], '"2" nav "25" daļa; "25" jau nosaukumā');
+assert.equal(tr(T.zelts).title, 'Dzija ar zelta pavedienu', '"Dzija" paliek pirms maza burta');
+assert.ok(tr(T.pedina).title.startsWith('Šujmašīnas pēdiņa'), `piederums nav mašīna: ${tr(T.pedina).title}`);
+assert.ok(!/priekš$/i.test(tr(T.pedina).description) && !/priekš$/i.test(tr(T.spolites).description));
+assert.equal(tr(T.spolites).title, 'Spolītes priekš Brother');
+assert.equal(tr(T.spiedpogas).description, 'Bez šūšanas 12 mm', '"bez" nav atmests');
+assert.equal(tr(T.ravejs).description, 'Bez metāla zobiem 20 cm');
+const balanced = (x) => {
+  const q = (x.match(/[„“”"]/g) || []).length;
+  return q % 2 === 0 && (x.match(/\(/g) || []).length === (x.match(/\)/g) || []).length;
+};
+for (const prod of [T.zvaigzne, T.eglite, T.riga, T.pogas]) {
+  for (const [k, x] of Object.entries(tr(prod))) assert.ok(balanced(x), `${prod.title} ${k} "${x}" – nesapārotas pēdiņas vai iekavas`);
+}
+assert.equal(tr(T.zvaigzne).title, 'Lente „Zvaigzne“ sarkana');
+assert.equal(tr(T.riga).description, '"Rīga - mana pilsēta"');
+assert.equal(tr(T.pogas).title, 'Pogas (koka - dabīgas)');
+assert.equal(tr(T.zwi).title, 'SCHMETZ 130/705 H ZWI', 'koda lielie burti paliek');
+assert.equal(tr(T.priekssauts).title, 'Priekšauts ar kabatām', 'apģērbam – veids, ne sagataves zīmols');
+assert.equal(tr(T.priekssauts).description, 'SOL’S Gala', 'daļa ar lielajiem burtiem – nosaukuma rakstībā');
+assert.equal(tr(T.cesis).title, 'Unisex džemperis “Cēsis”');
+assert.equal(tr(T.pukis).title, 'T-krekls “Mazais pūķis”');
+assert.equal(tr(T.lins2).title, 'Lina- un kokvilnas audums', 'piekares domuzīme nav atdalītājs');
+assert.deepEqual([tr(T.filcs2).title, tr(T.filcs2).description], ['Filca loksne mīksta', '20 × 30 cm']);
+assert.deepEqual([tr(T.satins2).title, tr(T.satins2).description], ['Satīna lente', '6, 10, 15 un 25 mm, balta']);
+assert.equal(tr(T.skeres).title, 'Drēbnieka šķēres 10"', 'collas nav pēdiņa');
+assert.equal(tr(T.skeres).description, 'Mīkstiem rokturiem');
+assert.equal(tr(T.komplekts).title, 'Adīšanas komplekts');
+assert.equal(tr(T.o13).title, 'Piešujamās spiedpogas');
+assert.deepEqual(tr(T.karogs), { title: 'Atstarotājs Latvija', subtitle: 'Sarkana', description: 'Furnitūra' });
+assert.equal(tr(T.keycap).title, 'Uzšuve numurs');
+assert.equal(tr(T.tonis).title, 'Krūzīte forša!');
+assert.ok(!/\p{RGI_Emoji}|\p{Regional_Indicator}|\p{Emoji_Modifier}|⃣/v.test(tOut.csv), 'nekādu emocijzīmju');
+assert.equal(tr(T.lietota), undefined, '"lietotā" – lietota prece');
+assert.equal(tr(T.lietotas), undefined, '"Lietotas" – lietota prece');
+// Pārbaude atrod emocijzīmes, "!!" un reklāmas frāzes
+const tBad = (fn) => validateGoogleAdsCustomCsv(fn(tOut.csv), CONFIG);
+assert.ok(tBad((s) => s.replace('Atstarotājs Latvija', 'Atstarotājs 🇱🇻')).errors.some((e) => /emocijzīme/.test(e)));
+assert.ok(tBad((s) => s.replace('Uzšuve numurs', 'Uzšuve 1⃣')).errors.some((e) => /emocijzīme/.test(e)));
+assert.ok(tBad((s) => s.replace('Krūzīte forša!', 'Krūzīte forša!!!')).errors.some((e) => /triku/.test(e)));
+assert.ok(tBad((s) => s.replace('Krūzīte forša!', 'Krūzīte ★ forša')).errors.some((e) => /triku/.test(e)));
+assert.ok(tBad((s) => s.replace('Krūzīte forša!', 'BEZMAKSAS piegāde')).warnings.some((e) => /reklāmas frāze/.test(e)));
+assert.equal(validateGoogleAdsCustomCsv(tOut.csv, CONFIG).errorCount, 0);
+
+// --- Atskaite: iekļautie + izlaistie = visi varianti ---
+const recon = buildItems([...products, ...Object.values(T)], CONFIG);
+const rOut = toGoogleAdsCustomCsv(recon.items, CONFIG);
+const allVariants = [...products, ...Object.values(T)].flatMap((x) => x.variants.map((y) => y.id.split('/').pop()));
+const accounted = [...parseCsv(rOut.csv).slice(1).map((r) => r[0]), ...rOut.excluded.map((x) => x.id), ...recon.skippedVariants.map((x) => x.id)];
+assert.deepEqual([...accounted].sort(), [...allVariants].sort(), 'katrs variants ir vai nu failā, vai izlaists ar iemeslu');
+assert.ok(rOut.excluded.every((x) => x.id && x.reason) && recon.skippedVariants.every((x) => x.id && x.reason));
+assert.equal(recon.skippedVariants.find((x) => x.id === vid(davana)).reason, 'dāvanu karte');
 
 // --- generate.mjs importējas bez palaišanas ---
 await import('../generate.mjs');

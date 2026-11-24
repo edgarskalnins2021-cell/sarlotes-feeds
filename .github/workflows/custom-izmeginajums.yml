@@ -89,11 +89,21 @@ jobs:
               }
               const k = `${ext} -> ${status} ${type}`;
               count[k] = (count[k] || 0) + 1;
-              if (status !== 200 || !/^image\/(jpeg|png|gif)$/.test(type)) out.push([r[0], ext, status, type, r[6]].join(','));
+              if (status !== 200 || !/^image\/(jpeg|png|gif)$/.test(type)) {
+                // Izmēģinājums: vai format=png dod PNG arī klientiem, kas pieņem WebP (caurspīdīgs fons)
+                let alt = '?';
+                try {
+                  const res2 = await fetch(r[6].replace('format=pjpg', 'format=png'), { headers: { Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8' }, signal: AbortSignal.timeout(20000) });
+                  alt = `${res2.status} ${(res2.headers.get('content-type') || '?').split(';')[0]}`;
+                  await res2.body?.cancel();
+                } catch (e) { alt = `kļūda ${e.name}`; }
+                count[`${k} | format=png -> ${alt}`] = (count[`${k} | format=png -> ${alt}`] || 0) + 1;
+                out.push([r[0], ext, status, type, alt, r[6]].join(','));
+              }
             }
           }
           await Promise.all(Array.from({ length: 12 }, worker));
-          writeFileSync('custom-check/attelu-formati.csv', ['ID,paplašinājums,HTTP,content-type,attēls', ...out].join('\n') + '\n');
+          writeFileSync('custom-check/attelu-formati.csv', ['ID,paplašinājums,HTTP,content-type,format=png,attēls', ...out].join('\n') + '\n');
           writeFileSync('custom-check/attelu-formati.json', JSON.stringify(count, null, 2));
           console.log(JSON.stringify(count, null, 2));
           JS

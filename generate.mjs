@@ -383,7 +383,7 @@ async function buildGoogleAdsCustom(items, prev) {
     if (prev?.googleAdsCustom?.items && r.stats.items < prev.googleAdsCustom.items * 0.5 && process.env.FORCE !== '1') {
       throw new Error(`preču skaits nokrities no ${prev.googleAdsCustom.items} uz ${r.stats.items}`);
     }
-    if (check.warnings.length) console.log(`::warning title=${file}::${check.warnings.length} brīdinājumi, piem. ${check.warnings[0]}`);
+    if (check.warningCount) console.log(`::warning title=${file}::${check.warningCount} brīdinājumi, piem. ${check.warnings[0]}`);
     return { xml: r.csv, stats: r.stats };
   } catch (err) {
     console.log(`::warning title=${file}::${err.message} – paliek iepriekšējā versija`);

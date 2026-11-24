@@ -1,8 +1,9 @@
 # Šarlotes audumi – cenu salīdzināšanas XML faili
 
 Katru stundu (6:17–21:17 pēc Latvijas laika) GitHub automātiski nolasa preces
-no Shopify, pārrēķina un vienā reizē uzbūvē deviņus failus (četri Latvijas cenu salīdzinātājiem, viens Igaunijai,
-viens Lietuvai un trīs Google Merchant Center – Latvijai latviski, Igaunijai un Lietuvai angliski):
+no Shopify, pārrēķina un vienā reizē uzbūvē desmit failus (četri Latvijas cenu salīdzinātājiem, viens Igaunijai,
+viens Lietuvai, trīs Google Merchant Center – Latvijai latviski, Igaunijai un Lietuvai angliski – un viena Google Ads
+dinamiskā remarketinga plūsma latviski):
 
 | Fails | Kam | Adrese |
 |---|---|---|
@@ -15,6 +16,7 @@ viens Lietuvai un trīs Google Merchant Center – Latvijai latviski, Igaunijai 
 | `google-lv.xml.gz` | Google Merchant Center, Latvija, latviešu valodā (skat. sadaļu "Google") – vēl nav pieslēgts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lv.xml.gz |
 | `google-ee-en.xml.gz` | Google Merchant Center, Igaunija, angliski (sharlottekangad.ee/en) – savs konts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-ee-en.xml.gz |
 | `google-lt-en.xml.gz` | Google Merchant Center, Lietuva, angliski (sarlotesaudiniai.lt/en) – savs konts (5902483950) | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-lt-en.xml.gz |
+| `google-ads-custom-lv.csv` | Google Ads dinamiskā remarketinga plūsma "Pielāgoti" (Custom), latviski (skat. sadaļu "Google Ads Custom") – vēl nav pieslēgts | https://edgarskalnins2021-cell.github.io/sarlotes-feeds/google-ads-custom-lv.csv |
 
 Grafiks GitHub pusē mēdz kavēties; vajadzības gadījumā: **Actions → Salidzini XML → Run workflow**.
 
@@ -202,6 +204,72 @@ Tas pats kods kā `google-lv.xml.gz`, atšķirības:
 Drošība: ja `/en/` pāradresē prom vai vairāk nekā 25 % nosaukumu nav angliski – paliek iepriekšējā versija.
 Pārbaudes darbs pēc katras izvietošanas atver 3 nejaušas preču lapas kā Google robots (Storebot-Google).
 
+## Google Ads Custom (`google-ads-custom-lv.csv`, Latvija, latviski)
+
+Google Ads dinamiskā remarketinga plūsma tipā **"Pielāgoti" (Custom)** – reklāma parāda latviski tieši to preci, ko
+apmeklētājs skatīja (B ceļš, Edgars 24.11.2026). Specifikācija: https://support.google.com/google-ads/answer/6053288
+(sadaļa "Custom"). Ieraksti – tie paši kā `google-lv.xml.gz` (visi varianti, apģērbiem katrs izmērs). Darba uzdevums un
+pārbaužu saraksts – Claude Doc "Latviskā Custom plūsma (B ceļš)".
+
+Fails ir UTF-8 CSV bez BOM, komats kā atdalītājs, pēdiņas pēc RFC 4180. Kolonnas (angliski, tieši šādā secībā; **jaunu
+kolonnu pēc pirmās ielādes pievienot nevar**, tāpēc tukšās kolonnas paliek failā):
+
+| Kolonna | No kurienes |
+|---|---|
+| `ID` | Shopify varianta ciparu ID (Google: tikai burti un cipari, `shopify_ZZ_…` neder). Tam jāsakrīt ar taga `items[].id` |
+| `Item title` | produkta nosaukuma daļa līdz " - ", bez sākuma "Dzijas" pirms zīmola (`DROPS Air`); līdz 25 zīmēm – saīsina pa frāzēm / veseliem vārdiem, bez daudzpunktes, nepārgriež izmēru (`20 × 30 cm`, `Ø13 mm`) un pēdiņas; garam nosaukumam ar zīmolu vidū – no zīmola (`DROPS Pro Circus`), bet ne piederumam (`pēdiņa priekš Janome …`); apdrukas precēm – preces veids + dizains (`Kokvilnas T-krekls “TĒTI”`), garš dizains – aprakstā |
+| `Item subtitle` | varianta opcijas (krāsa, izmērs), bez TeeInBlue "Available Product"; līdz 25 zīmēm; tukšs tikai, ja tieši tāds pats kā nosaukums |
+| `Item description` | garš dizaina nosaukums vai nosaukuma daļa pēc " - " (`50 g / 150 m`); ja nav – daļa pirms zīmola, atmestā nosaukuma daļa (`Bez šūšanas 12 mm` – "bez", "pret", "priekš" netiek atmesti) vai kategorija; līdz 25 zīmēm |
+| `Item category` | LV kategorijas pirmā daļa (`Dzija`, `Audumi`) |
+| `Final URL` | `https://sarlotesaudumi.lv/products/...`, variantiem ar `?variant=` |
+| `Image URL` | varianta / produkta attēls; Shopify CDN – vienmēr ar `width=1200` (Google: līdz 6 milj. pikseļu) un `format=pjpg` (CDN JPG, PNG un WebP oriģinālus klientiem, kas pieņem WebP, citādi atdod kā WebP, ko Google neatbalsta). Izņēmumi (pārbaudīts 24.11.2026 visiem 15 661 attēlam): PNG/WebP ar caurspīdīgu fonu (~0,7 %) Shopify uz JPEG nepārveido – arī ar `format=png` atdod WebP, ja klients to pieņem (bez tā – PNG); tos labo, Shopify augšupielādējot JPG ar baltu fonu. HEIC (iPhone foto) netiek likts vispār |
+| `Price`, `Sale price` | `5.30 EUR`; metrā tirgotajām – **par 1 m** (kā preces lapā "18,90 €/m"); akcija (salīdzinājuma cena > cena): `Price` = salīdzinājuma cena, `Sale price` = cena |
+| `Formatted price`, `Formatted sale price` | tikai metrā tirgotajām: `18,90 € / m` (aizstāj `Price` reklāmā) |
+| `Contextual keywords` | tukšs – atslēgvārdi drīkst nākt tikai no Edgara atslēgvārdu tabulas (1:1) |
+
+Saīsināšana līdz 25 zīmēm (`fitText`, `adsPhraseEnd`): teksts beidzas tikai frāzes beigās. Kas ir preces vārds un kas
+apzīmētājs, nosaka visa kataloga nosaukumi (`adsWordStats`): "kokvilnas" gandrīz vienmēr stāv pirms cita vārda (apzīmētājs),
+"audums", "pogas", "fiksators" – nosaukuma beigās (preces vārds). Teksts nebeidzas ar apzīmētāju (`Ūdensizturīgs`,
+`Velūrs ar burzījuma`), prievārdu vai "ar jūsu", neatrauj skaitli no mērvienības vai virknes (`100 g / 120 m`,
+`2,0 mm - 5,0 mm`, `ar 2 caurumiem`) un nesadala "X un Y" pusēs. Ja nosaukums neietilpst, sākumā drīkst atmest līdz trim
+apzīmētājiem – krāsu (`Sarkana dublēta vilnas trikotāža` → `Dublēta vilnas trikotāža`; "gaiši zils" un "oranži un zili" –
+tikai kopā), īpašības vārdu vai "X un" (`Brošu un sprādzīšu izgatavošanai` → `Sprādzīšu izgatavošanai`; sastāvu
+"viskozes un kokvilnas" – tikai abus kopā); zīmols sākumā paliek (`SCHMETZ šujmašīnu adatas`). "Mākslīgās", "sintētiskā",
+"caurumu" (pirms "veidošanas") netiek atmesti vieni – tikai kopā ar nākamo vārdu, un tad tie ir aprakstā
+(`Mākslīgās ādas slīpā diega lenta` → `Slīpā diega lenta` + `Mākslīgās ādas`). Vārds ar lielo burtu nosaukuma vidū ir
+nosaukums (`Punto di Roma`), ja vien katalogā tas nav rakstīts arī ar mazo burtu (`Organiskā Kokvilnas trikotāža`). Apraksta secība: dizaina sauklis (tikai vesels teikums), nosaukuma atlikums ("ar", "bez",
+"priekš" paliek; "kleitām un blūzēm" – kopā), daļa pēc " - ", atmestie sākuma vārdi (ne viens pats īpašības vārds),
+kategorija, daļa aiz komata. Ja vēlamais teksts neietilpst bez pārgriešanas, ņem nākamo; ja nekas neder, apraksts paliek
+tukšs (Google to atļauj) – piemēram, ja viss nosaukums jau ietilpst (`Šuvju ārdītājs`).
+
+Lielie burti (Google noraida tekstu tikai ar lielajiem burtiem): ja viss Shopify teksts ir ar lielajiem burtiem, tas kļūst
+par teikumu (`BALTA` → `Balta`); ja tikai daļa (`Šķēres … - TEXI TITANIUM CRAFT`) – nosaukuma rakstībā (`Texi Titanium
+Craft`). Zīmoli paliek zīmola rakstībā (`DROPS`, `SCHMETZ`, `PRYM` → `Prym`), kodi un izmēri (`XL`, `130/705 H`) – kā ir.
+Emocijzīmes visās formās (arī karogi 🇱🇻, ādas toņi, `1️⃣`), `!!` un dekoratīvas zīmes (`★`) tiek noņemtas.
+
+Izslēgtas: kā `google-lv.xml.gz` (defekti/demo/lietotas, bez attēla, metrā ar nezināmu atlikumu, dubulta saite) un
+papildus tipi `Dāvanu kartes`, `Digitālie materiāli`, `Meistarklases`, attēls nav JPG/PNG/GIF/WebP (piem. HEIC no iPhone),
+nosaukumu nevar saīsināt bez pārgriezta vārda, rinda neiziet rindas pārbaudi. Katrs izlaistais variants ar iemeslu ir
+`izlaistie.csv` (CLI). Atkārtots ID – kļūda.
+
+Drošība: katra rinda pirms ierakstīšanas iziet to pašu pārbaudi, ko `validateGoogleAdsCustomCsv` (garumi, cenas, saites,
+attēli, HTML, emocijzīmes, `!!`, daudzpunkte, vadības rakstzīmes) – rinda, kas neiziet, tiek izlaista, nevis aptur visu
+failu. Ja tomēr gatavajā failā ir kļūda (galvene, BOM, ID), preču ir zem 100 vai uz pusi mazāk nekā iepriekš – paliek
+iepriekšējā versija (citādi Google Ads ieplānotā ielāde ielādētu bojātu failu). Brīdinājumi (lielie burti, "bezmaksas") –
+`::warning` ar kopskaitu. `verify` darbs pēc izvietošanas pārbauda publisko CSV (arī Shopify attēliem `format=pjpg`).
+
+Pārbaude bez publicēšanas:
+```
+node check-google-ads-custom.mjs public/google-ads-custom-lv.csv   # gatavs fails vai publiskā adrese
+node check-google-ads-custom.mjs --storefront custom-check         # uzbūvē no publiskā /products.json, saglabā CSV,
+                                                                   # saisinajumi.csv, izlaistie.csv un summary.json
+                                                                   # (iekļautie + izlaistie = visi varianti, citādi kods 1)
+```
+
+Pieslēgšana (katrs solis – tikai ar Edgara apstiprinājumu): Google Ads → Rīki → Uzņēmējdarbības dati → + → Dinamisko
+reklāmu plūsma → **Pielāgoti** → ieplānotā ielāde no šīs adreses reizi dienā. Shopify pielāgotais pikselis sūta
+`view_item` / `add_to_cart` ar `items: [{ id: <varianta ID>, google_business_vertical: 'custom' }]` uz AW-442323683.
+
 ## Vienreizēja iestatīšana
 
 ### 1. GitHub
@@ -238,5 +306,6 @@ node test/test-cenueksperts.mjs  # Cenueksperts: formāts, apraksts, piegāde
 node test/test-hindee.mjs # Hind.ee: oficiālā struktūra, igauņu teksti, Igaunijas cena, metri, piegāde uz Igauniju
 node test/test-kaina24.mjs # Kaina24: oficiālā struktūra, lietuviešu teksti, metri, piegāde uz Lietuvu
 node test/test-google.mjs # Google: RSS/g: lauki, ID, cena par 10 cm + vienības cena, varianti, attēli, piegāde; EE/LT angliski
+node test/test-google-ads-custom.mjs # Google Ads Custom CSV: kolonnas, ID, 25 zīmes, cena par 1 m, akcijas, attēli, izslēgtās
 node generate.mjs         # uzbūvē visus failus mapē public/ (vajag Shopify atslēgas)
 ```

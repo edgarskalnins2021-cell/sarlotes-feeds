@@ -76,7 +76,8 @@ export const CONFIG = {
   },
 
   // Bojātas, lietotas, demo preces – Salidzini prasa <used>1</used>.
-  usedPattern: /(ar defektu|defekts|bojāt|lietot[aāsi]\b|\bdemo\b|ekspozīcij)/i,
+  // Robežas ar \p{L}, ne \b (\b ir tikai ASCII: "lietotā" un "lietotas" ar to netika atrasti).
+  usedPattern: /(ar defektu|defekts|bojāt|(?<!\p{L})lietot(a|ā|as|ās|s|i|ie|o|ai|u|ais|ajā)(?!\p{L})|(?<!\p{L})demo(?!\p{L})|ekspozīcij)/iu,
 
   // Nosaukumu tīrīšana: Salidzini neļauj noliktavas/reklāmas frāzes un iekšējas piezīmes.
   // Domuzīme "–" visur kļūst par "-" (veikala stils kopš 18.11.2026); atstarpes ap to tiek sakārtotas.
@@ -323,6 +324,36 @@ export const CONFIG = {
     },
   },
 
+  // Google Ads dinamiskā remarketinga plūsma, tips "Pielāgoti" (Custom), latviski (B ceļš, Edgars 24.11.2026).
+  // Specifikācija: support.google.com/google-ads/answer/6053288 (sadaļa Custom). Kolonnu kopu pēc pirmās ielādes mainīt
+  // nevar (vajag jaunu plūsmu), tāpēc tukšās kolonnas paliek failā. ID = Shopify varianta ciparu ID: Google atļauj tikai
+  // burtus un ciparus, un tam jāsakrīt ar taga items[].id (Shopify pielāgotais pikselis, google_business_vertical 'custom').
+  googleAdsCustom: {
+    file: 'google-ads-custom-lv.csv',
+    columns: ['ID', 'Item title', 'Item subtitle', 'Item description', 'Item category', 'Final URL', 'Image URL',
+      'Price', 'Sale price', 'Formatted price', 'Formatted sale price', 'Contextual keywords'],
+    textMax: 25, // Item title, Item subtitle, Item description
+    formattedMax: 20, // Formatted price, Formatted sale price
+    currency: 'EUR',
+    // Shopify CDN atdod attēlu šajā platumā (Google: līdz 6 miljoniem pikseļu; daži oriģināli ir 2500×2500 un vairāk).
+    imageWidth: 1200,
+    imageExt: /\.(jpe?g|png|gif)$/i, // Google: tikai JPG, PNG, GIF (WebP nav atbalstīts)
+    // Shopify CDN pēc Accept galvenes JPG, PNG un WebP oriģinālus klientiem, kas pieņem WebP, atdod kā WebP (Google to
+    // Custom plūsmai neatbalsta); ar format=pjpg – JPEG visiem (pārbaudīts 24.11.2026). Izņēmums: PNG ar caurspīdīgu fonu
+    // un HEIC Shopify uz JPEG nepārveido (atdod PNG vai WebP), tāpēc HEIC (iPhone foto) netiek likts – jāaugšupielādē JPG.
+    shopifyImageExt: /\.(jpe?g|png|gif|webp)$/i,
+    shopifyForceJpeg: 'pjpg',
+    // Papildus buildItems filtriem (requiresShipping, dāvanu kartes): ne-fiziskas preces pēc tipa – drošībai.
+    excludeProductTypes: ['Dāvanu kartes', 'Digitālie materiāli', 'Meistarklases'],
+    // Sākuma vārds, kas nosaukumā tikai pasaka preces veidu ("Dzijas DROPS Air" → "DROPS Air"); veids paliek Item category.
+    leadingTypeWords: /^[Dd]zijas?\s+(?=\p{Lu})/u, // bez i karoga: ar to \p{Lu} der arī mazajiem burtiem
+    // Metrā tirgotās preces: Price = cena par 1 m, Formatted price "18,90 € / m".
+    perMetre: ' / m',
+    // Vārdi, ar kuriem saīsināts teksts nedrīkst beigties ("Lente ar" → "Lente").
+    danglingWords: ['un', 'ar', 'no', 'uz', 'par', 'bez', 'pie', 'pēc', 'līdz', 'priekš', 'vai', 'ir', 'kā', 'ko', 'pret', 'starp', 'nr.', 'nr', 'ø', '⌀',
+      'and', 'with', 'for', 'of', 'the', 'in', 'on', 'to', 'x', '×'],
+  },
+
   // Google Merchant Center Igaunijai un Lietuvai – ANGLISKI (igauņu un lietuviešu valodu Google vēl neatbalsta).
   // Katram domēnam savs Merchant Center konts. Teksti, saites (/en/), cena un tips – no valsts veikala angļu versijas
   // (/en/products.json); preces, atlikums, svars, EAN, zīmols, Google kategorija – kā google-lv.xml. Piegāde – failā
@@ -490,6 +521,17 @@ function categoryFor(product, variant, cfg, stats) {
   return [type, best].filter(Boolean).join(' >> ');
 }
 
+// Varianta nosaukums Google Ads Custom (Item subtitle): opciju vērtības bez tehniskajām (TeeInBlue "Available Product",
+// CONFIG.apparel.hiddenOptions); bez opcijām – Shopify varianta nosaukums. "Default Title" → tukšs.
+function adsVariantTitle(v, cfg) {
+  const opts = v.selectedOptions || [];
+  const raw = opts.length
+    ? opts.filter((o) => !cfg.apparel?.hiddenOptions?.test(String(o.name ?? '').trim()))
+      .map((o) => String(o.value ?? '').trim()).filter((x) => x && x !== 'Default Title').join(' / ')
+    : (v.title && v.title !== 'Default Title' ? v.title : '');
+  return cleanName(raw, cfg).replace(/\s+/g, ' ').trim();
+}
+
 function cleanName(s, cfg) {
   for (const [re, to] of cfg.nameFixes || []) s = s.replace(re, to);
   return s;
@@ -504,7 +546,12 @@ function cleanName(s, cfg) {
  */
 export function buildItems(products, cfg = CONFIG) {
   const stats = { products: products.length, items: 0, skipped: {}, madeToOrder: 0, sizesInOneItem: 0 };
-  const skip = (why) => { stats.skipped[why] = (stats.skipped[why] || 0) + 1; };
+  // skippedVariants – katrs izlaistais variants ar iemeslu (atskaitēm: iekļautie + izlaistie = visi varianti).
+  const skippedVariants = [];
+  const skip = (why, p, vs) => {
+    stats.skipped[why] = (stats.skipped[why] || 0) + 1;
+    for (const v of vs) skippedVariants.push({ id: String(v.id).split('/').pop(), product: p.title, variant: v.title, reason: why });
+  };
   const seenNames = new Set();
   const items = [];
   const tags = tagStats(products);
@@ -512,12 +559,12 @@ export function buildItems(products, cfg = CONFIG) {
   const mtoDays = cfg.madeToOrder?.productionDays || [0, 0];
 
   for (const p of products) {
-    if (p.onlineStore === false) { skip('nav publicēts veikalā'); continue; }
+    if (p.onlineStore === false) { skip('nav publicēts veikalā', p, p.variants); continue; }
     if (p.isGiftCard || cfg.excludeProductTypes.includes(p.productType)) {
-      skip(p.isGiftCard || p.productType === 'Dāvanu kartes' ? 'dāvanu karte' : `tips ${p.productType}`);
+      skip(p.isGiftCard || p.productType === 'Dāvanu kartes' ? 'dāvanu karte' : `tips ${p.productType}`, p, p.variants);
       continue;
     }
-    if (cfg.excludeTitlePattern?.test(p.title)) { skip('T-krekli/džemperi'); continue; }
+    if (cfg.excludeTitlePattern?.test(p.title)) { skip('T-krekli/džemperi', p, p.variants); continue; }
     const decimal = (p.tags || []).includes(cfg.decimalTag);
     const multi = p.variants.length > 1;
     // Metrā tirgotajām precēm vienmēr der atlikuma noteikums (vismaz 1 m), arī ja tips ir "Customizer".
@@ -542,29 +589,29 @@ export function buildItems(products, cfg = CONFIG) {
     }
 
     for (const v of variants) {
-      if (!v.requiresShipping) { skip('digitāla prece'); continue; }
-      if (!(v.price > 0)) { skip('cena 0'); continue; }
+      if (!v.requiresShipping) { skip('digitāla prece', p, [v]); continue; }
+      if (!(v.price > 0)) { skip('cena 0', p, [v]); continue; }
       if (mto) {
         // Pēc pasūtījuma: atlikums nav gatavu preču daudzums. Izlaižam tikai, ja Shopify šo variantu pasūtīt neļauj.
-        if (v.tracked !== false && v.qty != null && v.qty <= 0 && v.inventoryPolicy !== 'CONTINUE') { skip('0 atlikums'); continue; }
+        if (v.tracked !== false && v.qty != null && v.qty <= 0 && v.inventoryPolicy !== 'CONTINUE') { skip('0 atlikums', p, [v]); continue; }
         // Publiskais /products.json (rezerves avots): uzskaites nav, der tikai "available".
-        if (v.tracked == null && v.qty == null && v.available === false) { skip('0 atlikums'); continue; }
+        if (v.tracked == null && v.qty == null && v.available === false) { skip('0 atlikums', p, [v]); continue; }
       } else {
-        if (v.tracked === false) { skip('atlikums netiek uzskaitīts'); continue; }
-        if (v.qty != null ? v.qty <= 0 : !v.available) { skip('0 atlikums'); continue; }
+        if (v.tracked === false) { skip('atlikums netiek uzskaitīts', p, [v]); continue; }
+        if (v.qty != null ? v.qty <= 0 : !v.available) { skip('0 atlikums', p, [v]); continue; }
       }
 
       const price = decimal ? v.price / cfg.decimalStep : v.price;
       let inStock = mto ? null : v.qty;
       if (decimal && inStock != null) {
         inStock = Math.floor(inStock * cfg.decimalStep + 1e-9);
-        if (inStock < cfg.minDecimalMeters) { skip('atlikumā mazāk par 1 m'); continue; }
+        if (inStock < cfg.minDecimalMeters) { skip('atlikumā mazāk par 1 m', p, [v]); continue; }
       }
-      if (price < cfg.minPrice) { skip(`cena zem ${money(cfg.minPrice)} €`); continue; }
+      if (price < cfg.minPrice) { skip(`cena zem ${money(cfg.minPrice)} €`, p, [v]); continue; }
 
       const variantTitle = v.title && v.title !== 'Default Title' ? ` - ${v.title}` : '';
       const name = cut(cleanName(`${p.title}${variantTitle}`, cfg) + (decimal ? cfg.decimalNameSuffix : ''), 200);
-      if (seenNames.has(name)) { skip('dublikāts'); continue; }
+      if (seenNames.has(name)) { skip('dublikāts', p, [v]); continue; }
       seenNames.add(name);
 
       const courier = p.productType === cfg.courierOnlyType;
@@ -606,6 +653,7 @@ export function buildItems(products, cfg = CONFIG) {
         _productImage: p.image || '', // produkta galvenā bilde (KurPirkt kopīgajam ierakstam)
         _options: (v.selectedOptions || []).map((o) => String(o.name ?? '').trim()).filter(Boolean), // opciju nosaukumi
         _productTitle: cleanName(p.title, cfg).replace(/\s+/g, ' ').trim(),
+        _variantTitle: adsVariantTitle(v, cfg), // Google Ads Custom: Item subtitle
         _lvTitle: p.title,
         _productType: p.productType || '',
         _variantCount: p.variants.length,
@@ -688,7 +736,7 @@ export function buildItems(products, cfg = CONFIG) {
   const portal = items.filter((it) => !it._portalSkip);
   stats.items = portal.length;
   stats.madeToOrder = portal.filter((it) => it._madeToOrder).length;
-  return { items, stats };
+  return { items, stats, skippedVariants };
 }
 
 // Ieraksti cenu portālu failiem (bez citiem tās pašas krāsas izmēriem, skat. buildItems).
@@ -1377,6 +1425,943 @@ export function toGoogleXml(items, store = new Map(), cfg = CONFIG, market = nul
   }
   out.push('</channel>', '</rss>', '');
   return { xml: out.join('\n'), stats };
+}
+
+// ---------- Google Ads Custom (dinamiskā remarketinga plūsma, CSV) ----------
+
+// CSV lauks (RFC 4180): pēdiņās, ja tajā ir komats, pēdiņas vai rindas pārnesums.
+const csvField = (s) => {
+  const t = String(s ?? '');
+  return /[",\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+};
+
+// CSV teksts → rindas (lauku masīvi), pēdiņas pēc RFC 4180. Pēdējā tukšā rinda netiek skaitīta.
+export function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let f = '';
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch !== '"') f += ch;
+      else if (text[i + 1] === '"') { f += '"'; i++; } else quoted = false;
+    } else if (ch === '"' && f === '') quoted = true;
+    else if (ch === ',') { row.push(f); f = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(f); rows.push(row); row = []; f = '';
+    } else f += ch;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+
+// Teksts tikai ar lielajiem burtiem (Google: šāda reklāma tiek noraidīta). Īsi kodi (XL, LV) – nav.
+const isAllCaps = (s) => (String(s).match(/\p{L}/gu) || []).length >= 4 && !/\p{Ll}/u.test(String(s));
+// Pirmais burts lielais, arī aiz pēdiņas ("“labākais…”" → "“Labākais…”"); aiz iekavas – nē ("(hotfix), 4 mm").
+const upperFirst = (s) => String(s).replace(/^([„“”"«]*)(\p{Ll})/u, (_, a, b) => a + b.toUpperCase());
+
+// Emocijzīmes visās formās: secības (1️⃣, 👍🏻, 🇱🇻), karogu burti, ādas toņi, keycap, tagi (\p{Extended_Pictographic} tās
+// neaptver visas). Dekoratīvas zīmes (★, ✔, ►) – Google "triku" noteikumi.
+const ADS_EMOJI = /\p{RGI_Emoji}|\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}|[⃣️‍]|[\u{E0020}-\u{E007F}]/v;
+const ADS_DECOR = /[★☆✓✔✗✘♥♡►◄▶◀●○■□▪▫→←⇒⇐✦✧✪✯✰※❗❕‼⁉]/u;
+
+/**
+ * Iekavu un pēdiņu pāri: ( ) un pēdiņas „ “ ” " « » jebkurā kombinācijā („…“, “…”, “…", "…"). Pēdiņa aiz burta aizver,
+ * aiz atstarpes vai bez atvērtas pēdiņas – atver (tā pati " vai “ pēc atvērtas " / “, arī “ pēc „ – vienmēr aizver);
+ * „ vienmēr atver.
+ * " aiz cipara ir collas (10"), nevis pēdiņa.
+ * Atgriež { cut: pirmā neaizvērtā atvērēja vieta vai -1, strays: lieku aizvērēju vietas }.
+ */
+function bracketScan(t) {
+  const stack = [];
+  const strays = [];
+  const QUOTES = '„“”"«»';
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    const prev = i ? t[i - 1] : ' ';
+    const top = stack[stack.length - 1];
+    const quoteOpen = !!top && QUOTES.includes(top.ch);
+    const opens = /[\s(]/.test(prev);
+    if (ch === '(' || ch === '„' || ch === '«') stack.push({ ch, i });
+    else if (ch === ')') { if (top && top.ch === '(') stack.pop(); else strays.push(i); }
+    else if (ch === '»' || ch === '”') { if (quoteOpen) stack.pop(); else strays.push(i); }
+    else if (ch === '“' || ch === '"') {
+      if (ch === '"' && /\d/.test(prev)) continue;
+      if (quoteOpen && (!opens || top.ch === ch || top.ch === '„')) stack.pop(); // '"Made with love "', „…“
+      else stack.push({ ch, i }); // arī pielipusi pie vārda: 'kokvilnas“Rūķi”'
+    }
+  }
+  return { cut: stack.length ? stack[0].i : -1, strays };
+}
+// Bez liekiem aizvērējiem ("Eglīte“ uzgludināma" → "Eglīte uzgludināma").
+const dropStrays = (t) => {
+  const { strays } = bracketScan(t);
+  for (const i of strays.reverse()) t = t.slice(0, i) + t.slice(i + 1);
+  return t.replace(/\s+/g, ' ').trim();
+};
+
+// Nosaukuma daļas, atdalītas ar " - ". Skaitļu diapazons ("izmēri 2 - 12 mm", "Ø3 - 20 mm", "2,0 mm - 5,0 mm") un " - " pēdiņās vai iekavās
+// ('T-krekls "Rīga - mana pilsēta"') nav atdalītājs.
+function titleParts(s) {
+  const parts = [];
+  const re = /\s+[-–]\s+/g;
+  let start = 0;
+  let m;
+  while ((m = re.exec(s))) {
+    if (adsNumberRange(s.slice(0, m.index), s.slice(m.index + m[0].length))) continue;
+    if (bracketScan(s.slice(0, m.index)).cut >= 0) continue;
+    parts.push(s.slice(start, m.index));
+    start = m.index + m[0].length;
+  }
+  parts.push(s.slice(start));
+  return parts.map((x) => x.trim()).filter(Boolean);
+}
+
+const ADS_BOUNDARY = /,\s+|;\s+|\s+[-–]\s+|\s+\/\s+|\s+\(|(?<=[.!?])\s+(?=\p{Lu})/gu;
+// Lielie burti, kas paliek arī teikumā: izmēri (XS, M, 2XL) un kodi ar cipariem (#12, A4), valstu kodi.
+const ADS_CODE = /^(\(?(X{0,3}S|M|X{0,4}L|\d+XL|LV|EE|LT|EU)\)?[,.;/]?|\S*\d\S*)$/;
+const ADS_UNIT = /^(mm|cm|m|km|g|kg|ml|l|gab\.?|m²|cm²|g\/m²|%|mm\)|cm\)|m\)|g\))[,.;)]*$/i;
+// Skaitlis vai izmērs bez mērvienības ("20", "6,", "Ø13", "10x15", '10"'); savienotājs skaitļu virknē ("×", "+", "un").
+const ADS_NUM = /^[Ø⌀#~±]?\d[\d.,/×x–-]*["”]?[,;:]?$/i;
+const ADS_JOIN = /^(×|x|\+|un|vai|and|or|līdz|\/)$/i;
+const ADS_DASH = /^[-–]$/;
+// Vārdi, ko var atmest atlikuma sākumā ("un karabīnēm" → "Karabīnēm"). Prievārdi paliek: "Ar spīdumiem", ne "Spīdumiem";
+// "Šūšanas 12 mm" no "bez šūšanas" nozīmētu pretējo, "Brother šujmašīnām" no "priekš Brother…" – citu preci.
+const ADS_LEAD_DROP = new Set(['un', 'vai', 'ir', 'kā', 'and', 'or', 'x', '×', '&', '+']);
+// Prievārdi un saikļi: aiz tiem sākas jauna frāze (vārds pirms tiem var būt frāzes beigas).
+const ADS_PREP = new Set(['ar', 'bez', 'uz', 'priekš', 'no', 'līdz', 'pret', 'par', 'pa', 'pie', 'pēc', 'zem', 'virs', 'ap', 'caur', 'starp',
+  'aiz', 'pirms', 'with', 'for', 'of', 'in', 'on', 'to']);
+const ADS_LINK = new Set([...ADS_PREP, 'un', 'vai', 'ir', 'kā', 'and', 'or', '-', '–', '/', 'x', '×', '+', '&']);
+// Prievārdi ar akuzatīvu: aiz tiem frāze beidzas ar "-u", "-i" vai daudzskaitļa "-iem/-ām/-ēm" ("ar jūsu dizainu"),
+// nevis ar ģenitīvu ("ar burzījuma", "ar vārda", "ar “kaķa acs”" – pārgriezts).
+const ADS_ACC_PREP = new Set(['ar', 'par', 'pa', 'ap', 'caur']);
+// Datīvs ("ādai", "rokdarbiem", "somām") aiz lietvārda – tā papildinātājs ("adatas ādai"), ne frāzes galvenais vārds.
+const ADS_DATIVE = /(iem|ām|ēm|īm|ai|am|im)$/u;
+// Īpašības vārdu un divdabju izskaņas ("dekoratīvas", "pašlīmējošs", "atverams", "personalizēts", "organiskās", "rūpniecisko").
+const ADS_ADJ = /((īg|isk|ain|oš|am|ām|ēt|āt|ot|īv|ūt)(s|š|a|i|as|ā|ās|ais|ie|o|u|ai|am|ām|iem)|ajā|ajām|ajiem|ajai|ajam|ajos|ajās|ais)$|^(plān|biez|mīkst|smalk|viegl|smag|liel|maz|plat|šaur|ciet|stingr|jaun|tīr|elegant|modern|interesant|grezn|skaist|krāšņ)(s|a|i|as|ā|ās|ais|ie|o|u|ai|am|ām|iem)$|^(premium|super|extra|eko|bio)$/u;
+// Krāsas un pakāpes apstākļa vārdi – apzīmētāji ("Gaiši zils | viskozes tvills", "Sarkana | dublēta vilnas trikotāža").
+const ADS_COLOR = /((balt|meln|zil|sarkan|zaļ|dzelten|brūn|pelēk|violet|oranž|bēš)(s|š|a|i|as|ā|ās|ais|ie|o|u|ai|am|ām|iem|ajā|ajām|ajiem)|^(gaiši|tumši|koši|maigi|spilgti|bāli|dziļi|silti|auksti|smalki|bordo)|rozā|lillā)$/u;
+// Lietvārdu izskaņas, kas nav ģenitīvs ("piekariņš", "rāvējslēdzējs", "audums") – var būt frāzes beigas arī tad, ja katalogā
+// aiz tiem bieži seko nosaukums ("piekariņš četrlapu āboliņš").
+const ADS_SHADE = /^(gaiši|tumši|koši|maigi|spilgti|bāli|dziļi|silti|auksti|smalki)$/u; // krāsas apstākļa vārds
+const ADS_INDECL = /.(veida|tipa)$/u; // "spirālveida", "spageti tipa" – apzīmētājs
+const ADS_NOUN = /(iņš|iņi|ītis|īši|tājs|tāji|ējs|ēji|ums|umi|nieks|nieki)$/u;
+// Teksts nevar beigties ar piederības vietniekvārdu ("T-krekla apdruka ar jūsu") ...
+const ADS_NOT_ADJ = /^(palīg|disk|risk|aparāt|formāt|motīv|pilot|robot|klot|kost|broš)/u; // lietvārdi ar īpašības vārda galotni
+// Lietvārdi, kurus ADS_ADJ galotnes dēļ uzskatītu par īpašības vārdiem ("dizainu", "tēta", "plastikāta", "ahāta").
+const ADS_NOUN_LIKE = /^(ahāt|citāt|dizain|jenot|kvadrāt|kāt|magnēt|pilsēt|plastikāt|terakot|tēt|fot)(s|a|i|is|as|u|am|ām|ai|im|iem|ā|e|es|os)?$/u;
+const adsAdj = (x) => ADS_ADJ.test(x) && !ADS_NOUN_LIKE.test(x);
+// Apzīmētāji, kurus nedrīkst atmest – bez tiem teksts nozīmē ko citu ("Mākslīgās ādas etiķetes" ≠ "Ādas etiķetes").
+const ADS_KEEP = /^(mākslīg|sintētisk|neīst|imitēt|imitācij|viltot)/u;
+// Materiāla apzīmētāji – attiecas uz nākamo vārdu ("Organiskās kokvilnas"), ne uz preci.
+const ADS_MATERIAL_ADJ = /^(organisk|dabīg|mākslīg|sintētisk|merserizēt|pārstrādāt|ekoloģisk|bioloģisk)/u;
+const ADS_HOLD = new Set(['jūsu', 'savu', 'sava', 'savas', 'savā', 'savām', 'saviem', 'mūsu', 'tavu', 'tava', 'manu', 'mana', 'your', 'my',
+  'ļoti', 'īpaši', 'sevišķi', 'pārāk', 'nedaudz', 'mazliet', 'diezgan', 'iepriekš']);
+// ... un ar apzīmējumu, kam seko tā vērtība ("35 cm, izmēri" no "… izmēri 2,25 mm - 7 mm").
+const ADS_LABEL = new Set(['izmēri', 'izmērs', 'izmērā', 'garums', 'garumā', 'platums', 'platumā', 'biezums', 'diametrs', 'svars', 'tilpums']);
+
+// Vārds bez pēdiņām, iekavām un pieturzīmēm, mazajiem burtiem ("“Kaķis”," → "kaķis").
+const adsKey = (w) => String(w ?? '').replace(/^[“„"«(]+/u, '').replace(/[,;:.!?)”“"»]+$/u, '').toLowerCase();
+
+/**
+ * Kataloga vārdu statistika saīsināšanai: Map vārds → [cik reizes frāzes beigās, cik reizes aiz tā seko vēl vārds,
+ * cik reizes rakstīts ar mazo burtu].
+ * Frāzes beigas – aiz vārda pieturzīme, prievārds vai saiklis, skaitlis, pēdiņa, iekava, vārds ar lielo sākumburtu (zīmols,
+ * modelis), datīvs ("adatas ādai") vai nosaukuma beigas. Preces vārds ("pērlītes", "lente", "audums") parasti ir frāzes
+ * beigās, apzīmētājs ("kokvilnas", "plastmasas", "rūpniecisko") – gandrīz nekad.
+ */
+export function adsWordStats(titles) {
+  const stats = new Map();
+  for (const title of titles) {
+    const toks = String(title ?? '').split(/\s+/).filter(Boolean);
+    toks.forEach((raw, i) => {
+      const w = adsKey(raw);
+      if (!/^\p{Ll}[\p{Ll}-]*$/u.test(w)) return;
+      const next = toks[i + 1] || '';
+      const nk = adsKey(next);
+      const dative = ADS_DATIVE.test(nk) && !w.endsWith('u') && w.slice(-2) !== nk.slice(-2);
+      const end = !next || /[,;:.!?)”"»]$/u.test(raw) || ADS_LINK.has(nk) || /^[\d#Ø⌀~±“”„"«(]/u.test(next)
+        || (/^\p{Lu}/u.test(next) && !/^\p{Lu}-/u.test(next)) || dative;
+      const s = stats.get(w) || [0, 0, 0];
+      s[end ? 0 : 1]++;
+      if (/^\p{Ll}/u.test(raw.replace(/^[“„"«(]+/u, ''))) s[2]++; // cik reizes ar mazo burtu ("Roma" – nekad, "Kokvilnas" – bieži)
+      stats.set(w, s);
+    });
+  }
+  return stats;
+}
+
+/**
+ * Vai tekstu (words[0..k)) var beigt ar words[k - 1], ja aiz tā ir words[k]: tas nav apzīmētājs bez sava lietvārda
+ * ("Plastmasas auklas" no "… auklas fiksators", "SCHMETZ rūpniecisko", "Dekoratīvas vistas"), prievārds, "jūsu",
+ * ģenitīvs aiz "ar" ("Velūrs ar burzījuma") vai vienrangu locekļu pirmā puse ("Metāla sprādze jostai" no "jostai vai somai").
+ * Vērtē pēc kataloga statistikas (ctx.stats), ja vārds tajā ir vismaz 3 reizes, citādi pēc vārda formas.
+ * relaxed – vienrangu locekļu noteikums netiek pārbaudīts (ja citas vietas nav).
+ */
+function adsPhraseEnd(words, k, ctx, relaxed = false) {
+  const raw = words[k - 1] || '';
+  const w = adsKey(raw);
+  if (!w || ctx.dangling.has(w) || ADS_HOLD.has(w)) return false;
+  const next = words[k] || '';
+  const nk = adsKey(next);
+  if (ADS_LABEL.has(w) && /^[Ø⌀]?\d/u.test(next)) return false;
+  const bare = raw.replace(/^[“„"«(]+/u, '').replace(/[,;:.!?)”“"»]+$/u, '');
+  // Īss kods pirms lietvārda ("ar AB | efektu", "ar 3D | ziediem", "pērlītes H | formā") – nepabeigts.
+  if (/^[\p{Lu}\d]{1,3}$/u.test(bare) && raw === bare && /^\p{Ll}[\p{Ll}-]*$/u.test(adsKey(words[k] || '')) && /^\p{Ll}/u.test(words[k] || '')
+    && !ADS_LINK.has(adsKey(words[k])) && !ADS_UNIT.test(words[k])) return false;
+  // Skaitlis, kods, zīmols vai nosaukums ("Alfie", "KARTOPU", "DBx1") – vārdšķira nav jāvērtē; aizvērta iekava vai pēdiņa
+  // ("(koka - dabīgas)") – frāzes beigas.
+  // "kanāla/tuneļa | lentīte" – vērtē pēc pēdējā vārda.
+  const sl = bare.match(/^\p{Ll}[\p{Ll}-]*\/(\p{Ll}[\p{Ll}-]*)$/u);
+  if (sl) {
+    const ws = [...words];
+    ws[k - 1] = raw.replace(bare, sl[1]);
+    return adsPhraseEnd(ws, k, ctx, relaxed);
+  }
+  // Vārds ar lielo burtu nosaukuma vidū, kas katalogā ir parasts vārds ("Organiskā Kokvilnas trikotāža", "Biezs Kokvilnas auduma
+  // maisiņš") – vērtē kā mazo burtu vārdu; zīmoli un reti vārdi ("Alfie", "Ūsiņš") paliek nosaukumi.
+  const common = (x) => {
+    const st = ctx.stats?.get(adsKey(x));
+    const b = String(x || '').replace(/^[“„"«(]+/u, '').replace(/[,;:.!?)”“"»]+$/u, '');
+    return /^\p{Lu}\p{Ll}+$/u.test(b) && !ctx.brands?.has(b.toUpperCase())
+      && !!st && st[0] + st[1] >= 5 && st[1] >= 1 && (st[2] || 0) >= 3;
+  };
+  const low = (x) => /^\p{Ll}/u.test(x) || common(x);
+  const nextPlain = !!next && low(next) && /^\p{Ll}[\p{Ll}-]*$/u.test(nk) && !ADS_LINK.has(nk) && !ctx.dangling.has(nk);
+  if (k > 1 && /^\d+\.$/u.test(words[k - 2]) && nextPlain) return false; // kārtas skaitlis: "3. krāsu | variants"
+  if (/^\d+\.$/u.test(raw) && nextPlain) return false; // "3. | krāsu variants"
+  if (/^(formas|veida|tipa)$/u.test(nk) && /^\p{Ll}/u.test(next)) return false; // "sirds | formas pērlītes"
+  // Nosaukums pēdiņās aiz "ar", aiz tā lietvārds: "ar “kaķa acs” | efektu" – nepabeigts.
+  if (/[”"»]$/u.test(raw) && nextPlain) {
+    let q = k - 1;
+    while (q > 0 && !/^[“„"«]/u.test(words[q])) q--;
+    if (q > 0 && ADS_ACC_PREP.has(adsKey(words[q - 1]))) return false;
+  }
+  // Lielais burts aiz komata ir jaunas daļas sākums, ne nosaukums ("“Veggie”, Dārzeņu | kolekcija"); ģenitīvs ar lielo burtu
+  // pirms cita vārda ("Slīpētas Čehu | stikla pērlītes") – apzīmētājs.
+  if (!/^\p{L}[\p{Ll}-]*$/u.test(bare) || /[)”»"]$/u.test(raw)
+    || (k > 1 && /^\p{Lu}/u.test(bare) && !common(raw) && !/[,;:]$/u.test(words[k - 2]) && !(/(u|as|es)$/u.test(w) && nextPlain)
+      && !(nextPlain && (k === 2 || /^\p{Ll}/u.test(words[k - 2])) && adsAdj(adsKey(words[k - 2])) && !ADS_NOT_ADJ.test(adsKey(words[k - 2]))))) return true; // "Pašlīmējoši Velcro | taisnstūri"
+  // Prievārds tuvāk par komatu: ar akuzatīvu – "ar vārda" (vietu) nepabeigts; ar ģenitīvu – "no mākslīgās ādas" pabeigts.
+  let genPrep = false;
+  for (let i = k - 2; i >= Math.max(0, k - 4); i--) {
+    if (/[,;:]$/.test(words[i])) break;
+    const pk = adsKey(words[i]);
+    if (ADS_ACC_PREP.has(pk)) {
+      if (/(a|as|es|is|us|s|š)$/u.test(w)) return false;
+      break;
+    }
+    if (ADS_PREP.has(pk)) { genPrep = true; break; }
+  }
+  // Aiz prievārda ar ģenitīvu daudzskaitļa ģenitīvs pirms cita vārda – apzīmētājs ("uz ogu | rozā fona").
+  if (genPrep && w.endsWith('u') && /^\p{Ll}/u.test(next) && /^\p{Ll}[\p{Ll}-]*$/u.test(nk) && !ADS_LINK.has(nk) && !ctx.dangling.has(nk)) return false;
+  if (ADS_UNIT.test(raw.replace(/[,;:]$/, ''))) return true; // "15 mm", "100 g" – mērvienība (atrautu skaitli pārbauda adsSplitsNumber)
+  const plain = nextPlain;
+  const noun = plain && !ADS_DATIVE.test(nk);
+  const st = ctx.stats?.get(w);
+  const seen = st ? st[0] + st[1] : 0;
+  const ratio = seen ? st[0] / seen : 0;
+  const ns = noun ? ctx.stats?.get(nk) : null;
+  const strongNext = !!ns && ns[0] + ns[1] >= 3 && ns[0] / (ns[0] + ns[1]) >= 0.7; // "auklas | fiksators", "flizelīna | lente"
+  const adj = adsAdj(w) || ADS_COLOR.test(w) || ADS_INDECL.test(w);
+  // "spirālveida | rāvējslēdzējam", "Spageti tipa | dzija", "sirds formas | pērlītes" – apzīmētājs bez sava lietvārda.
+  if ((ADS_INDECL.test(w) || /^(formas|veida|tipa)$/u.test(w)) && plain) return false;
+  // Ģenitīvs pirms darbības lietvārda (tas ir tā papildinātājs): "caurumu | izspiešanas presformas", "rāvējslēdzēju | iešūšanai".
+  if (w.endsWith('u') && nextPlain && /šan(as|ai|ā)$/u.test(nk)) return false;
+  // Noteiktais īpašības vārds ģenitīvā + lietvārds pirms cita vārda: "nerūsējošā tērauda | gredzeni", "slīpā diega | lentas".
+  const pw = k > 1 ? adsKey(words[k - 2]) : '';
+  if (nextPlain && !ADS_DATIVE.test(nk) && (k === 2 || /^\p{Ll}/u.test(words[k - 2] || '')) && adsAdj(pw) && !ADS_NOT_ADJ.test(pw) && /(ā|ās)$/u.test(pw)
+    && /(a|as|es|u)$/u.test(w) && !adsAdj(w)) return false;
+  // Īpašības vārds vīriešu dzimtē vai datīvā, aiz kura tikai ģenitīvi – tā lietvārds vēl nav sasniegts:
+  // "Elegants krāsu | pārejas dizains", "pilnīgai gaismas | bloķēšanai", "Personalizēts ģimenes | T-krekls".
+  if (/(u|as|es|a)$/u.test(w) && !adsAdj(w) && !ADS_COLOR.test(w)) {
+    for (let j = k - 2; j >= Math.max(0, k - 4); j--) {
+      const x = adsKey(words[j]);
+      if ((j > 0 && !/^\p{Ll}/u.test(words[j])) || /[,;:]$/u.test(words[j])) break; // "Personalizēts ģimenes | T-krekls"
+      if (adsAdj(x) && !ADS_NOT_ADJ.test(x)) {
+        if (/([^aeiouāēīūo][sš]|ais)$/u.test(x) || ADS_DATIVE.test(x)) return false;
+        break;
+      }
+      if (!/(u|as|es|a)$/u.test(x)) break;
+    }
+  }
+  // Bieži beigu vārds pirms "un" ("Metāla sprādze jostai | vai somai") der, bet nosaukumā labāk bez tā, ja viss
+  // pāris ("Jostai vai somai") ietilpst aprakstā; bez prievārda aprakstā citādi paliktu tikai "Somai".
+  const y = words[k + 1] || '';
+  const coordFits = !!ctx.coordMax && /^\p{Ll}/u.test(y) && (ADS_DATIVE.test(adsKey(y)) || adsKey(y).slice(-2) === w.slice(-2))
+    && `${w} ${nk} ${adsKey(y)}`.length <= ctx.coordMax && !words.slice(0, k - 1).some((x) => ADS_PREP.has(adsKey(x)));
+  // Vienrangu daudzskaitļa ģenitīvi, to lietvārds vēl priekšā: "pogcaurumu | un pogu novietošanai".
+  const z = words[k + 2] || '';
+  if (w.endsWith('u') && !adj && (nk === 'un' || nk === 'vai') && /^\p{Ll}/u.test(y) && adsKey(y).endsWith('u')
+    && /^\p{Ll}[\p{Ll}-]*$/u.test(z) && !adsKey(z).endsWith('u') && !ADS_LINK.has(adsKey(z)) && !ctx.dangling.has(adsKey(z))
+    && !words.slice(Math.max(0, k - 3), k - 1).some((x) => ADS_ACC_PREP.has(adsKey(x)))) return false; // ne "ar vilnu | un ģeometrisku rakstu"
+  if ((nk === 'un' || nk === 'vai') && (adj || (!relaxed && /(ai|am|iem|ām|ēm|īm|ā|ē|os|ās|ēs)$/u.test(w) && !(seen >= 3 && ratio >= 0.65 && !coordFits)))) {
+    return false; // "ar bēšu | un brūnu punktu rakstu", "jostai | vai somai" (pēdējais – ja citas vietas nav, der)
+  }
+  if (noun && adj) return false; // "Pašlīmējošs ūdensizturīgs | ielāps", "Gaiši zils | viskozes"
+  // Īpašības vārds pirms nosaukuma ar lielo burtu, aiz kura lietvārds: "Pašlīmējoši | Velcro taisnstūri".
+  const y2 = words[k + 1] || '';
+  if (adj && /^\p{Lu}\p{Ll}+$/u.test(next) && /^\p{Ll}[\p{Ll}-]*$/u.test(y2) && !ADS_LINK.has(adsKey(y2)) && !ctx.dangling.has(adsKey(y2))) return false;
+  if (plain && adj && w.slice(-2) === nk.slice(-2)) return false; // "ar pieskaņotiem | paneļiem"
+  if (ADS_NOUN.test(w)) return true;
+  if (noun && ADS_NOUN.test(nk)) return false; // "Atstarojošs lāča | piekariņš"
+  if (seen >= 3) {
+    if (ratio < 0.25 && !genPrep) return false;
+    if (ratio >= 0.65) return true;
+    return !strongNext;
+  }
+  if (strongNext) return false;
+  if (w.endsWith('u') && (nk.endsWith('u') || !words.slice(0, k - 1).some((x) => ADS_PREP.has(adsKey(x))))) return false; // "šujmašīnu"
+  if (plain && w.length > 3 && nk.length > 3 && w.slice(-2) === nk.slice(-2)) return false; // "vistas | spalvas", "smalkiem | audumiem"
+  // Lokatīvs vai noteiktais īpašības vārds pirms cita vārda ("ar pelītēm un mežā | zemenītēm", "rozā | bantēs").
+  if (/[āē]$/u.test(w) && next && /^\p{Ll}[\p{Ll}-]*$/u.test(nk) && /^\p{Ll}/u.test(next) && !ADS_LINK.has(nk) && !ctx.dangling.has(nk)) return false;
+  return true;
+}
+
+// Vai griezums aiz words[n - 1] atrauj skaitli no mērvienības vai pārgriež skaitļu virkni / diapazonu
+// ("Filca loksne 20" no "20 × 30 cm", "100 g" no "100 g / 120 m", "2,25 mm" no "2,25 mm - 7 mm", "poga ar 2" no "ar 2 caurumiem").
+function adsSplitsNumber(words, n, dangling) {
+  const last = words[n - 1] || '';
+  const next = words[n];
+  if (!next) return false;
+  const join = (w) => ADS_JOIN.test(w) || ADS_DASH.test(w);
+  if (ADS_NUM.test(last) && (ADS_UNIT.test(next) || ADS_NUM.test(next) || join(next))) {
+    // Domuzīme aiz nosaukuma numura ("Lanagold 800 - 100 g", "SPIRIT 2 - 100 ml") – nosaukuma daļa, ne diapazons.
+    return !(ADS_DASH.test(next) && /^\p{Lu}\p{L}/u.test(words[n - 2] || ''));
+  }
+  if (join(last) && /^[Ø⌀]?\d/u.test(next) && (ADS_NUM.test(words[n - 2] || '') || ADS_UNIT.test(words[n - 2] || ''))) return true;
+  if (ADS_UNIT.test(last) && !/[,;]$/.test(last) && join(next) && /^[Ø⌀]?\d/u.test(words[n + 1] || '')) return true;
+  // "100 % | vilna" – procenti pieder pie materiāla.
+  if (/^\d*%$/u.test(last) && /^\p{Ll}/u.test(next) && !ADS_LINK.has(adsKey(next))) return true;
+  // Izmēru saraksts ar vienu mērvienību: "7 mm, | 10 mm, 13 mm" – nepārgriež (citādi šķiet, ka ir tikai 7 mm).
+  const u = (x) => String(x || '').replace(/[,;.]+$/u, '').toLowerCase();
+  if (ADS_UNIT.test(last) && /,$/u.test(last) && ADS_NUM.test(next) && u(words[n + 1]) === u(last)) return true;
+  if (ADS_NUM.test(last) && /:$/.test(words[n - 2] || '')) return true; // "komplekts: 5" no "… 5 adatas"
+  if (ADS_NUM.test(last) && dangling.has((words[n - 2] || '').toLowerCase())) return true;
+  // Skaitlis, kas atrauts no sava lietvārda ("Best Socks 4" no "… 4 kārtu zeķu dzija"); ne "Nr. 30".
+  return /^\d+$/.test(last) && /^\p{Ll}/u.test(next) && !/^(nr\.?|no\.?|#)$/i.test(words[n - 2] || '');
+}
+
+// Vai teksts pirms atdalītāja beidzas ar skaitli (arī ar mērvienību) un aiz tā sākas skaitlis: diapazons vai saraksts
+// ("Ø3 - 20 mm", "2,0 mm - 5,0 mm", "100 g / 120 m"), ne atdalītājs.
+function adsNumberRange(left, right, withUnit = true) {
+  if (!/^[Ø⌀]?\s?\d/u.test(right)) return false;
+  const ws = left.trim().split(' ');
+  const a = ws[ws.length - 1] || '';
+  return /\d$/.test(a) || (withUnit && ADS_UNIT.test(a) && ADS_NUM.test(ws[ws.length - 2] || ''));
+}
+
+/**
+ * Teksts līdz max zīmēm bez pārgrieztiem vārdiem un bez daudzpunktes: vispirms garākā daļa līdz frāzes robežai
+ * (", ", " - ", " / ", " ("), ja tā nav pārāk īsa; citādi pa veseliem vārdiem. Beigās nepaliek pieturzīmes,
+ * saikļi un prievārdi ("ar", "un"), apzīmētājs bez sava lietvārda ("Plastmasas auklas" no "… auklas fiksators"; skat.
+ * adsPhraseEnd), skaitlis, kas atrauts no mērvienības vai otra izmēra ("20" no "20 × 30 cm"), neaizvērta iekava vai pēdiņa.
+ * Teksts netiek griezts skaitļu virknes vai diapazona vidū ("6, 10, 15 un 25 mm", "2,0 mm - 5,0 mm").
+ * Ja teksta sākumā ir tikai apzīmētāji ("Dekoratīvas vistas spalvas", "SCHMETZ rūpniecisko šujmašīnu adatas"), tie var tikt
+ * izlaisti ("Vistas spalvas 6-20 cm", "SCHMETZ šujmašīnu adatas"); izlaistie vārdi – dropped.
+ * ctx: { dangling: Set, stats?: adsWordStats(), brands?: Set (lielajiem burtiem) }.
+ * strict – ja pabeigtas frāzes vietas nav, text = '' (aprakstam: labāk cits teksts nekā pārgriezts); citādi – vecā kārtība.
+ * Atgriež { text, rest, dropped } – rest ir atmestā beigu daļa (var izmantot citā kolonnā). text = '' – nevar saīsināt.
+ */
+function fitText(s, max, ctx, strict = false) {
+  if (!strict) ctx = { ...ctx, coordMax: max }; // nosaukumam: "X un Y" var pāriet uz aprakstu (adsPhraseEnd)
+  const { dangling } = ctx;
+  s = dropStrays(String(s ?? '').trim());
+  if (s.length <= max && bracketScan(s).cut < 0) return { text: s, rest: '', dropped: '' };
+  const tidy = (t) => {
+    let prev;
+    do {
+      prev = t;
+      t = t.replace(/[\s,;:\-–/(&+·…]+$/u, '');
+      const { cut } = bracketScan(t);
+      if (cut >= 0) t = t.slice(0, cut);
+      const words = t.split(' ');
+      if (words.length > 1 && dangling.has(words[words.length - 1].toLowerCase())) t = words.slice(0, -1).join(' ');
+    } while (t !== prev);
+    return t.trim();
+  };
+  const min = Math.min(10, max);
+  const words = s.split(' ');
+  // Garākais derīgais teksts no vārdiem ws (griezums tikai tur, kur frāze pabeigta).
+  const fit = (ws, relaxed = false) => {
+    let n = 0;
+    let len = 0;
+    while (n < ws.length && len + (n ? 1 : 0) + ws[n].length <= max) { len += (n ? 1 : 0) + ws[n].length; n++; }
+    for (let k = n; k > 0; k--) {
+      const t = tidy(ws.slice(0, k).join(' '));
+      if (!t) continue;
+      const kt = t.split(' ').length;
+      if (adsSplitsNumber(ws, kt, dangling) || !adsPhraseEnd(ws, kt, ctx, relaxed)) continue;
+      return t;
+    }
+    return '';
+  };
+  let text = '';
+  let from = 0; // izlaisto sākuma vārdu skaits
+  let skip = 0; // izlaisti vārdi aiz pirmā (zīmols paliek: "SCHMETZ šujmašīnu adatas")
+  for (const m of s.matchAll(ADS_BOUNDARY)) {
+    const sep = m[0].trim();
+    const left = s.slice(0, m.index);
+    const right = s.slice(m.index + m[0].length);
+    // Skaitļu diapazons vai saraksts ("Ø3 - 20 mm", "2,0 mm - 5,0 mm", "lente 6, 10, 15 mm") – nav robeža. Ir robeža, ja
+    // kreisais skaitlis ir apzīmējums: aiz liela burta vārda vai "nr." ("Arena Nr. 30, 150 m", "SERV 7, 16x231") vai ar
+    // zīmēm ("8/0, 3 mm"); aiz komata mērvienība – divas īpašības ("Ø 6 mm, 30 cm").
+    if (sep !== '(' && /^[Ø⌀]?\s?\d/u.test(right)) {
+      const lw = left.split(' ');
+      const [a, b] = [lw[lw.length - 1], lw[lw.length - 2] || ''];
+      if (/\d$/.test(a)) {
+        if (/^[Ø⌀]?\d+([.,]\d+)?$/.test(a) && !/^\p{Lu}\p{L}/u.test(b) && !/^(nr|no)\.?$/i.test(b)) continue;
+      } else if (/^[-–/]$/.test(sep) && ADS_UNIT.test(a) && ADS_NUM.test(b)) continue;
+      else if (sep === ',' && ADS_UNIT.test(a) && ADS_NUM.test(b) && right.match(/^[Ø⌀]?\s?[\d.,]+\s+(\S+?)[,;.]?(\s|$)/u)?.[1]?.toLowerCase() === a.toLowerCase()) continue;
+    }
+    const t = tidy(left);
+    if (t.length > max || t.length <= text.length) continue;
+    const tw = t.split(' ');
+    if (adsPhraseEnd(tw, tw.length, ctx)) text = t;
+  }
+  if (text.length < min) text = '';
+  // Teksts tikai no skaitļiem un kodiem ("100 %" no "100 % kokvilnas audums") – nav nosaukums.
+  const wordy = (t) => /\p{L}{3,}/u.test(t);
+  if (!text) {
+    const head = fit(words);
+    if (head.length >= min && wordy(head)) text = head;
+    else {
+      // Sākumā tikai apzīmētāji – izlaiž līdz 3 vārdiem (īpašības vārdus, krāsas, ģenitīvus; ne prievārdu, skaitli, preces
+      // vārdu); zīmols sākumā paliek ("SCHMETZ šujmašīnu adatas"). Teksts nesākas ar "un" / "vai".
+      const brand = ctx.brands?.has(adsKey(words[0]).toUpperCase()) || /^\p{Lu}{2,}$/u.test(words[0]);
+      // Vietas, no kurām var sākt: aiz apzīmētājiem, aiz "100 %", aiz "X un" ("Viskozes un kokvilnas audums" → "Kokvilnas audums").
+      const starts = [];
+      for (let i = brand ? 1 : 0; i < words.length - 1 && starts.length < 3;) {
+        const w = words[i];
+        const k = adsKey(w);
+        const st = ctx.stats?.get(k);
+        const ratio = st && st[0] + st[1] >= 3 ? st[0] / (st[0] + st[1]) : null;
+        if (/^\d+([.,]\d+)?$/u.test(w) && words[i + 1] === '%' && i + 2 < words.length) { i += 2; starts.push(i); continue; } // "Plāns 100 % | kokvilnas …"
+        // Divi vienāda locījuma datīvi: "skaistām un | vienmērīgām adītām zeķēm".
+        if (ADS_DATIVE.test(k) && /^(un|vai)$/u.test(words[i + 1] || '') && adsKey(words[i + 2]).slice(-2) === k.slice(-2) && i + 3 < words.length) {
+          i += 2; starts.push(i); continue;
+        }
+        const pk = adsKey(words[i - 1] || '');
+        if (/^(un|vai)$/i.test(w) && i > 0 && starts.includes(i)) {
+          const y = words[i + 1] || '';
+          const yk = adsKey(y);
+          const z = words[i + 2] || '';
+          // Abas krāsas kopā ("oranžas un pelēkas | spalvas" → "Spalvas"); krāsu pa pusei nē ("rozā un | ceriņu …").
+          const j = ADS_SHADE.test(yk) ? i + 2 : i + 1;
+          if (ADS_COLOR.test(pk) && ADS_COLOR.test(adsKey(words[j] || '')) && !ADS_SHADE.test(adsKey(words[j] || '')) && j < words.length - 1) {
+            i = j + 1; starts.push(i); continue;
+          }
+          if (ADS_COLOR.test(pk)) break;
+          // Divi materiāli vai apzīmētāji – tikai abi kopā ("Minerāla un stikla | sirds formas pērlītes"); viens pats
+          // nozīmētu citu sastāvu ("Viskozes dzija" no "kokvilnas un viskozes dzija").
+          const gen = (x) => /(a|as|es|u)$/u.test(x) && !ADS_DATIVE.test(x) && !adsAdj(x);
+          if (gen(pk) && gen(yk) && /^\p{Ll}/u.test(y) && /^\p{Ll}/u.test(z) && !ADS_DATIVE.test(adsKey(z)) && !ADS_LINK.has(adsKey(z))) {
+            i += 2; starts.push(i); continue;
+          }
+          // Viens no pāra: daudzskaitļa ģenitīvs ("brošu un | sprādzīšu izgatavošanai", "nošu un | latviskā raksta") vai
+          // tāds pats datīvs ("skaistām un | vienmērīgām adītām zeķēm").
+          if ((pk.endsWith('u') && (!adsAdj(pk) || ADS_NOT_ADJ.test(pk))) || (ADS_DATIVE.test(pk) && pk.slice(-2) === yk.slice(-2))) {
+            i++; starts.push(i); continue;
+          }
+          break;
+        }
+        if (ADS_LINK.has(k) || dangling.has(k) || /[\d“”„"«»()]/u.test(w) || ADS_NOUN.test(k)) break;
+        // Krāsa vai īpašības vārds sākumā ir apzīmētājs ("Rozā rūtains …", "Ūdensizturīgs lietusmēteļu audums"), izņemot
+        // lietvārdus ar tādu pašu galotni ("Palīgs gumiju …", "Griešanas disks", "Pogu aparāts").
+        // Aiz noteiktā īpašības vārda ģenitīvā ("Sintētiskā", "Nerūsējošā") – ģenitīvs neatkarīgi no galotnes
+        // ("Sintētiskā mēnessakmens | pērlītes", "Nerūsējošā tērauda | savienojošie gredzeni").
+        const pk0 = i > 0 ? adsKey(words[i - 1]) : '';
+        const afterKeep = i > 0 && (ADS_KEEP.test(pk0) || (adsAdj(pk0) && !ADS_NOT_ADJ.test(pk0))) && /(ā|ās)$/u.test(pk0);
+        const modifier = ((adsAdj(k) || ADS_COLOR.test(k) || ADS_INDECL.test(k)) && !ADS_NOT_ADJ.test(k))
+          || (/(a|as|es|is|u|ā|ās|ēs|o|i|ais|ie)$/u.test(k) && (ratio === null || ratio < 0.25))
+          || (afterKeep && /^\p{Ll}/u.test(w) && (ratio === null || ratio < 0.5))
+          || (k.endsWith('u') && /^(un|vai)$/u.test(words[i + 1] || '') && adsKey(words[i + 2] || '').endsWith('u')) // "pogcaurumu un pogu …"
+          || (/šanas$/u.test(k) && /^\p{Ll}[\p{Ll}-]*$/u.test(words[i + 1] || '') && !ADS_LINK.has(adsKey(words[i + 1]))) // "Caurumu izspiešanas | presformas …"
+          || (k.endsWith('u') && /šan(as|ai|ā)$/u.test(adsKey(words[i + 1] || ''))); // "Caurumu | izspiešanas …"
+        if (!modifier || (!/^(un|vai)$/u.test(words[i + 1] || '') && adsPhraseEnd(words, i + 1, ctx))) break; // "Minerāla | un stikla …"
+        i++;
+        // "Gaiši | zils …" – apstākļa vārdu bez krāsas neatstāj ("Zils viskozes tvills" nozīmētu ko citu); "Mākslīgās | ādas …" –
+        // tikai kopā ar nākamo vārdu ("Slīpā diega lenta", ne "Ādas slīpā diega lenta").
+        if (ADS_SHADE.test(k) || ADS_KEEP.test(k)) continue;
+        if (k.endsWith('u') && /šan(as|ai|ā)$/u.test(adsKey(words[i] || ''))) continue; // "Caurumu | veidošanas …" – tikai abi kopā
+        if (/^(formas|veida|tipa)$/u.test(adsKey(words[i] || ''))) continue; // "Spageti | tipa …" – tikai kopā ar "tipa"
+        starts.push(i);
+      }
+      const okStart = (f) => !/^(un|vai|and|or)$/i.test(words[f] || '');
+      // Zīmols sākumā paliek: "SCHMETZ šujmašīnu adatas", "BOHIN rullītis 15 cm".
+      if (brand) {
+        // Aprakstā – tas, kas aptver vairāk ("SCHMETZ adatas ādai", ne "SCHMETZ šujmašīnu adatas"); nosaukumā – pirmais derīgais
+        // (atlikums paliek aprakstam).
+        let best = -1;
+        for (const f of starts) {
+          if (!okStart(f)) continue;
+          const t = fit([words[0], ...words.slice(f)]);
+          if (t.length < min || t.split(' ').length < 2) continue;
+          const reach = f + t.split(' ').length - 1;
+          if (reach > best) { best = reach; text = t; skip = f - 1; }
+          if (!strict) break;
+        }
+      }
+      for (const f of brand ? [] : starts) {
+        if (text) break;
+        if (!okStart(f)) continue;
+        const t = fit(words.slice(f));
+        if (t.length >= min && wordy(t)) { text = t; from = f; }
+      }
+      if (!text && (strict ? head : wordy(head))) text = head;
+      if (!text) text = fit(words, true);
+      if (strict && text.length < min && text !== head) text = ''; // "Skaistām" no "skaistām un vienmērīgām …"
+      if (!text && strict) return { text: '', rest: s, dropped: '' };
+      if (!text || (!strict && !wordy(text))) {
+        // Vecā kārtība: pa vārdiem, skaitlis netiek atrauts no mērvienības, beigās nav "izmēri" bez vērtības.
+        let n = 0;
+        let len = 0;
+        while (n < words.length && len + (n ? 1 : 0) + words[n].length <= max) { len += (n ? 1 : 0) + words[n].length; n++; }
+        const n0 = n;
+        while (n > 1 && (adsSplitsNumber(words, n, dangling) || ADS_LABEL.has(adsKey(words[n - 1])))) n--;
+        text = tidy(words.slice(0, n || n0).join(' '));
+      }
+    }
+  }
+  if (!text) return { text: '', rest: s, dropped: '' };
+  let dropped = '';
+  let restStart;
+  if (skip) {
+    dropped = words.slice(1, 1 + skip).join(' ');
+    const kept = text.split(' ').length; // zīmols + vārdi no words[1 + skip]
+    restStart = words.slice(0, 1 + skip + kept - 1).join(' ').length;
+  } else {
+    dropped = words.slice(0, from).join(' ');
+    restStart = (from ? dropped.length + 1 : 0) + text.length;
+    if (/\s(un|vai)$/u.test(dropped)) dropped = ''; // "Auduma un" (ādas caurumotājs) – aprakstam neder
+  }
+  let rest = s.slice(restStart).replace(/^[\s,;:\-–/)·]+/u, '').trim();
+  // "… trikotāža ar vilnu | un ģeometrisku rakstu" → "ar ģeometrisku rakstu" (tas pats prievārds, ne "Ģeometrisku rakstu").
+  if (/^(un|vai)\s/u.test(rest)) {
+    const kept = text.split(' ');
+    for (let i = kept.length - 2; i >= Math.max(0, kept.length - 4); i--) {
+      if (/[,;:]$/.test(kept[i])) break;
+      if (ADS_PREP.has(kept[i].toLowerCase())) { rest = `${kept[i].toLowerCase()} ${rest.replace(/^\S+\s+/u, '')}`; break; }
+    }
+  }
+  for (let w = rest.split(' '); w.length > 1 && ADS_LEAD_DROP.has(w[0].toLowerCase()); w = rest.split(' ')) rest = w.slice(1).join(' ');
+  return { text, rest: dropStrays(rest), dropped };
+}
+
+// Attēla adrese: tikai https un JPG/PNG/GIF; Shopify CDN – ar platumu imageWidth (Google: līdz 6 milj. pikseļu).
+// Shopify CDN – vienmēr ar format=pjpg (JPEG arī klientiem, kas pieņem WebP; skat. CONFIG.googleAdsCustom.shopifyForceJpeg).
+function adsImage(url, c) {
+  let u;
+  try { u = new URL(String(url ?? '').trim()); } catch { return ''; }
+  if (u.protocol !== 'https:') return '';
+  const shopify = u.hostname === 'cdn.shopify.com' || u.pathname.startsWith('/cdn/shop/');
+  if (!shopify) return c.imageExt.test(u.pathname) ? u.toString() : '';
+  if (!c.shopifyImageExt.test(u.pathname)) return '';
+  if (c.imageWidth) u.searchParams.set('width', String(c.imageWidth));
+  if (c.shopifyForceJpeg) u.searchParams.set('format', c.shopifyForceJpeg);
+  return u.toString();
+}
+
+// Vai attēla adrese der Google: https un JPG/PNG/GIF; Shopify CDN – tikai ar piespiedu JPEG un platumu līdz imageWidth
+// (bez tiem PNG/JPG klientiem, kas pieņem WebP, nāk kā WebP, un oriģināls var būt virs 6 milj. pikseļu).
+function adsImageOk(url, c) {
+  let u;
+  try { u = new URL(url); } catch { return false; }
+  if (u.protocol !== 'https:') return false;
+  const shopify = u.hostname === 'cdn.shopify.com' || u.pathname.startsWith('/cdn/shop/');
+  if (!shopify) return c.imageExt.test(u.pathname);
+  const width = Number(u.searchParams.get('width'));
+  return c.shopifyImageExt.test(u.pathname) && (!c.shopifyForceJpeg || u.searchParams.get('format') === c.shopifyForceJpeg)
+    && (!c.imageWidth || (width > 0 && width <= c.imageWidth));
+}
+
+// Vai vārdu virkne needle ir haystack kā veseli vārdi ("s" nav "kokvilnas" daļa, "2" nav "25" daļa).
+const hasWords = (haystack, needle) => {
+  const n = normCmp(needle);
+  return !!n && ` ${normCmp(haystack)} `.includes(` ${n} `);
+};
+
+/**
+ * Item title / Item subtitle / Item description (katrs līdz textMax zīmēm) no Shopify nosaukuma.
+ *   Item title – produkta nosaukuma pirmā daļa (līdz " - "), bez sākuma veida vārda ("Dzijas DROPS Air" → "DROPS Air");
+ *     ja par garu un vidū ir zināms zīmols ar modeli ("Tamboradatas DROPS Pro Circus, …") – no zīmola (ne tad, ja zīmols
+ *     ir piederums citai precei: "pēdiņa priekš Janome …", un ne apģērbiem: "Priekšauts … SOL’S"); apdrukas precēm –
+ *     preces veids + dizaina nosaukums pēdiņās; tad saīsināts pa frāzēm / vārdiem tā, lai preces vārds nepazūd
+ *     ("Dekoratīvas vistas spalvas …" → "Vistas spalvas 6-20 cm", nevis "Dekoratīvas vistas"; skat. fitText).
+ *   Item subtitle – varianta nosaukums (krāsa, izmērs), ja tas nav tieši tāds pats kā nosaukums.
+ *   Item description – pirmais no: dizaina sauklis (vesels teikums), daļa pirms zīmola (+ daļa pēc " - "), nosaukuma
+ *     atmestā daļa + daļa pēc " - " ("Traktors, tumši zils"), daļa pēc " - ", daļa pirms zīmola, atmestā daļa, izlaistie
+ *     sākuma vārdi ("Organiskās kokvilnas"), kategorija; neatkārto virsrakstu vai apakšvirsrakstu.
+ * Ja viss Shopify teksts ir ar lielajiem burtiem ("BALTA"), tas kļūst par teikumu ("Balta"); zīmoli (DROPS, SCHMETZ) un
+ * kodi (XL, 90/14) paliek. Ja Shopify tekstā ir arī mazie burti, lielie burti paliek (zīmols, modelis) – validators brīdina.
+ * ctx: { brandRe, brandCase, stats } no toGoogleAdsCustomCsv. Atgriež null, ja nosaukumu nevar saīsināt bez pārgriezta vārda.
+ */
+function adsTexts(it, cfg, ctx) {
+  const c = cfg.googleAdsCustom;
+  const max = c.textMax;
+  const { brandRe, brandCase } = ctx;
+  const fctx = { dangling: new Set(c.danglingWords), stats: ctx.stats, brands: new Set([...brandCase.keys(), String(it.brand || '').toUpperCase()]) };
+  const dangling = fctx.dangling;
+  const typeRe = cfg.apparel?.typePattern;
+  const notes = [];
+  const clean = (s) => noEmoji(String(s ?? '').replace(/<[^>]*>/g, ' ').replace(new RegExp(ADS_EMOJI.source, 'gv'), ' ')
+    .replace(new RegExp(ADS_DECOR.source, 'gu'), ' '))
+    .replace(/([!?])[!?]+/g, '$1')
+    .replace(/[�\u0080-\u009F]/g, ' ')
+    .replace(/…(?=["”“»]?\s*$)/u, '') // daudzpunkte beigās izskatītos pēc pārgriezta teksta ("Jē… skola" paliek)
+    .replace(/(\S)\s+(["”“»])(?=$|[\s,.;:!?)])/gu, '$1$2') // '"Made with love "' → '"Made with love"'
+    .replace(/(\p{L})"\s+(?=\p{L}[^"]*"(?:\s|$))/gu, (m0, a, i, str) => ((str.slice(0, i).match(/"/g) || []).length % 2 ? m0 : `${a} "`))
+    // ↑ 'T-krekls" Tētis dara tēta lietas"' → 'T-krekls "Tētis dara tēta lietas"' (taisnā pēdiņa, kas atver, pielipusi vārdam)
+    .replace(/“([^“”"„]+)"(?=$|[\s,.;:!?)])/gu, '“$1”') // '“Te ir manas mājas"' → '“Te ir manas mājas”'
+    .replace(/\)-(?=\s*\d)/g, ') - ') // "(kārsums)-5 g" → "(kārsums) - 5 g"
+    .replace(/–/g, '-')
+    .replace(/(\p{L})-\s+(?!(?:un|vai|ir|and|or)\s)/gu, '$1 - ') // "sprādze- lāča" → " - "; "Lina- un kokvilnas" paliek
+    .replace(/^[\s,;:\-–/·]+/u, '') // varianta "- #1000" → "#1000"
+    .replace(/^\d{1,2}\.\s+(?=\p{Lu})/u, '') // numurs sarakstā: "1. Dabīgā liellopa āda" → "Dabīgā liellopa āda"
+    .replace(/\s+/g, ' ').trim();
+  // Neaizvērta pēdiņa beigās ('T-krekls “Chaotic Barbie Mood') – aizver.
+  const closeQuote = (s) => {
+    const { cut } = bracketScan(s);
+    const pair = { '„': '“', '“': '”', '"': '"', '«': '»' }[s[cut]];
+    return cut >= 0 && pair && bracketScan(`${s}${pair}`).cut < 0 ? `${s}${pair}` : s;
+  };
+  const fixCaps = (s, what, src) => {
+    if (!isAllCaps(s) || brandCase.has(s.toUpperCase())) return s;
+    notes.push(`${what}: lielie burti`);
+    const keep = (w) => brandCase.get(w.toUpperCase()) ?? (ADS_CODE.test(w) ? w : null);
+    // Viss Shopify teksts ar lielajiem burtiem ("BALTA LENTE") → teikums ("Balta lente"). Tikai daļa ("Šķēres … - TEXI
+    // TITANIUM CRAFT") – tas ir nosaukums: vārdi no 4 burtiem ar lielo sākumburtu ("Texi Titanium Craft"), īsie (LED) paliek.
+    if (isAllCaps(src)) return upperFirst(s.split(' ').map((w) => keep(w) ?? w.toLowerCase()).join(' '));
+    return s.split(' ').map((w) => keep(w) ?? ((w.match(/\p{L}/gu) || []).length >= 4
+      ? w.toLowerCase().replace(/\p{L}/u, (x) => x.toUpperCase()) : w)).join(' ');
+  };
+  // Sauklis pēdiņās netiek pārgriezts teikuma vidū ("Supervaronim nevajag"): viss vai pirmais teikums, kas ietilpst.
+  const sentence = (q) => {
+    if (q.length <= max) return q;
+    for (const sn of q.split(/(?<=[.!?…])\s+/u)) if (sn.length >= 8 && sn.length <= max) return sn;
+    return '';
+  };
+  const full = closeQuote(clean(it._productTitle || it._baseName || it.name));
+  let parts = titleParts(full);
+  if (parts.length > 1 && parts[0].length < 5 && !parts[0].includes(' ')) parts = [`${parts[0]} - ${parts[1]}`, ...parts.slice(2)]; // "O - riņķis", "Hot - Fix"
+  let head = parts[0] || '';
+  const tail = parts.slice(1).join(' - ');
+  let before = '';
+  let quoteDropped = '';
+  let quoteAfter = ''; // vārdi starp preces veidu un dizainu ("T-krekls | organiskās kokvilnas | “Super mamma”")
+  let quoteType = '';
+  const lead = head.match(c.leadingTypeWords);
+  if (lead && head.length > lead[0].length) { head = head.slice(lead[0].length); notes.push('bez veida vārda'); }
+  // Apdrukas preces (apģērbi, pēc pasūtījuma): dizaina nosaukums pēdiņās ir svarīgākais. Ar preces veidu, ja ietilpst
+  // ("Bērnu T-krekls ar īsām piedurknēm “Mazais pūķis”" → "T-krekls “Mazais pūķis”", "Organiskās kokvilnas T-krekls “TĒTI”"
+  // → "Kokvilnas T-krekls “TĒTI”"), citādi vārdi tieši pirms pēdiņām (bez sākuma prievārda) vai tikai pēdiņas.
+  // Izlaistie sākuma vārdi ("Organiskās kokvilnas") – aprakstam.
+  const quote = head.length > max && (it._apparel || it._madeToOrder) ? head.match(/[“„"«][^“”„"«»]+[”"»“]$/u) : null;
+  let design = '';
+  if (quote && quote[0].length > max) {
+    // Dizaina nosaukums par garu ("“Tētis zina visu. Ja nezina - izdomās.”"): nosaukumā – preces veids, aprakstā – dizaina sākums.
+    const words = head.slice(0, quote.index).trim().split(' ').filter(Boolean);
+    const ti = typeRe ? words.findIndex((w) => typeRe.test(w)) : -1;
+    if (ti >= 0) {
+      let j = 0;
+      while (j < ti && words.slice(j, ti + 1).join(' ').length > max) j++;
+      // Ja sauklis aprakstā neietilpst, apzīmētāju neatmet pa pusei: "Organiskās | kokvilnas T-krekls" → "T-krekls", aprakstā
+      // "Organiskās kokvilnas"; ja ietilpst – "Kokvilnas T-krekls" + sauklis.
+      if (j > 0 && j < ti && !sentence(quote[0].slice(1, -1).trim())) j = ti;
+      head = words.slice(j, ti + 1).join(' ');
+      quoteDropped = words.slice(0, j).join(' ');
+      quoteAfter = words.slice(ti + 1).join(' ');
+      quoteType = words.slice(0, ti + 1).join(' ');
+      design = quote[0].slice(1, -1).trim();
+      notes.push('nosaukums saīsināts', 'dizains aprakstā');
+    }
+  } else if (quote) {
+    const words = head.slice(0, quote.index).trim().split(' ').filter(Boolean);
+    const fits = (ws) => `${ws.join(' ')} ${quote[0]}`.trim().length <= max;
+    const ti = typeRe ? words.findIndex((w) => typeRe.test(w)) : -1;
+    // Preces veids ar tik daudz vārdiem pirms tā, cik ietilpst; ja veida nav vai neietilpst – vārdi tieši pirms pēdiņām.
+    const end = ti >= 0 && fits([words[ti]]) ? ti + 1 : words.length;
+    let j = 0;
+    while (j < end && !fits(words.slice(j, end))) j++;
+    // Apzīmētāju neatmet pa pusei: "Organiskās | kokvilnas T-krekls “TĒTI”" → "T-krekls “TĒTI”", aprakstā "Organiskās kokvilnas".
+    if (ti >= 0 && end === ti + 1 && j > 0 && j < ti) j = ti;
+    let keep = words.slice(j, end);
+    while (keep.length && dangling.has(keep[0].toLowerCase())) keep = keep.slice(1);
+    // Tikai krāsa vai īpašības vārds bez preces veida ("Priekšauts tumši | zaļš “Slepenā recepte”") – labāk tikai dizains,
+    // preces veids un krāsa – aprakstā.
+    if (keep.length && keep.every((w) => (adsAdj(adsKey(w)) && !ADS_NOT_ADJ.test(adsKey(w))) || ADS_COLOR.test(adsKey(w)))) {
+      keep = [];
+      j = end;
+    }
+    head = `${keep.join(' ')} ${quote[0]}`.trim();
+    quoteDropped = words.slice(0, j).join(' '); // "Organiskās kokvilnas", "Bērnu kokvilnas T-krekls"
+    quoteAfter = words.slice(end).join(' ');
+    if (ti >= 0 && keep.length) quoteType = words.slice(0, ti + 1).join(' ');
+    notes.push('nosaukums saīsināts', 'dizaina nosaukums paturēts');
+  }
+  let brandUsed = false;
+  if (head.length > max && brandRe) {
+    const m = brandRe.exec(head);
+    const pre = m ? head.slice(0, m.index).replace(/[\s,;:\-–]+$/u, '') : '';
+    const preWords = pre.split(' ');
+    // "pēdiņa priekš Janome …", "adatas ar SCHMETZ …" – zīmols ir mašīnai / sastāvdaļai, ne precei.
+    const accessory = dangling.has(preWords[preWords.length - 1].toLowerCase());
+    // Aiz zīmola – modelis ar lielo burtu ("DROPS Pro Circus", "YarnArt Camellia"); "DROPS 40 cm", "DROPS alumīnija" – nav.
+    const [m1, m2] = m ? head.slice(m.index + m[0].length).trim().split(' ') : [];
+    const model = !!m1 && (/^\p{Lu}/u.test(m1) || (/\d/.test(m1) && !ADS_NUM.test(m1.replace(/[,;:]$/, '')) && !ADS_UNIT.test(m2 || ''))
+      || /^\d+\/\d+/.test(m1)); // "SCHMETZ 130/705 H ZWI"; "DROPS 40 cm" – nav
+    if (m && m.index > 0 && !accessory && model) {
+      const fromBrand = fitText(head.slice(m.index), max, fctx);
+      // Apģērbam tikai zīmols + modelis ("SOL’S GALA") – nosaukumā labāk apģērba veids ("Priekšauts ar kabatām").
+      const brandOnly = !!typeRe && typeRe.test(pre) && fromBrand.text.split(' ').length <= 2;
+      if (fromBrand.text.length >= 8 && !brandOnly) {
+        before = pre;
+        head = head.slice(m.index);
+        brandUsed = true;
+        notes.push('nosaukums no zīmola');
+      }
+    }
+  }
+  const t = fitText(head, max, fctx);
+  if (!t.text) return null;
+  if (t.rest || t.dropped) notes.push('nosaukums saīsināts');
+  if (t.dropped) notes.push('sākuma vārdi aprakstam');
+  const title = fixCaps(upperFirst(t.text), 'nosaukums', full);
+
+  let subtitle = '';
+  if (it._variantTitle) {
+    const src = clean(it._variantTitle);
+    const s = fitText(src, max, fctx);
+    if (s.rest || s.dropped || !s.text) notes.push('apakšvirsraksts saīsināts');
+    subtitle = fixCaps(upperFirst(s.text), 'apakšvirsraksts', src);
+    // Tikai, ja tieši tāds pats kā nosaukums: citādi variantus (S un L, 2,5 mm un 5 mm) reklāmā nevarētu atšķirt.
+    if (subtitle && normCmp(subtitle) === normCmp(title)) { subtitle = ''; notes.push('apakšvirsraksts = nosaukums'); }
+  }
+
+  // Divas daļas kopā ("traktors" + "tumši zils" → "traktors, tumši zils"); daļa iekavās – bez iekavām ("(kārsums)" → "kārsums").
+  const unwrap = (x) => String(x || '').trim().replace(/^\(([^()]*)\)(?=$|[\s,;])/u, '$1'); // "(hotfix), 4 mm" → "hotfix, 4 mm"
+  const join = (a, b) => (unwrap(a) && unwrap(b) ? `${unwrap(a).replace(/[\s,;:\-–]+$/u, '')}, ${unwrap(b)}` : '');
+  const category = String(it.category_full || '').split(/\s*>>\s*/).filter(Boolean).pop() || '';
+  // Atmestie sākuma vārdi ("Organiskās kokvilnas", "Ziemassvētku", "Filcēšanas") – informatīvāki par kategoriju, bet ne viens
+  // pats īpašības vārds vai krāsa ("Organiskās", "Sarkana").
+  const droppedPhrase = (x) => {
+    const w = String(x || '').replace(/[\s,;:\-–]+$/u, '').split(' ').filter(Boolean);
+    return !w.length || (w.length === 1 && (adsAdj(adsKey(w[0])) || ADS_COLOR.test(adsKey(w[0])))) ? '' : w.join(' ');
+  };
+  // Viens atmests īpašības vārds ("Magnētiskais", "Ūdensizturīgs") – kopā ar atlikumu, ja ietilpst viss ("Magnētiskais, apaļš"),
+  // vai viens pats pirms kategorijas. Krāsa – nē (redzama attēlā / variantā).
+  const dw = String(t.dropped || '');
+  const nextW = adsKey(String(t.text || '').split(' ')[t.dropped && /^\p{Lu}{2,}/u.test(t.text) ? 1 : 0]);
+  const oneAdj = /^\S+$/u.test(dw) && adsAdj(adsKey(dw)) && !ADS_NOT_ADJ.test(adsKey(dw)) && !ADS_COLOR.test(adsKey(dw))
+    && /(s|š|a|i|ais|ie|as|ās)$/u.test(adsKey(dw)) && !(ADS_MATERIAL_ADJ.test(adsKey(dw)) && /ās$/u.test(adsKey(dw)) && /as$/u.test(nextW))
+    ? dw : ''; // ne "Organiskās" (kokvilnas), bet "Apvelkamās" (pogas)
+  const restShort = String(t.rest || '').length <= 12;
+  const keepD = String(t.dropped || '').split(' ').some((x) => ADS_KEEP.test(adsKey(x))) ? droppedPhrase(t.dropped) : '';
+  const cands = [
+    [sentence(design), 'design'],
+    [design && !/[.!?…]/u.test(design) ? design : '', 'designfit'], // "Nošu un latviskā raksta dizains" → "Latviskā raksta dizains"
+    [brandUsed ? join(before, tail) : '', ''],
+    // Atmests "Sintētiskā ahāta" / "Mākslīgās ādas" – aprakstā obligāti (bez tā nosaukums maldina).
+    [keepD ? join(keepD, t.rest || tail) : '', 'whole'],
+    [keepD && !/[“„"«]/u.test(`${t.rest} ${tail}`) ? keepD : '', 'whole'], // dizaina nosaukums pēdiņās svarīgāks (Opry etiķetes)
+    [oneAdj && t.rest ? join(oneAdj, t.rest.split(/,\s+/u)[0]) : '', 'whole'], // "Pašlīmējošs, 10 × 18 cm" – atmestā īpašība svarīgāka par toņiem
+    [join(t.rest, tail), 'whole'],
+    [oneAdj && restShort ? join(oneAdj, t.rest) : '', 'whole'], // "Magnētiskais, apaļš"
+    [oneAdj && !t.rest ? join(oneAdj, tail) : '', 'whole'], // "Ūdensizturīgs, balts"
+    [join(t.rest, tail), ''],
+    [unwrap(tail), ''],
+    [unwrap(before), ''],
+    [unwrap(t.rest), ''],
+    [quoteDropped && quoteType ? quoteType : '', 'whole'], // "Bērnu T-krekls", "Kokvilnas auduma maisiņš"
+    [droppedPhrase(t.dropped || quoteDropped), ''],
+    [unwrap(quoteAfter), ''], // "ar apdruku", "organiskās kokvilnas"
+    [oneAdj, 'whole'],
+    [String(t.rest || tail).split(/,\s+/u).slice(1).join(', '), ''], // aiz komata: "27 mm, 40 gab.", "violeta Sew Tasty"
+    [clean(category), 'kategorija'],
+    [unwrap(tail || t.rest), 'loose'], // "Trīs dekoratīvo lentīšu" – labāk nekā tukšs apraksts
+  ];
+  let description = '';
+  // Tikai kodi ("16x231 SES SERV 7") – tikai tad, ja nekā cita nav (vispirms meklē tekstu ar vārdiem: "SCHMETZ adatas trikotāžai").
+  const codesOnly = (x) => !/\p{Ll}{3,}/u.test(x) && /\d[x×]\d|\p{Lu}{2,}\d|\p{Lu}\p{L}*x\d/u.test(x);
+  for (const pass of [0, 1]) {
+    for (const [cand, kind] of cands) {
+      if (!cand || description) continue;
+      // Sauklis pēdiņās ('“Šajā maisiņā dzīvo jauni projekti”') – vesels teikums vai nekas.
+      const q = kind ? null : cand.match(/^[“„"«]([^“”„"«»]+)[”"»“]$/u);
+      const d = kind === 'design' ? { text: cand, rest: '' }
+        : kind === 'whole' ? { text: cand.length <= max ? cand : '', rest: '' }
+          : q ? { text: sentence(cand) || (sentence(q[1]) ? `${cand[0]}${sentence(q[1])}${cand[cand.length - 1]}` : ''), rest: '' }
+            : fitText(cand, max, fctx, kind !== 'loose');
+      if (!d.text || d.text.length > max || (kind === 'loose' && !d.text.includes(' '))) continue;
+      // Dizaina nosaukumu nepārgriež ("Mūsu satikšanos | rakstīja zvaigznes") un neatmet tā sākumu ("Šajā maisiņā | dzīvo …"),
+      // izņemot vienrangu locekļus ("Nošu un | latviskā raksta dizains").
+      if (kind === 'designfit' && (d.rest || d.dropped)) continue;
+      if (hasWords(title, d.text) || (subtitle && normCmp(d.text) === normCmp(subtitle))) continue;
+      if (!pass && kind !== 'kategorija' && codesOnly(d.text)) continue;
+      if (d.rest || d.dropped) notes.push('apraksts saīsināts');
+      if (kind === 'kategorija') notes.push('apraksts = kategorija');
+      description = fixCaps(upperFirst(d.text), 'apraksts', kind === 'kategorija' ? cand : full);
+    }
+  }
+  return { title, subtitle, description, notes, source: full + (it._variantTitle ? ` | ${clean(it._variantTitle)}` : '') };
+}
+
+/**
+ * Google Ads dinamiskā remarketinga plūsma "Pielāgoti" (Custom), CSV latviski, no buildItems ierakstiem (visi
+ * varianti, kā google-lv.xml). Izslēdz tāpat kā toGoogleXml (ar defektu, bez attēla, metrā ar nezināmu atlikumu,
+ * dubulta saite) un papildus: CONFIG.googleAdsCustom.excludeProductTypes, attēls nav JPG/PNG/GIF, nosaukumu nevar
+ * saīsināt. Atkārtots ID – kļūda (Google: "IDs must be unique").
+ * Atgriež { csv, stats, report, excluded } – report: rindas, kurās teksts saīsināts vai mainīts (Edgara pārbaudei);
+ * excluded: katrs izlaistais ieraksts ar iemeslu.
+ */
+export function toGoogleAdsCustomCsv(items, cfg = CONFIG, opts = {}) {
+  const c = cfg.googleAdsCustom;
+  const stats = { items: 0, decimal: 0, sale: 0, skipped: {}, notes: {},
+    with: { subtitle: 0, description: 0, category: 0, formatted_price: 0 } };
+  let cur = null;
+  const skip = (why) => {
+    stats.skipped[why] = (stats.skipped[why] || 0) + 1;
+    excluded.push({ id: String(cur._variantId ?? ''), source: cur._baseName || cur.name || '', reason: why });
+  };
+  const brands = [...new Set(cfg.titleBrands)].sort((a, b) => b.length - a.length)
+    .map((b) => b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+'));
+  const brandRe = brands.length ? new RegExp(`(?<![\\p{L}\\d])(${brands.join('|')})(?![\\p{L}\\d])`, 'u') : null;
+  const brandCase = new Map(cfg.titleBrands.map((b) => [b.toUpperCase(), b])); // PRYM → Prym
+  // Kuri vārdi kataloga nosaukumos ir preces vārdi un kuri – apzīmētāji (skat. adsWordStats, adsPhraseEnd)
+  // opts.wordStats – cita kataloga statistika (pārbaudēm ar dažām precēm)
+  const wordStats = opts.wordStats || adsWordStats([...new Set(items.map((it) => it._productTitle || it._baseName || it.name))]);
+  const prefix = `${cfg.shopUrl}/products/`;
+  const fmt = (n) => `${money(n).replace('.', ',')} €${c.perMetre}`;
+  const seenIds = new Set();
+  const seenLinks = new Set();
+  const report = [];
+  const excluded = []; // { id, source, reason } – katrs izlaistais ieraksts (atskaitei)
+  const lines = [c.columns.map(csvField).join(',')];
+
+  for (const it of items) {
+    cur = it;
+    if (it.used === '1') { skip('ar defektu / demo / lietota'); continue; }
+    if (c.excludeProductTypes.includes(it._productType)) { skip(`tips ${it._productType}`); continue; }
+    if (it._decimal && it.in_stock === '') { skip('metrā tirgota, atlikums nav zināms'); continue; }
+    const id = String(it._variantId ?? '');
+    if (!/^[0-9]+$/.test(id)) { skip('ID nav tikai cipari'); continue; }
+    if (!String(it.link || '').startsWith(prefix)) { skip('saite nav preces lapa'); continue; }
+    if (seenLinks.has(it.link)) { skip('dublikāts (saite)'); continue; }
+    if (!it.image) { skip('nav attēla'); continue; }
+    const image = adsImage(it.image, c);
+    if (!image) { skip('attēls nav JPG/PNG/GIF/WebP'); continue; }
+    if (!(it._priceNum > 0)) { skip('cena 0'); continue; }
+    const t = adsTexts(it, cfg, { brandRe, brandCase, stats: wordStats });
+    if (!t) { skip(`nosaukumu nevar saīsināt līdz ${c.textMax} zīmēm`); continue; }
+    if (seenIds.has(id)) throw new Error(`Google Ads Custom: ID ${id} atkārtojas`);
+
+    const sale = it._compareAt != null && it._compareAt > it._priceNum + 0.004;
+    const price = sale ? it._compareAt : it._priceNum;
+    const category = noEmoji(String(it.category_full || '').split(/\s*>>\s*/)[0] || '');
+    const row = [
+      id, t.title, t.subtitle, t.description, category, it.link, image,
+      `${money(price)} ${c.currency}`,
+      sale ? `${money(it._priceNum)} ${c.currency}` : '',
+      it._decimal ? fmt(price) : '',
+      it._decimal && sale ? fmt(it._priceNum) : '',
+      '', // Contextual keywords: tikai no Edgara atslēgvārdu tabulas (1:1), tāpēc pagaidām tukšs
+    ];
+    const bad = adsRowCheck(row, cfg).errors;
+    if (bad.length) { skip(`rinda neiziet pārbaudi: ${bad[0].replace(/:.*$/, '')}`); continue; }
+    seenIds.add(id);
+    seenLinks.add(it.link);
+    lines.push(row.map(csvField).join(','));
+
+    stats.items++;
+    if (it._decimal) stats.decimal++;
+    if (sale) stats.sale++;
+    if (t.subtitle) stats.with.subtitle++;
+    if (t.description) stats.with.description++;
+    if (category) stats.with.category++;
+    if (row[9]) stats.with.formatted_price++;
+    for (const n of t.notes) stats.notes[n] = (stats.notes[n] || 0) + 1;
+    if (t.notes.some((n) => n !== 'bez veida vārda')) {
+      report.push({ id, source: t.source, title: t.title, subtitle: t.subtitle, description: t.description, notes: t.notes.join('; ') });
+    }
+  }
+  return { csv: `${lines.join('\n')}\n`, stats, report, excluded };
+}
+
+/**
+ * Pārbauda gatavu Custom CSV pret Google noteikumiem (6053288, sadaļa Custom) un šī repo noteikumiem.
+ * Atgriež { rows, errors[], errorCount, warnings[] }. errors – fails nav publicējams; warnings – jāizskata.
+ */
+export function validateGoogleAdsCustomCsv(csv, cfg = CONFIG) {
+  const c = cfg.googleAdsCustom;
+  const errors = [];
+  const warnings = [];
+  let errorCount = 0;
+  let warningCount = 0;
+  const err = (where, msg) => { errorCount++; if (errors.length < 100) errors.push(where ? `${where}: ${msg}` : msg); };
+  const warn = (where, msg) => { warningCount++; if (warnings.length < 100) warnings.push(`${where}: ${msg}`); };
+  const text = String(csv ?? '');
+  if (text.charCodeAt(0) === 0xfeff) err('', 'fails sākas ar BOM');
+  if (/[\uFFFD]/.test(text)) err('', 'fails satur bojātas UTF-8 rakstzīmes (U+FFFD)');
+  const rows = parseCsv(text);
+  const header = rows.shift() || [];
+  if (header.join('\u0001') !== c.columns.join('\u0001')) err('', `galvene neatbilst: ${header.join(',')}`);
+  const ids = new Set();
+  rows.forEach((r, i) => {
+    const where = `rinda ${i + 2}${r[0] ? ` (ID ${r[0]})` : ''}`;
+    const check = adsRowCheck(r, cfg);
+    for (const e of check.errors) err(where, e);
+    for (const w of check.warnings) warn(where, w);
+    if (r.length !== c.columns.length || !/^[0-9]+$/.test(r[0])) return;
+    if (ids.has(r[0])) err(where, 'ID atkārtojas');
+    ids.add(r[0]);
+  });
+  return { rows: rows.length, errors, errorCount, warnings, warningCount };
+}
+
+/**
+ * Vienas Custom CSV rindas pārbaude (bez ID unikalitātes): { errors[], warnings[] }. To pašu izmanto toGoogleAdsCustomCsv –
+ * rinda, ko pārbaude noraidītu, failā netiek likta (citādi viena slikta prece apturētu visu failu).
+ */
+function adsRowCheck(r, cfg) {
+  const c = cfg.googleAdsCustom;
+  const errors = [];
+  const warnings = [];
+  if (r.length !== c.columns.length) return { errors: [`${r.length} kolonnas, nevis ${c.columns.length}`], warnings };
+  const [id, title, subtitle, description, category, url, image, price, salePrice, fPrice, fSale, keywords] = r;
+  const priceRe = new RegExp(`^\\d+\\.\\d{2} ${c.currency}$`);
+  const brands = new Set(cfg.titleBrands.map((b) => b.toUpperCase()));
+  if (!/^[0-9]+$/.test(id)) errors.push('ID nav tikai cipari');
+  if (!title.trim()) errors.push('tukšs Item title');
+  for (const [name, val, max] of [['Item title', title, c.textMax], ['Item subtitle', subtitle, c.textMax],
+    ['Item description', description, c.textMax], ['Formatted price', fPrice, c.formattedMax],
+    ['Formatted sale price', fSale, c.formattedMax]]) {
+    if (val.length > max) errors.push(`${name} garāks par ${max} zīmēm (${val.length})`);
+    if (val !== val.trim()) errors.push(`${name} ar atstarpi sākumā vai beigās`);
+  }
+  for (const [name, val] of [['Item title', title], ['Item subtitle', subtitle], ['Item description', description],
+    ['Item category', category], ['Contextual keywords', keywords]]) {
+    if (/[\r\n\t]/.test(val)) errors.push(`${name}: rindas pārnesums`);
+    if (/[\u0000-\u001F\u007F-\u009F\uFFFD]/.test(val)) errors.push(`${name}: vadības vai bojāta rakstzīme`);
+    if (/<\/?[a-z!][^>]*>/i.test(val)) errors.push(`${name}: HTML`);
+    if (ADS_EMOJI.test(val)) errors.push(`${name}: emocijzīme`);
+    if (ADS_DECOR.test(val) || /[!?]{2,}/.test(val)) errors.push(`${name}: triku zīmes ("!!", "★")`);
+    if (/Default Title/i.test(val)) errors.push(`${name}: "Default Title"`);
+    if (/…$/.test(val)) errors.push(`${name}: daudzpunkte (pārgriezts teksts)`);
+    if (/(?<!\p{L})(bezmaksas|free|tikai šodien|labākā cena)(?!\p{L})/iu.test(val)) warnings.push(`${name}: reklāmas frāze: ${val}`);
+    // Tikai zīmols un kodi ("SCHMETZ", "SCHMETZ 134") – nav brīdinājums.
+    if (isAllCaps(val) && !val.split(' ').every((w) => brands.has(w.toUpperCase()) || ADS_CODE.test(w))) {
+      warnings.push(`${name} tikai ar lielajiem burtiem: ${val}`);
+    }
+  }
+  if (!url.startsWith(`${cfg.shopUrl}/products/`)) errors.push('Final URL nav veikala preces lapa');
+  if (/\s/.test(image) || !adsImageOk(image, c)) errors.push('Image URL nav https JPG/PNG/GIF (Shopify – ar width un format=pjpg)');
+  if (!priceRe.test(price) || !(parseFloat(price) > 0)) errors.push(`Price formāts: ${price}`);
+  if (salePrice && (!priceRe.test(salePrice) || !(parseFloat(salePrice) < parseFloat(price)))) errors.push(`Sale price: ${salePrice}`);
+  if (fSale && !salePrice) errors.push('Formatted sale price bez Sale price');
+  if (fSale && !fPrice) errors.push('Formatted sale price bez Formatted price');
+  return { errors, warnings };
 }
 
 export function toXml(items, cfg = CONFIG) {

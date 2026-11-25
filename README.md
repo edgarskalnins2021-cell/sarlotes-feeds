@@ -262,8 +262,18 @@ Emocijzīmes visās formās (arī karogi 🇱🇻, ādas toņi, `1️⃣`), `!!`
 
 Izslēgtas: kā `google-lv.xml.gz` (defekti/demo/lietotas, bez attēla, metrā ar nezināmu atlikumu, dubulta saite) un
 papildus tipi `Dāvanu kartes`, `Digitālie materiāli`, `Meistarklases`, attēls nav JPG/PNG/GIF/WebP (piem. HEIC no iPhone),
-nosaukumu nevar saīsināt bez pārgriezta vārda, rinda neiziet rindas pārbaudi. Katrs izlaistais variants ar iemeslu ir
-`izlaistie.csv` (CLI). Atkārtots ID – kļūda.
+nosaukumu nevar saīsināt bez pārgriezta vārda, rinda neiziet rindas pārbaudi, attēls ar augšupielādes ikonu, kam nav cita
+foto (`iconImages`, skat. zemāk). Katrs izlaistais variants ar iemeslu ir `izlaistie.csv` (CLI). Atkārtots ID – kļūda.
+
+Google Ads politika (25.11.2026, Display kampaņa noraidīja 19 vienumus):
+- **"Bīstams vai aizvainojošs saturs"** – visos tekstā bija "nazis/nazi" (visticamāk lasīts kā angļu "Nazis"). Ads tekstos
+  (nosaukums, apakšvirsraksts, apraksts, kategorija) vārds "nazis" visos locījumos tiek aizstāts ar "griezējs"
+  (`wordSwap`: `TEXI Diska nazis` → `TEXI Diska griezējs`, `Diskveida nazim` → `Diskveida griezējam`, `Šķēres un naži` →
+  `Šķēres un griezēji`); Shopify un saite nemainās. Ja vārds tomēr paliek, rinda neiziet pārbaudi.
+- **"Maldinošs reklāmu dizains"** – foto ar augšupielādes bultas ikonu un "TAVS DIZAINS ŠEIT". `iconImages`: Shopify faila
+  nosaukums → tās pašas preces foto bez ikonas (džemperi, rozā un pelēkais priekšauts, divi maisiņi – 40 rindas) vai
+  `null` – preci Ads plūsmā neliek (T-krekla apdrukas, bērnu T-krekli, paneļi, melnais un zaļais priekšauts, melnais
+  maisiņš – 275 rindas), kamēr Shopify nav foto bez ikonas. Jaunu foto pievieno, ierakstot to `iconImages`.
 
 Drošība: katra rinda pirms ierakstīšanas iziet to pašu pārbaudi, ko `validateGoogleAdsCustomCsv` (garumi, cenas, saites,
 attēli, HTML, emocijzīmes, `!!`, daudzpunkte, vadības rakstzīmes) – rinda, kas neiziet, tiek izlaista, nevis aptur visu

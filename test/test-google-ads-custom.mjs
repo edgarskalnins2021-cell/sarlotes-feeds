@@ -470,6 +470,61 @@ assert.equal(kRows.find((r) => r[5].endsWith('/k-diegs'))[11], kwT(K.diegs).join
 assert.equal(kRows.find((r) => r[5].endsWith('/k-acis'))[11], '');
 assert.ok(kRows.every((r) => r[11].split('; ').filter(Boolean).every((k) => KW.atslegvardi[k])));
 
+// --- Google Ads politika (25.11.2026): "nazis" → "griezējs", attēli ar augšupielādes ikonu ---
+{
+  const N = {
+    rokdarbu: p({ title: 'Rokdarbu nazis', handle: 'rokdarbu-nazis', productType: 'Šūšanas aksesuāri',
+      variants: [v({ title: 'Violets ar 5 asmeņiem', categoryPath: ['Šūšanas piederumi'] })] }),
+    arditajs: p({ title: 'Šuvju ārdītājs - Nazis', handle: 'suvju-arditajs-nazis', productType: 'Šūšanas aksesuāri' }),
+    pedina: p({ title: 'Šujmašīnas pēdiņa - overloka, ar nazi', handle: 'pedina-ar-nazi', productType: 'Pēdiņas' }),
+    asmeni: p({ title: 'TEXI Rezerves asmeņi - Diskveida nazim', handle: 'asmeni-nazim', productType: 'Šūšanas aksesuāri' }),
+    skeres: p({ title: 'Drēbnieku šķēres 24 cm - Šķēres un naži', handle: 'skeres-nazi', productType: 'Šķēres' }),
+    lielie: p({ title: 'ROTĀCIJAS NAZIS 45 MM', handle: 'rot-nazis', productType: 'Šūšanas aksesuāri' }),
+    nazisks: p({ title: 'Nazisks audums', handle: 'nazisks', productType: 'Audums' }), // ne vesels vārds – nemaina
+  };
+  const nRows = parseCsv(toGoogleAdsCustomCsv(buildItems(Object.values(N), CONFIG).items, CONFIG).csv).slice(1);
+  const nRow = (h) => nRows.find((r) => r[5].includes(`/products/${h}`));
+  assert.equal(nRow('rokdarbu-nazis')[1], 'Rokdarbu griezējs');
+  assert.equal(nRow('suvju-arditajs-nazis')[3], 'Griezējs', 'lielais sākumburts paliek');
+  assert.match(nRow('pedina-ar-nazi').slice(1, 4).join(' | '), /ar griezēju/);
+  assert.match(nRow('asmeni-nazim').slice(1, 4).join(' | '), /Diskveida griezējam/);
+  assert.match(nRow('skeres-nazi').slice(1, 4).join(' | '), /Šķēres un griezēji/);
+  assert.ok(nRow('rokdarbu-nazis')[5].endsWith('/products/rokdarbu-nazis'), 'saite nemainās');
+  assert.equal(nRow('nazisks')[1], 'Nazisks audums');
+  for (const r of nRows.filter((x) => !x[5].includes('nazisks'))) {
+    assert.doesNotMatch(r.slice(1, 5).join(' | '), /(?<!\p{L})(nazis|nazi|nazim|naži)(?!\p{L})/iu, r.join(','));
+  }
+  assert.ok(nRows.every((r) => !validateGoogleAdsCustomCsv(`${header.join(',')}\n${r.map((x) => `"${x.replace(/"/g, '""')}"`).join(',')}\n`, CONFIG)
+    .errors?.some((e) => /wordSwap/.test(e))));
+  // Validators atrod vārdu, ja tas tomēr palicis
+  const bad = rows[0].slice(); bad[1] = 'TEXI Diska nazis';
+  const badCsv = [header, bad].map((r) => r.map((x) => `"${x.replace(/"/g, '""')}"`).join(',')).join('\n') + '\n';
+  assert.ok(JSON.stringify(validateGoogleAdsCustomCsv(badCsv, CONFIG)).includes('wordSwap'), 'validators: nazis');
+
+  const ICON = CONFIG.googleAdsCustom.iconImages;
+  const iconFiles = Object.keys(ICON);
+  const alt = iconFiles.find((f) => ICON[f]);
+  const none = iconFiles.find((f) => !ICON[f]);
+  const I = {
+    dzemp: p({ title: 'Personalizēts džemperis ar jūsu dizainu', handle: 'i-dzemp', image: `${CDN}/${alt}?v=5`,
+      variants: [v({ title: 'Balta / S', image: `${CDN}/${alt}?v=5` })] }),
+    krekls: p({ title: 'T-krekla apdruka ar jūsu dizainu', handle: 'i-krekls', image: `${CDN}/${none}?v=5`,
+      variants: [v({ title: 'Balta / S', image: `${CDN}/${none}?v=5` })] }),
+  };
+  const ir = toGoogleAdsCustomCsv(buildItems(Object.values(I), CONFIG).items, CONFIG);
+  const iRows = parseCsv(ir.csv).slice(1);
+  assert.equal(iRows.length, 1, 'prece ar ikonu bez cita foto netiek likta');
+  assert.ok(iRows[0][6].startsWith(`${CDN}/${ICON[alt]}?`), 'cits foto bez ikonas');
+  assert.ok(!iRows[0][6].includes(alt));
+  assert.equal(ir.stats.notes['attēls bez ikonas'], 1);
+  assert.ok(ir.excluded.some((e) => /ikona/.test(e.reason)));
+  // Aizvietotājs pats nav ikonu sarakstā; visi faili ir Shopify attēli (JPG/PNG/WebP)
+  for (const [f, a] of Object.entries(ICON)) {
+    assert.match(f, CONFIG.googleAdsCustom.shopifyImageExt);
+    if (a) { assert.ok(!Object.hasOwn(ICON, a), a); assert.match(a, CONFIG.googleAdsCustom.shopifyImageExt); }
+  }
+}
+
 // --- generate.mjs importējas bez palaišanas ---
 await import('../generate.mjs');
 

@@ -352,6 +352,48 @@ export const CONFIG = {
     // Vārdi, ar kuriem saīsināts teksts nedrīkst beigties ("Lente ar" → "Lente").
     danglingWords: ['un', 'ar', 'no', 'uz', 'par', 'bez', 'pie', 'pēc', 'līdz', 'priekš', 'vai', 'ir', 'kā', 'ko', 'pret', 'starp', 'nr.', 'nr', 'ø', '⌀',
       'and', 'with', 'for', 'of', 'the', 'in', 'on', 'to', 'x', '×'],
+    // Google Ads 25.11.2026 (kampaņa 24538296924) noraidīja "Rokdarbu nazis", "TEXI Diska nazis", "Šuvju ārdītājs / Nazis"
+    // u.c. kā "Bīstams vai aizvainojošs saturs" (politika par naida saturu) – visticamāk "nazis/nazi" tiek lasīts kā angļu
+    // "Nazis". Ads tekstos (Shopify un saite nemainās) vārds "nazis" visos locījumos → "griezējs"; lielais sākumburts paliek.
+    wordSwap: { nazis: 'griezējs', naža: 'griezēja', nazim: 'griezējam', nazi: 'griezēju', nazī: 'griezējā',
+      naži: 'griezēji', nažu: 'griezēju', nažiem: 'griezējiem', nažus: 'griezējus', nažos: 'griezējos' },
+    // Attēli ar augšupielādes bultas ikonu un "TAVS DIZAINS ŠEIT" – Google Ads 25.11.2026 noraidīja kā "Maldinošs reklāmu
+    // dizains" (Bērnu T-krekla apdruka, Personalizēts džemperis). Shopify faila nosaukums → tās pašas preces foto bez ikonas
+    // (katrs pārbaudīts ar aci 25.11.2026); null – preci Ads plūsmā neliek, kamēr Shopify nav foto bez ikonas.
+    iconImages: {
+      '69a193aad9940.webp': null, // T-krekla apdruka ar jūsu dizainu (abi foto ar ikonu)
+      '69a193e5c05bd.webp': null,
+      't-krekla-apdruka-ar-tavu-dizainu-kreisaja-puse-individuali-apdrukats-t-krekls-ar-logo-sarlotes-audumi-5232235.webp': null,
+      'bernu-t-krekla-apdruka-ar-tavu-dizainu-bernu-t-krekla-apdruka-ar-tavu-dizainu-sarlotes-audumi-8881226.webp': null,
+      'bernu-t-krekla-apdruka-ar-tavu-dizainu-bernu-t-krekla-apdruka-ar-tavu-dizainu-sarlotes-audumi-4157621.webp': null,
+      'bernu-t-krekla-apdruka-ar-tavu-logo-bernu-t-krekla-apdruka-ar-tavu-logo-sarlotes-audumi-4108282.webp': null,
+      'bernu-t-krekla-apdruka-ar-tavu-logo-bernu-t-krekla-apdruka-ar-tavu-logo-sarlotes-audumi-2081464.webp': null,
+      'premium-kokvilnas-auduma-panela-apdruka-ar-tavu-dizainu-30-40-cm-2404551.jpg': null, // 2 paneļu preces
+      'kanvas-auduma-panela-apdruka-ar-tavu-dizainu-30-40-cm-4475169.jpg': null,
+      'prieksauts-ar-tavu-apdruku-prieksauts-1999711.webp': null, // melns
+      'prieksauts-ar-tavu-apdruku-tumsi-zals-prieksauts-ar-tavu-apdruku-tumsi-zals-7320653.webp': null,
+      'kokvilnas-auduma-maisins-ar-personalizetu-apdruku-melns-kokvilnas-auduma-maisins-ar-apdruku-melns-2068015.webp': null,
+      'personalizets-dzemperis-ar-tavu-dizainu-dzemperis-balts-6264347.webp':
+        'personalizets-dzemperis-ar-tavu-dizainu-dzemperis-balts-6054733.webp',
+      'personalizets-dzemperis-ar-tavu-dizainu-melns-dzemperis-melns-3843014.webp':
+        'personalizets-dzemperis-ar-tavu-dizainu-melns-dzemperis-melns-7841486.webp',
+      'personalizets-dzemperis-ar-tavu-logo-dzemperis-balts-7179531.webp':
+        'personalizets-dzemperis-ar-tavu-logo-dzemperis-balts-9392963.webp',
+      'personalizets-dzemperis-ar-tavu-logo-melns-dzemperis-melns-1390722.webp':
+        'personalizets-dzemperis-ar-tavu-logo-melns-dzemperis-melns-4035225.webp',
+      'personalizets-dzemperis-ar-tavu-logo-melns-dzemperis-melns-4958087.webp':
+        'personalizets-dzemperis-ar-tavu-logo-melns-dzemperis-melns-4035225.webp',
+      'prieksauts-ar-tavu-apdruku-roza-prieksauts-ar-tavu-apdruku-roza-8360656.webp':
+        'prieksauts-ar-tavu-apdruku-roza-prieksauts-ar-tavu-apdruku-roza-9041470.jpg',
+      'prieksauts-ar-tavu-apdruku-peleks-prieksauts-ar-tavu-apdruku-peleks-6920854.webp':
+        'prieksauts-ar-tavu-apdruku-peleks-prieksauts-ar-tavu-apdruku-peleks-6619448.webp',
+      'prieksauts-ar-tavu-apdruku-peleks-prieksauts-ar-tavu-apdruku-peleks-8180880.webp':
+        'prieksauts-ar-tavu-apdruku-peleks-prieksauts-ar-tavu-apdruku-peleks-6619448.webp',
+      'biezs-kokvilnas-auduma-maisins-ar-apdruku-kokvilnas-auduma-maisins-ar-apdruku-4775952.webp':
+        'biezs-kokvilnas-auduma-maisins-ar-apdruku-kokvilnas-auduma-maisins-ar-apdruku-4576687.webp',
+      'kokvilnas-auduma-maisins-ar-tavu-apdruku-kokvilnas-auduma-maisins-ar-apdruku-7212101.webp':
+        'kokvilnas-auduma-maisins-ar-tavu-apdruku-kokvilnas-auduma-maisins-ar-apdruku-1935558.webp',
+    },
   },
 
   // Google Merchant Center Igaunijai un Lietuvai – ANGLISKI (igauņu un lietuviešu valodu Google vēl neatbalsta).
@@ -2026,6 +2068,35 @@ export function adsKeywords(it, data) {
 }
 const adsKwLess = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i]; return false; };
 
+// Vārdi, ko Google Ads tekstā noraida (CONFIG.googleAdsCustom.wordSwap): vesels vārds jebkurā rakstībā.
+const adsSwapCache = new WeakMap();
+function adsSwapRe(c) {
+  const words = Object.keys(c.wordSwap || {});
+  if (!words.length) return /(?!)/u;
+  if (!adsSwapCache.has(c)) {
+    adsSwapCache.set(c, new RegExp(`(?<![\\p{L}\\d])(${words.sort((a, b) => b.length - a.length).join('|')})(?![\\p{L}\\d])`, 'giu'));
+  }
+  const re = adsSwapCache.get(c);
+  re.lastIndex = 0;
+  return re;
+}
+function adsSwapWord(w, c) {
+  const to = c.wordSwap[w.toLowerCase()];
+  if (!to) return w;
+  if (w.length > 1 && w === w.toUpperCase()) return to.toUpperCase();
+  return w[0] === w[0].toUpperCase() ? upperFirst(to) : to;
+}
+
+// Attēls ar augšupielādes ikonu (CONFIG.googleAdsCustom.iconImages): undefined – nav sarakstā; '' – preci neliek;
+// citādi – tās pašas preces cita foto adrese (tajā pašā Shopify mapē).
+function adsIconFix(url, c) {
+  const s = String(url ?? '');
+  const file = s.split(/[?#]/)[0].split('/').pop();
+  if (!c.iconImages || !Object.hasOwn(c.iconImages, file)) return undefined;
+  const alt = c.iconImages[file];
+  return alt ? s.split(/[?#]/)[0].replace(/[^/]+$/, alt) : '';
+}
+
 // Attēla adrese: tikai https un JPG/PNG/GIF; Shopify CDN – ar platumu imageWidth (Google: līdz 6 milj. pikseļu).
 // Shopify CDN – vienmēr ar format=pjpg (JPEG arī klientiem, kas pieņem WebP; skat. CONFIG.googleAdsCustom.shopifyForceJpeg).
 function adsImage(url, c) {
@@ -2096,7 +2167,8 @@ function adsTexts(it, cfg, ctx) {
     .replace(/(\p{L})-\s+(?!(?:un|vai|ir|and|or)\s)/gu, '$1 - ') // "sprādze- lāča" → " - "; "Lina- un kokvilnas" paliek
     .replace(/^[\s,;:\-–/·]+/u, '') // varianta "- #1000" → "#1000"
     .replace(/^\d{1,2}\.\s+(?=\p{Lu})/u, '') // numurs sarakstā: "1. Dabīgā liellopa āda" → "Dabīgā liellopa āda"
-    .replace(/\s+/g, ' ').trim();
+    .replace(/\s+/g, ' ').trim()
+    .replace(adsSwapRe(c), (w) => adsSwapWord(w, c)); // "TEXI Diska nazis" → "TEXI Diska griezējs" (skat. wordSwap)
   // Neaizvērta pēdiņa beigās ('T-krekls “Chaotic Barbie Mood') – aizver.
   const closeQuote = (s) => {
     const { cut } = bracketScan(s);
@@ -2326,7 +2398,9 @@ export function toGoogleAdsCustomCsv(items, cfg = CONFIG, opts = {}) {
     if (!String(it.link || '').startsWith(prefix)) { skip('saite nav preces lapa'); continue; }
     if (seenLinks.has(it.link)) { skip('dublikāts (saite)'); continue; }
     if (!it.image) { skip('nav attēla'); continue; }
-    const image = adsImage(it.image, c);
+    const iconFix = adsIconFix(it.image, c);
+    if (iconFix === '') { skip('attēlā augšupielādes ikona, foto bez ikonas nav (Google: maldinošs dizains)'); continue; }
+    const image = adsImage(iconFix ?? it.image, c);
     if (!image) { skip('attēls nav JPG/PNG/GIF/WebP'); continue; }
     if (!(it._priceNum > 0)) { skip('cena 0'); continue; }
     const t = adsTexts(it, cfg, { brandRe, brandCase, stats: wordStats });
@@ -2335,7 +2409,8 @@ export function toGoogleAdsCustomCsv(items, cfg = CONFIG, opts = {}) {
 
     const sale = it._compareAt != null && it._compareAt > it._priceNum + 0.004;
     const price = sale ? it._compareAt : it._priceNum;
-    const category = noEmoji(String(it.category_full || '').split(/\s*>>\s*/)[0] || '');
+    const category = noEmoji(String(it.category_full || '').split(/\s*>>\s*/)[0] || '')
+      .replace(adsSwapRe(c), (w) => adsSwapWord(w, c));
     const row = [
       id, t.title, t.subtitle, t.description, category, it.link, image,
       `${money(price)} ${c.currency}`,
@@ -2354,6 +2429,7 @@ export function toGoogleAdsCustomCsv(items, cfg = CONFIG, opts = {}) {
     stats.items++;
     if (it._decimal) stats.decimal++;
     if (sale) stats.sale++;
+    if (iconFix) stats.notes['attēls bez ikonas'] = (stats.notes['attēls bez ikonas'] || 0) + 1;
     if (t.subtitle) stats.with.subtitle++;
     if (t.description) stats.with.description++;
     if (category) stats.with.category++;
@@ -2428,6 +2504,7 @@ function adsRowCheck(r, cfg) {
     if (/Default Title/i.test(val)) errors.push(`${name}: "Default Title"`);
     if (/…$/.test(val)) errors.push(`${name}: daudzpunkte (pārgriezts teksts)`);
     if (/(?<!\p{L})(bezmaksas|free|tikai šodien|labākā cena)(?!\p{L})/iu.test(val)) warnings.push(`${name}: reklāmas frāze: ${val}`);
+    if (name !== 'Contextual keywords' && adsSwapRe(c).test(val)) errors.push(`${name}: vārds, ko Google noraida (wordSwap)`);
     // Tikai zīmols un kodi ("SCHMETZ", "SCHMETZ 134") – nav brīdinājums.
     if (isAllCaps(val) && !val.split(' ').every((w) => brands.has(w.toUpperCase()) || ADS_CODE.test(w))) {
       warnings.push(`${name} tikai ar lielajiem burtiem: ${val}`);
@@ -2435,6 +2512,7 @@ function adsRowCheck(r, cfg) {
   }
   if (!url.startsWith(`${cfg.shopUrl}/products/`)) errors.push('Final URL nav veikala preces lapa');
   if (/\s/.test(image) || !adsImageOk(image, c)) errors.push('Image URL nav https JPG/PNG/GIF (Shopify – ar width un format=pjpg)');
+  if (adsIconFix(image, c) !== undefined) errors.push('Image URL: attēls ar augšupielādes ikonu (iconImages)');
   if (!priceRe.test(price) || !(parseFloat(price) > 0)) errors.push(`Price formāts: ${price}`);
   if (salePrice && (!priceRe.test(salePrice) || !(parseFloat(salePrice) < parseFloat(price)))) errors.push(`Sale price: ${salePrice}`);
   if (fSale && !salePrice) errors.push('Formatted sale price bez Sale price');

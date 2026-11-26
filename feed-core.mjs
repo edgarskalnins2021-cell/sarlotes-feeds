@@ -240,6 +240,8 @@ export const CONFIG = {
     defaultCategory: 'Siuvimo ir rankdarbių prekės',
     // Kā Hind.ee: neiztulkotas preces (lietuviešu nosaukums = latviskais) netiek sūtītas, kamēr nav iztulkotas. 26.11.2026.
     sameNameTypes: ['Žurnāli'],
+    // Produkti (Shopify ID), kuru nosaukums lietuviski ir tieši tāds pats kā latviski: "Organza - balta".
+    sameNameProducts: ['10413451510094'],
     // Apģērbi (CONFIG.apparel): LV kategorija → lietuviski (Lietuvas veikala tips ir "Konfigūratorius" u.c. vai latvisks "Apģērbi").
     apparelCategories: { 'Gatavie izstrādājumi un apdruka >> T-krekli': 'Marškinėliai', 'Gatavie izstrādājumi un apdruka >> Džemperi': 'Džemperiai',
       'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Prijuostės', 'Gatavie izstrādājumi un apdruka >> Auduma maisiņi': 'Medžiaginiai maišeliai',
@@ -1092,7 +1094,8 @@ function localizeItems(items, store, h, cfg) {
     if (!e) { skip(`nav ${h.countryLabel} veikalā`); continue; }
     if (!(e.price > 0)) { skip(`nav ${h.countryLabel} cenas`); continue; }
     // Vēl nav iztulkota (vietējā veikala nosaukums = latviskais) – nesūta; parādīsies, tiklīdz būs iztulkota.
-    if (normCmp(e.title) === normCmp(it._lvTitle ?? it._productTitle) && !h.sameNameTypes?.includes(it._productType)) {
+    if (normCmp(e.title) === normCmp(it._lvTitle ?? it._productTitle) && !h.sameNameTypes?.includes(it._productType)
+      && !h.sameNameProducts?.includes(String(it._productId))) {
       skip('nav iztulkots'); continue;
     }
 

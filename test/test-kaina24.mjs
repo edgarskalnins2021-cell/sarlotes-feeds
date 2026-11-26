@@ -108,3 +108,19 @@ assert.equal(stats.items, prods.length); assert.equal(stats.decimal, 1);
 }
 
 console.log('Kaina24 pārbaudes izietas:', JSON.stringify(stats));
+
+// Neiztulkotas preces netiek sūtītas; izņēmums – produkti ar tieši tādu pašu nosaukumu lietuviski (sameNameProducts, 26.11.2026)
+{
+  const { buildItems: bi, toKaina24Xml: tk, CONFIG: C } = await import('../feed-core.mjs');
+  const { normalizeEe: ne } = await import('../generate.mjs');
+  const mk = (id, title) => ({ id: `gid://shopify/Product/${id}`, title, handle: `h${id}`, productType: 'Audums', vendor: 'X', tags: [], isGiftCard: false,
+    onlineStore: true, image: 'https://cdn.example/x.jpg', collections: [], description: 'A.',
+    variants: [{ id: `gid://shopify/ProductVariant/${id}1`, title: 'Default Title', price: 2, compareAtPrice: null, available: true, qty: 5, tracked: true,
+      requiresShipping: true, grams: 10, image: '', barcode: '', categoryPath: [] }] });
+  const org = mk('10413451510094', 'Organza - balta'); const cits = mk('999', 'Pogadimants 12 mm');
+  const { items: zi } = bi([org, cits], C);
+  const lt = ne([{ title: 'Organza - balta', handle: 'organza-balta', product_type: 'Audinys', variants: [{ id: 104134515100941, title: 'Default Title', price: '2.10' }] },
+    { title: 'Pogadimants 12 mm', handle: 'pogadimants', product_type: 'Sagos', variants: [{ id: 9991, title: 'Default Title', price: '2.10' }] }]);
+  const r = tk(zi, lt, C);
+  assert.equal(r.stats.items, 1); assert.ok(r.xml.includes('Organza - balta')); assert.equal(r.stats.skipped['nav iztulkots'], 1);
+}

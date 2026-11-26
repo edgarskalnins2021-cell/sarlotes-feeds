@@ -196,6 +196,9 @@ export const CONFIG = {
     technicalTypePattern: /KULLER|KURIER|COURIER/i,
     // category_name ir obligāts: ja nav ne tipa, ne LV kategorijas atbilsmes – vispārīgā kategorija.
     defaultCategory: 'Õmblus- ja käsitöötarbed',
+    // Neiztulkotas preces (igauņu nosaukums = latviskais) netiek sūtītas, kamēr nav iztulkotas – citādi Hind.ee
+    // paņem latvisko nosaukumu un to vairs nemaina. Izņēmums – tipi, kuru nosaukums visās valodās vienāds. 26.11.2026.
+    sameNameTypes: ['Žurnāli'],
     // Apģērbi (CONFIG.apparel): LV kategorija → igauniski (Igaunijas veikala tips ir "Kohandaja" vai latvisks "Apģērbi").
     apparelCategories: { 'Gatavie izstrādājumi un apdruka >> T-krekli': 'T-särgid', 'Gatavie izstrādājumi un apdruka >> Džemperi': 'Pusad',
       'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Põlled', 'Gatavie izstrādājumi un apdruka >> Auduma maisiņi': 'Riidest kotid',
@@ -235,6 +238,8 @@ export const CONFIG = {
     technicalTypePattern: /KURJER|KULLER|COURIER/i,
     // category_name ir obligāts: ja nav ne tipa, ne LV kategorijas atbilsmes – vispārīgā kategorija.
     defaultCategory: 'Siuvimo ir rankdarbių prekės',
+    // Kā Hind.ee: neiztulkotas preces (lietuviešu nosaukums = latviskais) netiek sūtītas, kamēr nav iztulkotas. 26.11.2026.
+    sameNameTypes: ['Žurnāli'],
     // Apģērbi (CONFIG.apparel): LV kategorija → lietuviski (Lietuvas veikala tips ir "Konfigūratorius" u.c. vai latvisks "Apģērbi").
     apparelCategories: { 'Gatavie izstrādājumi un apdruka >> T-krekli': 'Marškinėliai', 'Gatavie izstrādājumi un apdruka >> Džemperi': 'Džemperiai',
       'Gatavie izstrādājumi un apdruka >> Priekšauti': 'Prijuostės', 'Gatavie izstrādājumi un apdruka >> Auduma maisiņi': 'Medžiaginiai maišeliai',
@@ -1086,6 +1091,10 @@ function localizeItems(items, store, h, cfg) {
     const e = store.get(String(it._variantId));
     if (!e) { skip(`nav ${h.countryLabel} veikalā`); continue; }
     if (!(e.price > 0)) { skip(`nav ${h.countryLabel} cenas`); continue; }
+    // Vēl nav iztulkota (vietējā veikala nosaukums = latviskais) – nesūta; parādīsies, tiklīdz būs iztulkota.
+    if (normCmp(e.title) === normCmp(it._lvTitle ?? it._productTitle) && !h.sameNameTypes?.includes(it._productType)) {
+      skip('nav iztulkots'); continue;
+    }
 
     // Vietējā cena par Shopify vienību; metrā tirgotajām – par 1 m (Shopify vienība = 0,1 m).
     const price = it._decimal ? e.price / cfg.decimalStep : e.price;

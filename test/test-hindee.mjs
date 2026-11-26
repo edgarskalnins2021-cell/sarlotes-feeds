@@ -97,8 +97,19 @@ assert.ok(!xml.includes('store_pickup'), 'saņemšana Cēsīs Igaunijas pircēji
 // Kategorija: bez tipa – pēc LV kategorijas; citādi vispārīgā
 assert.equal(by('ilma-tuubita').val('category_name'), 'Kangas'); assert.equal(by('haruldane').val('category_name'), CONFIG.hindee.defaultCategory);
 assert.equal(stats.categoryFromLv, 1); assert.equal(stats.defaultCategory, 2);
-// Nosaukums, kas sakrīt ar LV, tiek uzskaitīts (drošības pārbaudei)
-assert.equal(stats.sameNameAsLv, 1);
+// Neiztulkota prece (igauņu nosaukums = latviskais) netiek sūtīta, kamēr nav iztulkota (26.11.2026)
+assert.equal(by('lentite'), undefined); assert.equal(stats.skipped['nav iztulkots'], 1);
+assert.equal(stats.sameNameAsLv, 0);
+{
+  // Iztulkota – parādās; žurnāls (nosaukums visās valodās vienāds) – parādās arī neiztulkots
+  const zurn = p({ title: 'Burda Easy 03/2025-DE', handle: 'burda', productType: 'Žurnāli', variants: [v({ price: 8.5, qty: 2 })] });
+  const { items: zi } = buildItems([latviski, zurn], CONFIG);
+  const tulk = normalizeEe([{ title: 'Paelake', handle: 'paelake', product_type: 'Paelad', variants: [{ id: vid(latviski), title: 'Default Title', price: '0.82' }] },
+    { title: 'Burda Easy 03/2025-DE', handle: 'burda', product_type: 'Ajakirjad', variants: [{ id: vid(zurn), title: 'Default Title', price: '8.70' }] }]);
+  const r = toHindeeXml(zi, tulk, CONFIG);
+  assert.equal(r.stats.items, 2); assert.ok(r.xml.includes('<title><![CDATA[Paelake]]></title>'));
+  assert.ok(r.xml.includes('<title><![CDATA[Burda Easy 03/2025-DE]]></title>')); assert.equal(r.stats.skipped['nav iztulkots'], undefined);
+}
 // Visas saites – Igaunijas domēns, unikālas; cenas formātā 0.00
 assert.ok(rows.every((r) => r.link.startsWith('https://sharlottekangad.ee/products/')));
 assert.equal(new Set(rows.map((r) => r.link)).size, rows.length);
